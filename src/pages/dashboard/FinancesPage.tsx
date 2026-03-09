@@ -49,6 +49,32 @@ const FinancesPage = () => {
     enabled: !!companyId,
   });
 
+  const { data: devices = [] } = useQuery({
+    queryKey: ["finances-devices", companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data } = await supabase
+        .from("devices")
+        .select("purchase_price")
+        .eq("company_id", companyId);
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+
+  const { data: products = [] } = useQuery({
+    queryKey: ["finances-products", companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data } = await supabase
+        .from("products")
+        .select("cost_price, stock")
+        .eq("company_id", companyId);
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+
   const monthExpenses = expenses.filter((e: any) => new Date(e.date) >= new Date(monthStart));
 
   const revenue = sales.reduce((s: number, sale: any) => s + (sale.total || 0), 0);
@@ -58,8 +84,13 @@ const FinancesPage = () => {
   const totalExpenses = monthExpenses.reduce((s: number, e: any) => s + (e.amount || 0), 0);
   const netProfit = revenue - costOfGoods - totalExpenses;
 
+  const totalInventoryCost = 
+    devices.reduce((s: number, d: any) => s + (d.purchase_price || 0), 0) +
+    products.reduce((s: number, p: any) => s + ((p.cost_price || 0) * (p.stock || 0)), 0);
+
   const stats = [
     { label: "Выручка за месяц", value: `${revenue.toLocaleString("ru")} ₽`, icon: DollarSign },
+    { label: "Товары по себестоимости", value: `${totalInventoryCost.toLocaleString("ru")} ₽`, icon: DollarSign },
     { label: "Закупки (себестоимость)", value: `${costOfGoods.toLocaleString("ru")} ₽`, icon: TrendingDown },
     { label: "Расходы за месяц", value: `${totalExpenses.toLocaleString("ru")} ₽`, icon: TrendingDown },
     { label: "Чистая прибыль", value: `${netProfit.toLocaleString("ru")} ₽`, icon: TrendingUp },
@@ -107,7 +138,7 @@ const FinancesPage = () => {
         </Dialog>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {stats.map((s) => (
           <Card key={s.label} className="p-5 card-shadow">
             <div className="flex items-center justify-between">
