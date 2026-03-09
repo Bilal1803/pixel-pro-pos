@@ -1,14 +1,14 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Printer, Search, CheckSquare, Square, Settings2, Upload, X, Image } from "lucide-react";
+import { Printer, Search, CheckSquare, Square, Settings2, Upload, X, Image, Save, Trash2, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -57,11 +57,105 @@ const SIZE_CONFIG: Record<TagSize, { label: string; cols: number; printCols: num
 const PriceTagsPage = () => {
   const { companyId } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [settings, setSettings] = useState<TemplateSettings>(DEFAULT_SETTINGS);
   const [uploading, setUploading] = useState(false);
+  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
+  const [templateName, setTemplateName] = useState("Основной");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Load saved templates
+  const { data: templates = [] } = useQuery({
+    queryKey: ["price-tag-templates", companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data, error } = await supabase
+        .from("price_tag_templates")
+        .select("*")
+        .eq("company_id", companyId)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!companyId,
+  });
+
+  // Load default template on first load
+  useEffect(() => {
+    if (templates.length > 0 && !activeTemplateId) {
+      const defaultTpl = templates.find((t: any) => t.is_default) || templates[0];
+      setActiveTemplateId(defaultTpl.id);
+      setTemplateName(defaultTpl.name);
+      setSettings({ ...DEFAULT_SETTINGS, ...(defaultTpl.settings as any) });
+    }
+  }, [templates, activeTemplateId]);
+
+  // Save template mutation
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!companyId) throw new Error("No company");
+      const payload = {
+        company_id: companyId,
+        name: templateName,
+        settings: settings as any,
+        updated_at: new Date().toISOString(),
+      };
+      if (activeTemplateId) {
+        const { error } = await supabase
+          .from("price_tag_templates")
+          .update(payload)
+          .eq("id", activeTemplateId);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase
+          .from("price_tag_templates")
+          .insert({ ...payload, is_default: templates.length === 0 })
+          .select()
+          .single();
+        if (error) throw error;
+        setActiveTemplateId(data.id);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["price-tag-templates"] });
+      toast({ title: "Шаблон сохранён" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Ошибка сохранения", description: err.message, variant: "destructive" });
+    },
+  });
+
+  // Delete template mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("price_tag_templates").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setActiveTemplateId(null);
+      setSettings(DEFAULT_SETTINGS);
+      setTemplateName("Основной");
+      queryClient.invalidateQueries({ queryKey: ["price-tag-templates"] });
+      toast({ title: "Шаблон удалён" });
+    },
+  });
+
+  const createNewTemplate = () => {
+    setActiveTemplateId(null);
+    setSettings(DEFAULT_SETTINGS);
+    setTemplateName("Новый шаблон");
+  };
+
+  const switchTemplate = (id: string) => {
+    const tpl = templates.find((t: any) => t.id === id);
+    if (tpl) {
+      setActiveTemplateId(tpl.id);
+      setTemplateName(tpl.name);
+      setSettings({ ...DEFAULT_SETTINGS, ...(tpl.settings as any) });
+    }
+  };
 
   const sizeConf = SIZE_CONFIG[settings.size];
 
@@ -272,6 +366,30 @@ const PriceTagsPage = () => {
                 <SheetTitle>Настройка шаблона</SheetTitle>
               </SheetHeader>
               <div className="space-y-6 mt-6 overflow-y-auto max-h-[calc(100vh-100px)]">
+                {/* Template selector */}
+                <div className="space-y-2">
+                  <Label>Шаблон</Label>
+                  <div className="flex gap-2">
+                    <Select value={activeTemplateId || ""} onValueChange={switchTemplate}>
+                      <SelectTrigger className="flex-1"><SelectValue placeholder="Выберите шаблон" /></SelectTrigger>
+                      <SelectContent>
+                        {templates.map((t: any) => (
+                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button variant="outline" size="icon" onClick={createNewTemplate} title="Новый шаблон">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Template name */}
+                <div className="space-y-2">
+                  <Label>Название шаблона</Label>
+                  <Input value={templateName} onChange={(e) => setTemplateName(e.target.value)} placeholder="Название шаблона" />
+                </div>
+
                 {/* Store name */}
                 <div className="space-y-2">
                   <Label>Название магазина</Label>
@@ -354,6 +472,19 @@ const PriceTagsPage = () => {
                     onChange={(e) => setSettings(s => ({ ...s, promoText: e.target.value }))}
                   />
                   <p className="text-[11px] text-muted-foreground">Отображается внизу ценника</p>
+                </div>
+
+                {/* Save / Delete buttons */}
+                <div className="flex gap-2 pt-2 border-t">
+                  <Button className="flex-1" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+                    <Save className="mr-2 h-4 w-4" />
+                    {saveMutation.isPending ? "Сохранение..." : "Сохранить"}
+                  </Button>
+                  {activeTemplateId && (
+                    <Button variant="destructive" size="icon" onClick={() => deleteMutation.mutate(activeTemplateId)} disabled={deleteMutation.isPending}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </SheetContent>
