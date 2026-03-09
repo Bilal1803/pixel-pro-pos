@@ -1,18 +1,57 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Printer, Search, CheckSquare, Square } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Printer, Search, CheckSquare, Square, Settings2, Upload, X, Image } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+
+type TagSize = "small" | "medium" | "large";
+
+interface TemplateSettings {
+  size: TagSize;
+  showMemory: boolean;
+  showColor: boolean;
+  showBattery: boolean;
+  showImei: boolean;
+  showBrand: boolean;
+  logoUrl: string | null;
+}
+
+const DEFAULT_SETTINGS: TemplateSettings = {
+  size: "medium",
+  showMemory: true,
+  showColor: true,
+  showBattery: true,
+  showImei: true,
+  showBrand: false,
+  logoUrl: null,
+};
+
+const SIZE_CONFIG: Record<TagSize, { label: string; cols: number; printCols: number; cardClass: string; titleClass: string; priceClass: string; textClass: string }> = {
+  small: { label: "Маленький (4 в ряд)", cols: 4, printCols: 4, cardClass: "p-2", titleClass: "text-xs font-bold", priceClass: "text-sm font-extrabold", textClass: "text-[9px]" },
+  medium: { label: "Средний (2 в ряд)", cols: 3, printCols: 2, cardClass: "p-3", titleClass: "text-sm font-bold", priceClass: "text-xl font-extrabold", textClass: "text-xs" },
+  large: { label: "Большой (1 в ряд)", cols: 2, printCols: 1, cardClass: "p-5", titleClass: "text-lg font-bold", priceClass: "text-3xl font-extrabold", textClass: "text-sm" },
+};
 
 const PriceTagsPage = () => {
   const { companyId } = useAuth();
+  const { toast } = useToast();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
+  const [settings, setSettings] = useState<TemplateSettings>(DEFAULT_SETTINGS);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const sizeConf = SIZE_CONFIG[settings.size];
 
   const { data: devices = [], isLoading } = useQuery({
     queryKey: ["devices-pricetags", companyId],
@@ -65,11 +104,61 @@ const PriceTagsPage = () => {
 
   const selectedDevices = devices.filter((d: any) => selected.has(d.id));
 
-  const handlePrint = () => {
-    window.print();
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !companyId) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${companyId}/logo.${ext}`;
+      const { error } = await supabase.storage.from("logos").upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from("logos").getPublicUrl(path);
+      setSettings(s => ({ ...s, logoUrl: urlData.publicUrl + "?t=" + Date.now() }));
+      toast({ title: "Логотип загружен" });
+    } catch (err: any) {
+      toast({ title: "Ошибка загрузки", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
   };
 
-  const DeviceRow = ({ device, list }: { device: any; list?: any[] }) => (
+  const removeLogo = () => setSettings(s => ({ ...s, logoUrl: null }));
+
+  const PriceTag = ({ device, forPrint = false }: { device: any; forPrint?: boolean }) => {
+    const details: string[] = [];
+    if (settings.showMemory && device.memory) details.push(device.memory);
+    if (settings.showColor && device.color) details.push(device.color);
+    if (settings.showBattery && device.battery_health) details.push(`АКБ ${device.battery_health}`);
+
+    return (
+      <Card className={`${sizeConf.cardClass} ${forPrint ? "shadow-none border" : "card-shadow"}`}>
+        <div className="space-y-1.5">
+          {settings.logoUrl && (
+            <div className="flex justify-center pb-1">
+              <img src={settings.logoUrl} alt="logo" className={settings.size === "small" ? "h-4" : settings.size === "medium" ? "h-6" : "h-8"} />
+            </div>
+          )}
+          <h3 className={`${sizeConf.titleClass} ${forPrint ? "" : "truncate"}`}>
+            {settings.showBrand && device.brand ? `${device.brand} ` : ""}{device.model}
+          </h3>
+          {details.length > 0 && (
+            <p className={`${sizeConf.textClass} text-muted-foreground`}>{details.join(" · ")}</p>
+          )}
+          {settings.showImei && (
+            <p className={`font-mono ${settings.size === "small" ? "text-[8px]" : "text-[10px]"} text-muted-foreground`}>{device.imei}</p>
+          )}
+          <div className="border-t pt-1.5 mt-1">
+            <span className={sizeConf.priceClass}>
+              {device.sale_price ? `${Number(device.sale_price).toLocaleString("ru")} ₽` : "—"}
+            </span>
+          </div>
+        </div>
+      </Card>
+    );
+  };
+
+  const DeviceRow = ({ device }: { device: any }) => (
     <div
       className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 cursor-pointer transition-colors"
       onClick={() => toggle(device.id)}
@@ -94,16 +183,78 @@ const PriceTagsPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header - hidden on print */}
+      {/* Header */}
       <div className="flex items-center justify-between print:hidden">
         <h1 className="text-2xl font-bold">Ценники</h1>
-        <Button onClick={handlePrint} disabled={selected.size === 0}>
-          <Printer className="mr-2 h-4 w-4" />
-          Печать ({selected.size})
-        </Button>
+        <div className="flex gap-2">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline"><Settings2 className="mr-2 h-4 w-4" /> Шаблон</Button>
+            </SheetTrigger>
+            <SheetContent className="w-full sm:max-w-sm">
+              <SheetHeader>
+                <SheetTitle>Настройка шаблона</SheetTitle>
+              </SheetHeader>
+              <div className="space-y-6 mt-6">
+                {/* Size */}
+                <div className="space-y-2">
+                  <Label>Размер ценника</Label>
+                  <Select value={settings.size} onValueChange={(v) => setSettings(s => ({ ...s, size: v as TagSize }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="small">Маленький (4 в ряд)</SelectItem>
+                      <SelectItem value="medium">Средний (2 в ряд)</SelectItem>
+                      <SelectItem value="large">Большой (1 в ряд)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Fields */}
+                <div className="space-y-3">
+                  <Label>Отображаемые поля</Label>
+                  {[
+                    { key: "showMemory" as const, label: "Память" },
+                    { key: "showColor" as const, label: "Цвет" },
+                    { key: "showBattery" as const, label: "Состояние АКБ" },
+                    { key: "showImei" as const, label: "IMEI" },
+                    { key: "showBrand" as const, label: "Бренд" },
+                  ].map(f => (
+                    <div key={f.key} className="flex items-center justify-between">
+                      <span className="text-sm">{f.label}</span>
+                      <Switch checked={settings[f.key]} onCheckedChange={(v) => setSettings(s => ({ ...s, [f.key]: v }))} />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Logo */}
+                <div className="space-y-3">
+                  <Label>Логотип магазина</Label>
+                  {settings.logoUrl ? (
+                    <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50">
+                      <img src={settings.logoUrl} alt="logo" className="h-10 max-w-[120px] object-contain" />
+                      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={removeLogo}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button variant="outline" className="w-full" onClick={() => fileRef.current?.click()} disabled={uploading}>
+                      {uploading ? "Загрузка..." : <><Upload className="mr-2 h-4 w-4" /> Загрузить логотип</>}
+                    </Button>
+                  )}
+                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                  <p className="text-[11px] text-muted-foreground">PNG или JPG, рекомендуется прозрачный фон</p>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+          <Button onClick={() => window.print()} disabled={selected.size === 0}>
+            <Printer className="mr-2 h-4 w-4" />
+            Печать ({selected.size})
+          </Button>
+        </div>
       </div>
 
-      {/* Selection UI - hidden on print */}
+      {/* Selection UI */}
       <div className="print:hidden space-y-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -148,7 +299,7 @@ const PriceTagsPage = () => {
               </Button>
             )}
             {recentDevices.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">Нет устройств, добавленных за последние 24 часа</p>
+              <p className="text-sm text-muted-foreground text-center py-8">Нет устройств за последние 24 часа</p>
             ) : (
               <div className="space-y-1.5 max-h-[60vh] overflow-y-auto">
                 {recentDevices.map((d: any) => <DeviceRow key={d.id} device={d} />)}
@@ -158,58 +309,21 @@ const PriceTagsPage = () => {
         </Tabs>
       </div>
 
-      {/* Print layout - visible only on print */}
+      {/* Print layout */}
       {selectedDevices.length > 0 && (
         <div className="hidden print:block">
-          <div className="grid grid-cols-2 gap-2">
-            {selectedDevices.map((d: any) => (
-              <Card key={d.id} className="p-3 shadow-none border">
-                <div className="space-y-1.5">
-                  <h3 className="text-base font-bold">{d.model}</h3>
-                  <div className="grid grid-cols-2 gap-0.5 text-xs">
-                    <span className="text-muted-foreground">Память:</span>
-                    <span className="font-medium">{d.memory || "—"}</span>
-                    <span className="text-muted-foreground">Цвет:</span>
-                    <span className="font-medium">{d.color || "—"}</span>
-                    <span className="text-muted-foreground">АКБ:</span>
-                    <span className="font-medium">{d.battery_health || "—"}</span>
-                    <span className="text-muted-foreground">IMEI:</span>
-                    <span className="font-mono text-[10px]">{d.imei}</span>
-                  </div>
-                  <div className="border-t pt-1.5 mt-1">
-                    <span className="text-xl font-extrabold">
-                      {d.sale_price ? `${Number(d.sale_price).toLocaleString("ru")} ₽` : "Цена не указана"}
-                    </span>
-                  </div>
-                </div>
-              </Card>
-            ))}
+          <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${sizeConf.printCols}, 1fr)` }}>
+            {selectedDevices.map((d: any) => <PriceTag key={d.id} device={d} forPrint />)}
           </div>
         </div>
       )}
 
-      {/* Preview of selected - screen only */}
+      {/* Preview */}
       {selectedDevices.length > 0 && (
         <div className="print:hidden">
-          <h2 className="text-sm font-semibold text-muted-foreground mb-3">Предпросмотр ценников ({selectedDevices.length})</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {selectedDevices.map((d: any) => (
-              <Card key={d.id} className="p-3 card-shadow">
-                <div className="space-y-1.5">
-                  <h3 className="text-sm font-bold truncate">{d.model}</h3>
-                  <div className="text-[11px] text-muted-foreground space-y-0.5">
-                    <p>{[d.memory, d.color].filter(Boolean).join(" · ")}</p>
-                    <p>АКБ: {d.battery_health || "—"}</p>
-                    <p className="font-mono text-[10px]">{d.imei}</p>
-                  </div>
-                  <div className="border-t pt-1.5">
-                    <span className="text-lg font-extrabold">
-                      {d.sale_price ? `${Number(d.sale_price).toLocaleString("ru")} ₽` : "—"}
-                    </span>
-                  </div>
-                </div>
-              </Card>
-            ))}
+          <h2 className="text-sm font-semibold text-muted-foreground mb-3">Предпросмотр ({selectedDevices.length})</h2>
+          <div className={`grid gap-3`} style={{ gridTemplateColumns: `repeat(${sizeConf.cols}, 1fr)` }}>
+            {selectedDevices.map((d: any) => <PriceTag key={d.id} device={d} />)}
           </div>
         </div>
       )}
