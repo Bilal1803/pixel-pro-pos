@@ -35,6 +35,8 @@ const SalesPage = () => {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [serviceName, setServiceName] = useState("");
   const [servicePrice, setServicePrice] = useState("");
+  const [discountType, setDiscountType] = useState<"percent" | "fixed">("percent");
+  const [discountValue, setDiscountValue] = useState("");
 
   const { data: sales = [], isLoading } = useQuery({
     queryKey: ["sales", companyId],
