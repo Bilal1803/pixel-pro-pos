@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { useState } from "react";
+import { Plus, Search } from "lucide-react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,6 +16,7 @@ const SalesPage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [deviceSearch, setDeviceSearch] = useState("");
 
   const { data: sales = [], isLoading } = useQuery({
     queryKey: ["sales", companyId],
@@ -54,6 +55,19 @@ const SalesPage = () => {
 
   const [saleForm, setSaleForm] = useState({ device_id: "", client_id: "", payment_method: "cash" as string });
 
+  const filteredDevices = useMemo(() => {
+    if (!deviceSearch.trim()) return availableDevices;
+    const q = deviceSearch.toLowerCase().trim();
+    return availableDevices.filter(d =>
+      d.model.toLowerCase().includes(q) ||
+      d.imei.toLowerCase().includes(q) ||
+      (d.brand && d.brand.toLowerCase().includes(q)) ||
+      (d.memory && d.memory.toLowerCase().includes(q))
+    );
+  }, [availableDevices, deviceSearch]);
+
+  const selectedDevice = availableDevices.find(d => d.id === saleForm.device_id);
+
   const createSale = useMutation({
     mutationFn: async () => {
       if (!companyId || !user) throw new Error("No company");
@@ -88,6 +102,7 @@ const SalesPage = () => {
       toast({ title: "Продажа оформлена!" });
       setOpen(false);
       setSaleForm({ device_id: "", client_id: "", payment_method: "cash" });
+      setDeviceSearch("");
     },
     onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
@@ -98,24 +113,62 @@ const SalesPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Продажи</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setDeviceSearch(""); setSaleForm({ device_id: "", client_id: "", payment_method: "cash" }); } }}>
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" /> Новая продажа</Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-lg">
             <DialogHeader><DialogTitle>Оформить продажу</DialogTitle></DialogHeader>
-            <form onSubmit={(e) => { e.preventDefault(); createSale.mutate(); }} className="space-y-3">
-              <div>
+            <form onSubmit={(e) => { e.preventDefault(); createSale.mutate(); }} className="space-y-4">
+              {/* Device search & selection */}
+              <div className="space-y-2">
                 <Label>Устройство *</Label>
-                <Select value={saleForm.device_id} onValueChange={(v) => setSaleForm({ ...saleForm, device_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Выберите устройство" /></SelectTrigger>
-                  <SelectContent>
-                    {availableDevices.map(d => (
-                      <SelectItem key={d.id} value={d.id}>{d.model} {d.memory} — {d.sale_price} ₽</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Поиск по модели или IMEI..."
+                    className="pl-9"
+                    value={deviceSearch}
+                    onChange={(e) => setDeviceSearch(e.target.value)}
+                  />
+                </div>
+                <div className="max-h-[220px] overflow-y-auto rounded-lg border divide-y">
+                  {filteredDevices.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      {availableDevices.length === 0 ? "Нет устройств в наличии" : "Ничего не найдено"}
+                    </div>
+                  ) : (
+                    filteredDevices.map(d => (
+                      <button
+                        type="button"
+                        key={d.id}
+                        onClick={() => setSaleForm({ ...saleForm, device_id: d.id })}
+                        className={`w-full text-left px-3 py-2.5 hover:bg-muted/50 transition-colors ${saleForm.device_id === d.id ? "bg-primary/10 border-l-2 border-l-primary" : ""}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-sm">{d.model}</span>
+                          <span className="font-semibold text-sm">{d.sale_price ? `${d.sale_price} ₽` : "—"}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs text-muted-foreground">
+                          <span className="font-mono">IMEI: {d.imei}</span>
+                          {d.memory && <span>Память: {d.memory}</span>}
+                          {d.color && <span>Цвет: {d.color}</span>}
+                          {d.battery_health && <span>АКБ: {d.battery_health}</span>}
+                          {d.brand && <span>Бренд: {d.brand}</span>}
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+                {selectedDevice && (
+                  <div className="rounded-lg bg-muted/30 border p-3 text-sm space-y-1">
+                    <p className="font-medium">Выбрано: {selectedDevice.model} {selectedDevice.memory || ""} {selectedDevice.color || ""}</p>
+                    <p className="text-xs text-muted-foreground font-mono">IMEI: {selectedDevice.imei}</p>
+                    <p className="font-semibold">Цена: {selectedDevice.sale_price ? `${selectedDevice.sale_price} ₽` : "Не указана"}</p>
+                  </div>
+                )}
               </div>
+
               <div>
                 <Label>Клиент</Label>
                 <Select value={saleForm.client_id} onValueChange={(v) => setSaleForm({ ...saleForm, client_id: v })}>
