@@ -86,7 +86,17 @@ const AccessoriesPage = () => {
             <DialogHeader><DialogTitle>Новый товар</DialogTitle></DialogHeader>
             <form onSubmit={(e) => { e.preventDefault(); createProduct.mutate(); }} className="space-y-3">
               <div><Label>Название *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
-              <div><Label>Категория</Label><Input placeholder="Чехлы, Стёкла, Кабели..." value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></div>
+              <div>
+                <Label>Категория</Label>
+                <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+                  <SelectTrigger><SelectValue placeholder="Выберите категорию" /></SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Себестоимость</Label><Input type="number" value={form.cost_price} onChange={(e) => setForm({ ...form, cost_price: e.target.value })} /></div>
                 <div><Label>Цена продажи</Label><Input type="number" value={form.sale_price} onChange={(e) => setForm({ ...form, sale_price: e.target.value })} /></div>
