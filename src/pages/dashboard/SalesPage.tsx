@@ -404,7 +404,7 @@ const SalesPage = () => {
             </div>
 
             <Button onClick={() => createSale.mutate()} className="w-full mt-4" disabled={createSale.isPending || cart.length === 0}>
-              {createSale.isPending ? "Оформление..." : `Оформить продажу — ${cartTotal} ₽`}
+              {createSale.isPending ? "Оформление..." : `Оформить продажу — ${finalTotal} ₽`}
             </Button>
           </DialogContent>
         </Dialog>
