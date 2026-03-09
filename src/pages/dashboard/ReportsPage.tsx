@@ -210,16 +210,7 @@ const ReportsPage = () => {
       XLSX.utils.book_append_sheet(wb, ws, "Отчёт");
 
       const fileName = `Report_${format(dateRange.from, "dd-MM-yyyy")}_${format(dateRange.to, "dd-MM-yyyy")}.xlsx`;
-      const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-      const blob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      XLSX.writeFile(wb, fileName);
 
       toast({ title: "Отчёт скачан", description: fileName });
     } catch (err: any) {
