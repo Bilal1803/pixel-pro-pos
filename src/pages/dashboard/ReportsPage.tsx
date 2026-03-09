@@ -280,7 +280,7 @@ const ReportsPage = () => {
           </div>
 
           <div className="rounded-lg border p-4 space-y-2">
-            <p className="font-medium flex items-center gap-2"><FileSpreadsheet className="h-4 w-4 text-primary" /> Содержание отчёта (Excel, 6 листов):</p>
+            <p className="font-medium flex items-center gap-2"><FileSpreadsheet className="h-4 w-4 text-primary" /> Содержание отчёта (Excel, 1 лист):</p>
             <ul className="text-sm text-muted-foreground space-y-1 ml-6 list-disc">
               <li><strong>Сводка</strong> — выручка, себестоимость, расходы, чистая прибыль, скупки</li>
               <li><strong>Продажи</strong> — детали каждой продажи, позиции, клиенты, сотрудники</li>
