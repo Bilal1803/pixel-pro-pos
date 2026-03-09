@@ -1,21 +1,69 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, TrendingUp, TrendingDown, Minus, Trash2 } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, Minus, Trash2, Search, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+const IPHONE_CATALOG: { name: string; memories: string[] }[] = [
+  { name: "iPhone X", memories: ["64GB", "256GB"] },
+  { name: "iPhone XR", memories: ["64GB", "128GB", "256GB"] },
+  { name: "iPhone XS", memories: ["64GB", "256GB", "512GB"] },
+  { name: "iPhone XS Max", memories: ["64GB", "256GB", "512GB"] },
+  { name: "iPhone 11", memories: ["64GB", "128GB", "256GB"] },
+  { name: "iPhone 11 Pro", memories: ["64GB", "256GB", "512GB"] },
+  { name: "iPhone 11 Pro Max", memories: ["64GB", "256GB", "512GB"] },
+  { name: "iPhone SE (2020)", memories: ["64GB", "128GB", "256GB"] },
+  { name: "iPhone 12 mini", memories: ["64GB", "128GB", "256GB"] },
+  { name: "iPhone 12", memories: ["64GB", "128GB", "256GB"] },
+  { name: "iPhone 12 Pro", memories: ["128GB", "256GB", "512GB"] },
+  { name: "iPhone 12 Pro Max", memories: ["128GB", "256GB", "512GB"] },
+  { name: "iPhone 13 mini", memories: ["128GB", "256GB", "512GB"] },
+  { name: "iPhone 13", memories: ["128GB", "256GB", "512GB"] },
+  { name: "iPhone 13 Pro", memories: ["128GB", "256GB", "512GB", "1TB"] },
+  { name: "iPhone 13 Pro Max", memories: ["128GB", "256GB", "512GB", "1TB"] },
+  { name: "iPhone SE (2022)", memories: ["64GB", "128GB", "256GB"] },
+  { name: "iPhone 14", memories: ["128GB", "256GB", "512GB"] },
+  { name: "iPhone 14 Plus", memories: ["128GB", "256GB", "512GB"] },
+  { name: "iPhone 14 Pro", memories: ["128GB", "256GB", "512GB", "1TB"] },
+  { name: "iPhone 14 Pro Max", memories: ["128GB", "256GB", "512GB", "1TB"] },
+  { name: "iPhone 15", memories: ["128GB", "256GB", "512GB"] },
+  { name: "iPhone 15 Plus", memories: ["128GB", "256GB", "512GB"] },
+  { name: "iPhone 15 Pro", memories: ["128GB", "256GB", "512GB", "1TB"] },
+  { name: "iPhone 15 Pro Max", memories: ["256GB", "512GB", "1TB"] },
+  { name: "iPhone 16", memories: ["128GB", "256GB", "512GB"] },
+  { name: "iPhone 16 Plus", memories: ["128GB", "256GB", "512GB"] },
+  { name: "iPhone 16 Pro", memories: ["128GB", "256GB", "512GB", "1TB"] },
+  { name: "iPhone 16 Pro Max", memories: ["256GB", "512GB", "1TB"] },
+  { name: "iPhone 16e", memories: ["128GB", "256GB", "512GB"] },
+  { name: "iPhone 17", memories: ["128GB", "256GB", "512GB"] },
+  { name: "iPhone 17 Air", memories: ["256GB", "512GB"] },
+  { name: "iPhone 17 Pro", memories: ["256GB", "512GB", "1TB"] },
+  { name: "iPhone 17 Pro Max", memories: ["256GB", "512GB", "1TB"] },
+];
 
 const MonitoringPage = () => {
   const { companyId } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ model: "", our_price: "", prices: "" });
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [selectedModel, setSelectedModel] = useState<{ name: string; memory: string } | null>(null);
+  const [priceDialogOpen, setPriceDialogOpen] = useState(false);
+  const [form, setForm] = useState({ our_price: "", prices: "" });
+
+  const filteredCatalog = useMemo(() => {
+    if (!search.trim()) return IPHONE_CATALOG;
+    const q = search.toLowerCase();
+    return IPHONE_CATALOG.filter(m => m.name.toLowerCase().includes(q));
+  }, [search]);
 
   const { data: monitoring = [], isLoading } = useQuery({
     queryKey: ["price-monitoring", companyId],
@@ -34,12 +82,13 @@ const MonitoringPage = () => {
 
   const createEntry = useMutation({
     mutationFn: async () => {
-      if (!companyId) throw new Error("No company");
+      if (!companyId || !selectedModel) throw new Error("No company or model");
+      const modelName = `${selectedModel.name} ${selectedModel.memory}`;
       const pricesArr = form.prices.split(/[,;\s]+/).map(Number).filter(n => !isNaN(n) && n > 0);
       const avg = pricesArr.length > 0 ? Math.round(pricesArr.reduce((a, b) => a + b, 0) / pricesArr.length) : null;
       const { error } = await supabase.from("price_monitoring").insert({
         company_id: companyId,
-        model: form.model,
+        model: modelName,
         our_price: form.our_price ? Number(form.our_price) : null,
         prices: pricesArr,
         avg_price: avg,
@@ -49,8 +98,11 @@ const MonitoringPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["price-monitoring"] });
       toast({ title: "Модель добавлена" });
-      setOpen(false);
-      setForm({ model: "", our_price: "", prices: "" });
+      setPriceDialogOpen(false);
+      setSheetOpen(false);
+      setSelectedModel(null);
+      setForm({ our_price: "", prices: "" });
+      setSearch("");
     },
     onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
@@ -66,30 +118,90 @@ const MonitoringPage = () => {
     },
   });
 
+  const handleSelectMemory = (modelName: string, memory: string) => {
+    setSelectedModel({ name: modelName, memory });
+    setPriceDialogOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Мониторинг цен</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
+        <Sheet open={sheetOpen} onOpenChange={(v) => { setSheetOpen(v); if (!v) { setSearch(""); } }}>
+          <SheetTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" /> Добавить модель</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Новая модель для мониторинга</DialogTitle></DialogHeader>
-            <form onSubmit={(e) => { e.preventDefault(); createEntry.mutate(); }} className="space-y-3">
-              <div><Label>Модель *</Label><Input placeholder="iPhone 14 Pro 128GB" value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} required /></div>
-              <div><Label>Наша цена</Label><Input type="number" value={form.our_price} onChange={(e) => setForm({ ...form, our_price: e.target.value })} /></div>
-              <div><Label>Цены с Avito (через запятую)</Label><Input placeholder="49000, 50000, 51000, ..." value={form.prices} onChange={(e) => setForm({ ...form, prices: e.target.value })} /></div>
-              <Button type="submit" className="w-full" disabled={createEntry.isPending || !form.model}>
-                {createEntry.isPending ? "Добавление..." : "Добавить"}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+          </SheetTrigger>
+          <SheetContent className="w-full sm:max-w-md p-0 flex flex-col">
+            <SheetHeader className="p-6 pb-2">
+              <SheetTitle>Выберите модель iPhone</SheetTitle>
+            </SheetHeader>
+            <div className="px-6 pb-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Поиск модели..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+            <ScrollArea className="flex-1 px-6 pb-6">
+              <div className="space-y-1">
+                {filteredCatalog.map((model) => (
+                  <div key={model.name}>
+                    <p className="text-sm font-semibold text-foreground py-2 sticky top-0 bg-background">{model.name}</p>
+                    <div className="grid grid-cols-2 gap-1.5 pb-2">
+                      {model.memories.map((mem) => (
+                        <Button
+                          key={mem}
+                          variant="outline"
+                          size="sm"
+                          className="justify-between text-xs h-8"
+                          onClick={() => handleSelectMemory(model.name, mem)}
+                        >
+                          {mem}
+                          <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {filteredCatalog.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-8">Ничего не найдено</p>
+                )}
+              </div>
+            </ScrollArea>
+          </SheetContent>
+        </Sheet>
       </div>
 
+      {/* Price entry dialog */}
+      <Dialog open={priceDialogOpen} onOpenChange={setPriceDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {selectedModel ? `${selectedModel.name} ${selectedModel.memory}` : "Модель"}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); createEntry.mutate(); }} className="space-y-3">
+            <div>
+              <Label>Наша цена</Label>
+              <Input type="number" placeholder="55000" value={form.our_price} onChange={(e) => setForm({ ...form, our_price: e.target.value })} />
+            </div>
+            <div>
+              <Label>Цены с Avito (через запятую)</Label>
+              <Input placeholder="49000, 50000, 51000, ..." value={form.prices} onChange={(e) => setForm({ ...form, prices: e.target.value })} />
+            </div>
+            <Button type="submit" className="w-full" disabled={createEntry.isPending}>
+              {createEntry.isPending ? "Добавление..." : "Добавить"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <p className="text-sm text-muted-foreground">
-        Введите цены с Avito — система рассчитает среднюю рыночную цену и рекомендованную цену продажи.
+        Выберите модель iPhone из каталога, введите цены с Avito — система рассчитает среднюю рыночную цену и рекомендацию.
       </p>
 
       {isLoading ? (
