@@ -102,7 +102,8 @@ const MonitoringPage = () => {
       setPriceDialogOpen(false);
       setSheetOpen(false);
       setSelectedModel(null);
-      setForm({ our_price: "", prices: "" });
+      setOurPrice("");
+      setPriceSlots(Array(10).fill(""));
       setSearch("");
     },
     onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
