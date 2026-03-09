@@ -23,7 +23,13 @@ interface TemplateSettings {
   showBattery: boolean;
   showImei: boolean;
   showBrand: boolean;
+  showSim: boolean;
   logoUrl: string | null;
+  storeName: string;
+  promoText: string;
+  showOldPrice: boolean;
+  showPromoPrice: boolean;
+  promoPricePercent: number;
 }
 
 const DEFAULT_SETTINGS: TemplateSettings = {
@@ -33,7 +39,13 @@ const DEFAULT_SETTINGS: TemplateSettings = {
   showBattery: true,
   showImei: true,
   showBrand: false,
+  showSim: true,
   logoUrl: null,
+  storeName: "",
+  promoText: "",
+  showOldPrice: false,
+  showPromoPrice: false,
+  promoPricePercent: 10,
 };
 
 const SIZE_CONFIG: Record<TagSize, { label: string; cols: number; printCols: number; cardClass: string; titleClass: string; priceClass: string; textClass: string }> = {
