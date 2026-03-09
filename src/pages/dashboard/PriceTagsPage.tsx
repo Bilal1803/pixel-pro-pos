@@ -366,6 +366,30 @@ const PriceTagsPage = () => {
                 <SheetTitle>Настройка шаблона</SheetTitle>
               </SheetHeader>
               <div className="space-y-6 mt-6 overflow-y-auto max-h-[calc(100vh-100px)]">
+                {/* Template selector */}
+                <div className="space-y-2">
+                  <Label>Шаблон</Label>
+                  <div className="flex gap-2">
+                    <Select value={activeTemplateId || ""} onValueChange={switchTemplate}>
+                      <SelectTrigger className="flex-1"><SelectValue placeholder="Выберите шаблон" /></SelectTrigger>
+                      <SelectContent>
+                        {templates.map((t: any) => (
+                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button variant="outline" size="icon" onClick={createNewTemplate} title="Новый шаблон">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Template name */}
+                <div className="space-y-2">
+                  <Label>Название шаблона</Label>
+                  <Input value={templateName} onChange={(e) => setTemplateName(e.target.value)} placeholder="Название шаблона" />
+                </div>
+
                 {/* Store name */}
                 <div className="space-y-2">
                   <Label>Название магазина</Label>
@@ -448,6 +472,19 @@ const PriceTagsPage = () => {
                     onChange={(e) => setSettings(s => ({ ...s, promoText: e.target.value }))}
                   />
                   <p className="text-[11px] text-muted-foreground">Отображается внизу ценника</p>
+                </div>
+
+                {/* Save / Delete buttons */}
+                <div className="flex gap-2 pt-2 border-t">
+                  <Button className="flex-1" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+                    <Save className="mr-2 h-4 w-4" />
+                    {saveMutation.isPending ? "Сохранение..." : "Сохранить"}
+                  </Button>
+                  {activeTemplateId && (
+                    <Button variant="destructive" size="icon" onClick={() => deleteMutation.mutate(activeTemplateId)} disabled={deleteMutation.isPending}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </SheetContent>
