@@ -42,7 +42,7 @@ const SalesPage = () => {
       if (!companyId) return [];
       const { data, error } = await supabase
         .from("sales")
-        .select("*, clients(name), sale_items(*)")
+        .select("*, clients(name), sale_items(*, devices(model, imei, memory, color, battery_health, brand))")
         .eq("company_id", companyId)
         .order("created_at", { ascending: false });
       if (error) throw error;
