@@ -29,6 +29,7 @@ const DashboardLayout = () => {
           <Outlet />
         </main>
       </div>
+      <OnboardingTour />
     </div>
   );
 };
