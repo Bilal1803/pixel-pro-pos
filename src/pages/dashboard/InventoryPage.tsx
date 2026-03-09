@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import * as XLSX from "xlsx";
 
 const statusLabels: Record<string, { label: string; className: string }> = {
@@ -21,6 +23,16 @@ const statusLabels: Record<string, { label: string; className: string }> = {
   defective: { label: "Дефект", className: "bg-destructive/10 text-destructive" },
   rental: { label: "Аренда", className: "bg-primary/10 text-primary" },
 };
+
+const STATUS_TABS = [
+  { value: "all", label: "Все" },
+  { value: "available", label: "В наличии" },
+  { value: "testing", label: "Проверка" },
+  { value: "reserved", label: "Резерв" },
+  { value: "sold", label: "Проданные" },
+  { value: "defective", label: "Дефект" },
+  { value: "rental", label: "Аренда" },
+];
 
 type ParsedDevice = {
   model: string;
@@ -67,6 +79,7 @@ const InventoryPage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [statusTab, setStatusTab] = useState("all");
   const [open, setOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [parsedRows, setParsedRows] = useState<ParsedDevice[]>([]);
@@ -85,6 +98,15 @@ const InventoryPage = () => {
     },
     enabled: !!companyId,
   });
+
+  // Count by status
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: devices.length };
+    for (const d of devices) {
+      counts[d.status] = (counts[d.status] || 0) + 1;
+    }
+    return counts;
+  }, [devices]);
 
   const addDevice = useMutation({
     mutationFn: async () => {
@@ -181,7 +203,6 @@ const InventoryPage = () => {
           return;
         }
 
-        // Map columns
         const headerMap = new Map<string, keyof ParsedDevice>();
         const rawHeaders = Object.keys(json[0]);
         for (const h of rawHeaders) {
@@ -238,7 +259,6 @@ const InventoryPage = () => {
       }
     };
     reader.readAsArrayBuffer(file);
-    // Reset input
     e.target.value = "";
   };
 
@@ -259,7 +279,6 @@ const InventoryPage = () => {
         notes: d.notes || null,
       }));
 
-      // Insert in batches of 50
       for (let i = 0; i < toInsert.length; i += 50) {
         const batch = toInsert.slice(i, i + 50);
         const { error } = await supabase.from("devices").insert(batch);
@@ -280,9 +299,19 @@ const InventoryPage = () => {
     setParsedRows((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const filtered = devices.filter((d) =>
-    d.model.toLowerCase().includes(search.toLowerCase()) || d.imei.includes(search)
-  );
+  const filtered = useMemo(() => {
+    let result = devices;
+    if (statusTab !== "all") {
+      result = result.filter(d => d.status === statusTab);
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase().trim();
+      result = result.filter(d =>
+        d.model.toLowerCase().includes(q) || d.imei.includes(q)
+      );
+    }
+    return result;
+  }, [devices, statusTab, search]);
 
   return (
     <div className="space-y-6">
@@ -302,7 +331,6 @@ const InventoryPage = () => {
                     Загрузите файл Excel (.xlsx, .xls) или CSV. Первая строка — заголовки столбцов.
                   </p>
 
-                  {/* Example table */}
                   <div>
                     <p className="text-sm font-medium mb-2">Пример таблицы:</p>
                     <div className="overflow-x-auto rounded-lg border">
@@ -346,7 +374,6 @@ const InventoryPage = () => {
                     <p className="mt-1.5 text-[11px] text-muted-foreground">✱ Обязательные столбцы. Остальные можно не заполнять.</p>
                   </div>
 
-                  {/* Accepted column names */}
                   <details className="group">
                     <summary className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
                       Какие названия столбцов распознаются? ▾
@@ -469,6 +496,20 @@ const InventoryPage = () => {
         </div>
       </div>
 
+      {/* Status tabs */}
+      <Tabs value={statusTab} onValueChange={setStatusTab}>
+        <TabsList className="flex-wrap h-auto gap-1">
+          {STATUS_TABS.map(tab => (
+            <TabsTrigger key={tab.value} value={tab.value} className="gap-1.5">
+              {tab.label}
+              <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-[10px]">
+                {statusCounts[tab.value] || 0}
+              </Badge>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input placeholder="Поиск по модели или IMEI..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -478,7 +519,9 @@ const InventoryPage = () => {
         {isLoading ? (
           <div className="p-8 text-center text-muted-foreground">Загрузка...</div>
         ) : filtered.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">Нет устройств. Добавьте первое!</div>
+          <div className="p-8 text-center text-muted-foreground">
+            {statusTab === "all" ? "Нет устройств. Добавьте первое!" : `Нет устройств со статусом «${STATUS_TABS.find(t => t.value === statusTab)?.label}»`}
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

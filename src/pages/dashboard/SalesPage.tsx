@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, X, Smartphone, ShoppingBag, Wrench, Trash2 } from "lucide-react";
+import { Plus, Search, X, Smartphone, ShoppingBag, Wrench, Trash2, Undo2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type CartItem = {
   id: string;
@@ -37,6 +47,10 @@ const SalesPage = () => {
   const [servicePrice, setServicePrice] = useState("");
   const [discountType, setDiscountType] = useState<"percent" | "fixed">("percent");
   const [discountValue, setDiscountValue] = useState("");
+
+  // Return state
+  const [returnOpen, setReturnOpen] = useState(false);
+  const [returnTarget, setReturnTarget] = useState<any>(null);
 
   const { data: sales = [], isLoading } = useQuery({
     queryKey: ["sales", companyId],
@@ -83,7 +97,6 @@ const SalesPage = () => {
     enabled: !!companyId && open,
   });
 
-  // Devices not already in cart
   const devicesInCart = new Set(cart.filter(i => i.type === "device").map(i => i.device_id));
   const filteredDevices = useMemo(() => {
     const available = availableDevices.filter(d => !devicesInCart.has(d.id));
@@ -194,13 +207,11 @@ const SalesPage = () => {
       const { error: itemError } = await supabase.from("sale_items").insert(saleItems);
       if (itemError) throw itemError;
 
-      // Mark devices as sold
       const deviceIds = cart.filter(i => i.type === "device" && i.device_id).map(i => i.device_id!);
       for (const did of deviceIds) {
         await supabase.from("devices").update({ status: "sold" as any }).eq("id", did);
       }
 
-      // Decrease product stock
       for (const item of cart.filter(i => i.type === "accessory" && i.product_id)) {
         const prod = products.find(p => p.id === item.product_id);
         if (prod) {
@@ -216,6 +227,42 @@ const SalesPage = () => {
       toast({ title: "Продажа оформлена!" });
       setOpen(false);
       resetForm();
+    },
+    onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
+  });
+
+  const returnSale = useMutation({
+    mutationFn: async (sale: any) => {
+      const items = sale.sale_items || [];
+
+      // Restore devices to "available"
+      for (const item of items) {
+        if (item.item_type === "device" && item.device_id) {
+          await supabase.from("devices").update({ status: "available" as any }).eq("id", item.device_id);
+        }
+        // Restore product stock
+        if (item.item_type === "accessory" && item.product_id) {
+          const { data: prod } = await supabase.from("products").select("stock").eq("id", item.product_id).single();
+          if (prod) {
+            await supabase.from("products").update({ stock: (prod.stock ?? 0) + (item.quantity || 1) }).eq("id", item.product_id);
+          }
+        }
+      }
+
+      // Delete sale items then sale
+      await supabase.from("sale_items").delete().eq("sale_id", sale.id);
+      await supabase.from("sales").delete().eq("id", sale.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sales"] });
+      queryClient.invalidateQueries({ queryKey: ["devices"] });
+      queryClient.invalidateQueries({ queryKey: ["available-devices"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["sales-dash"] });
+      queryClient.invalidateQueries({ queryKey: ["devices-dash"] });
+      setReturnOpen(false);
+      setReturnTarget(null);
+      toast({ title: "Продажа возвращена", description: "Товары возвращены на склад" });
     },
     onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
@@ -240,7 +287,6 @@ const SalesPage = () => {
             <DialogHeader><DialogTitle>Оформить продажу</DialogTitle></DialogHeader>
 
             <div className="flex-1 overflow-y-auto space-y-4">
-              {/* Add items tabs */}
               <Tabs defaultValue="devices" className="w-full">
                 <TabsList className="w-full">
                   <TabsTrigger value="devices" className="flex-1 gap-1.5"><Smartphone className="h-3.5 w-3.5" /> Устройства</TabsTrigger>
@@ -313,7 +359,6 @@ const SalesPage = () => {
                 </TabsContent>
               </Tabs>
 
-              {/* Cart */}
               {cart.length > 0 && (
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold">Корзина ({cart.length})</Label>
@@ -351,7 +396,6 @@ const SalesPage = () => {
                     </div>
                   </div>
 
-                  {/* Discount */}
                   <div className="flex items-end gap-2">
                     <div className="flex-1">
                       <Label className="text-xs">Скидка</Label>
@@ -374,7 +418,6 @@ const SalesPage = () => {
                 </div>
               )}
 
-              {/* Client & payment */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Клиент</Label>
@@ -425,6 +468,7 @@ const SalesPage = () => {
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Оплата</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Клиент</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Дата</th>
+                  <th className="px-4 py-3"></th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -453,6 +497,17 @@ const SalesPage = () => {
                     <td className="px-4 py-3">{paymentLabels[s.payment_method] || s.payment_method}</td>
                     <td className="px-4 py-3">{s.clients?.name || "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground">{new Date(s.created_at).toLocaleString("ru")}</td>
+                    <td className="px-4 py-3">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={() => { setReturnTarget(s); setReturnOpen(true); }}
+                        title="Возврат продажи"
+                      >
+                        <Undo2 className="h-4 w-4" />
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -460,6 +515,37 @@ const SalesPage = () => {
           </div>
         )}
       </Card>
+
+      {/* Return confirmation */}
+      <AlertDialog open={returnOpen} onOpenChange={setReturnOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Возврат продажи</AlertDialogTitle>
+            <AlertDialogDescription>
+              Продажа на сумму <strong>{returnTarget?.total} ₽</strong> будет отменена. Устройства вернутся на склад, остатки аксессуаров будут восстановлены. Это действие нельзя отменить.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {returnTarget && (
+            <div className="rounded-lg border divide-y text-sm max-h-40 overflow-y-auto">
+              {(returnTarget.sale_items || []).map((item: any, idx: number) => (
+                <div key={idx} className="px-3 py-2 flex justify-between">
+                  <span>{item.name}{item.quantity > 1 ? ` ×${item.quantity}` : ""}</span>
+                  <span className="text-muted-foreground">{item.price} ₽</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => returnTarget && returnSale.mutate(returnTarget)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {returnSale.isPending ? "Возврат..." : "Оформить возврат"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
