@@ -1,6 +1,7 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardSidebar from "@/components/DashboardSidebar";
+import OnboardingTour from "@/components/OnboardingTour";
 
 const DashboardLayout = () => {
   const { user, loading } = useAuth();
@@ -28,6 +29,7 @@ const DashboardLayout = () => {
           <Outlet />
         </main>
       </div>
+      <OnboardingTour />
     </div>
   );
 };
