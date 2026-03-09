@@ -150,6 +150,8 @@ const SalesPage = () => {
   const removeFromCart = (id: string) => setCart(prev => prev.filter(i => i.id !== id));
 
   const cartTotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const discountAmount = discountValue ? (discountType === "percent" ? Math.round(cartTotal * parseFloat(discountValue) / 100) : parseFloat(discountValue)) : 0;
+  const finalTotal = Math.max(0, cartTotal - discountAmount);
 
   const resetForm = () => {
     setCart([]);
