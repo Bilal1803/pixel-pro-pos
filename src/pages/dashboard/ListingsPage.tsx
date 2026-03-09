@@ -1,21 +1,104 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ExternalLink, AlertCircle, Plus, Trash2 } from "lucide-react";
+import { ExternalLink, AlertCircle, Plus, Trash2, Search, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const IPHONE_CATALOG: { name: string; memories: string[]; colors: string[] }[] = [
+  { name: "iPhone X", memories: ["64GB", "256GB"], colors: ["Серебристый", "Серый космос"] },
+  { name: "iPhone XR", memories: ["64GB", "128GB", "256GB"], colors: ["Белый", "Чёрный", "Синий", "Жёлтый", "Коралловый", "Красный"] },
+  { name: "iPhone XS", memories: ["64GB", "256GB", "512GB"], colors: ["Серебристый", "Серый космос", "Золотой"] },
+  { name: "iPhone XS Max", memories: ["64GB", "256GB", "512GB"], colors: ["Серебристый", "Серый космос", "Золотой"] },
+  { name: "iPhone 11", memories: ["64GB", "128GB", "256GB"], colors: ["Белый", "Чёрный", "Зелёный", "Жёлтый", "Фиолетовый", "Красный"] },
+  { name: "iPhone 11 Pro", memories: ["64GB", "256GB", "512GB"], colors: ["Серебристый", "Серый космос", "Золотой", "Тёмно-зелёный"] },
+  { name: "iPhone 11 Pro Max", memories: ["64GB", "256GB", "512GB"], colors: ["Серебристый", "Серый космос", "Золотой", "Тёмно-зелёный"] },
+  { name: "iPhone SE (2020)", memories: ["64GB", "128GB", "256GB"], colors: ["Белый", "Чёрный", "Красный"] },
+  { name: "iPhone 12 mini", memories: ["64GB", "128GB", "256GB"], colors: ["Белый", "Чёрный", "Синий", "Зелёный", "Красный", "Фиолетовый"] },
+  { name: "iPhone 12", memories: ["64GB", "128GB", "256GB"], colors: ["Белый", "Чёрный", "Синий", "Зелёный", "Красный", "Фиолетовый"] },
+  { name: "iPhone 12 Pro", memories: ["128GB", "256GB", "512GB"], colors: ["Серебристый", "Графитовый", "Золотой", "Тихоокеанский синий"] },
+  { name: "iPhone 12 Pro Max", memories: ["128GB", "256GB", "512GB"], colors: ["Серебристый", "Графитовый", "Золотой", "Тихоокеанский синий"] },
+  { name: "iPhone 13 mini", memories: ["128GB", "256GB", "512GB"], colors: ["Сияющая звезда", "Тёмная ночь", "Синий", "Розовый", "Зелёный", "Красный"] },
+  { name: "iPhone 13", memories: ["128GB", "256GB", "512GB"], colors: ["Сияющая звезда", "Тёмная ночь", "Синий", "Розовый", "Зелёный", "Красный"] },
+  { name: "iPhone 13 Pro", memories: ["128GB", "256GB", "512GB", "1TB"], colors: ["Серебристый", "Графитовый", "Золотой", "Небесно-голубой", "Альпийский зелёный"] },
+  { name: "iPhone 13 Pro Max", memories: ["128GB", "256GB", "512GB", "1TB"], colors: ["Серебристый", "Графитовый", "Золотой", "Небесно-голубой", "Альпийский зелёный"] },
+  { name: "iPhone SE (2022)", memories: ["64GB", "128GB", "256GB"], colors: ["Сияющая звезда", "Тёмная ночь", "Красный"] },
+  { name: "iPhone 14", memories: ["128GB", "256GB", "512GB"], colors: ["Сияющая звезда", "Тёмная ночь", "Синий", "Фиолетовый", "Красный", "Жёлтый"] },
+  { name: "iPhone 14 Plus", memories: ["128GB", "256GB", "512GB"], colors: ["Сияющая звезда", "Тёмная ночь", "Синий", "Фиолетовый", "Красный", "Жёлтый"] },
+  { name: "iPhone 14 Pro", memories: ["128GB", "256GB", "512GB", "1TB"], colors: ["Серебристый", "Космический чёрный", "Золотой", "Глубокий фиолетовый"] },
+  { name: "iPhone 14 Pro Max", memories: ["128GB", "256GB", "512GB", "1TB"], colors: ["Серебристый", "Космический чёрный", "Золотой", "Глубокий фиолетовый"] },
+  { name: "iPhone 15", memories: ["128GB", "256GB", "512GB"], colors: ["Чёрный", "Синий", "Зелёный", "Жёлтый", "Розовый"] },
+  { name: "iPhone 15 Plus", memories: ["128GB", "256GB", "512GB"], colors: ["Чёрный", "Синий", "Зелёный", "Жёлтый", "Розовый"] },
+  { name: "iPhone 15 Pro", memories: ["128GB", "256GB", "512GB", "1TB"], colors: ["Титановый натуральный", "Титановый синий", "Титановый белый", "Титановый чёрный"] },
+  { name: "iPhone 15 Pro Max", memories: ["256GB", "512GB", "1TB"], colors: ["Титановый натуральный", "Титановый синий", "Титановый белый", "Титановый чёрный"] },
+  { name: "iPhone 16", memories: ["128GB", "256GB", "512GB"], colors: ["Чёрный", "Белый", "Розовый", "Бирюзовый", "Ультрамарин"] },
+  { name: "iPhone 16 Plus", memories: ["128GB", "256GB", "512GB"], colors: ["Чёрный", "Белый", "Розовый", "Бирюзовый", "Ультрамарин"] },
+  { name: "iPhone 16 Pro", memories: ["128GB", "256GB", "512GB", "1TB"], colors: ["Титановый натуральный", "Титановый белый", "Титановый чёрный", "Титановый песочный"] },
+  { name: "iPhone 16 Pro Max", memories: ["256GB", "512GB", "1TB"], colors: ["Титановый натуральный", "Титановый белый", "Титановый чёрный", "Титановый песочный"] },
+  { name: "iPhone 16e", memories: ["128GB", "256GB", "512GB"], colors: ["Чёрный", "Белый"] },
+  { name: "iPhone 17", memories: ["128GB", "256GB", "512GB"], colors: ["Чёрный", "Белый", "Зелёный", "Розовый"] },
+  { name: "iPhone 17 Air", memories: ["256GB", "512GB"], colors: ["Чёрный", "Белый"] },
+  { name: "iPhone 17 Pro", memories: ["256GB", "512GB", "1TB"], colors: ["Титановый натуральный", "Титановый белый", "Титановый чёрный", "Титановый зелёный"] },
+  { name: "iPhone 17 Pro Max", memories: ["256GB", "512GB", "1TB"], colors: ["Титановый натуральный", "Титановый белый", "Титановый чёрный", "Титановый зелёный"] },
+];
 
 const ListingsPage = () => {
   const { companyId } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ group_name: "", avito_url: "", device_count: "" });
+
+  // Sheet state
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  // Selection state
+  const [selectedModel, setSelectedModel] = useState<string | null>(null);
+  const [selectedMemory, setSelectedMemory] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+
+  // Dialog form state
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [avitoUrl, setAvitoUrl] = useState("");
+  const [deviceCount, setDeviceCount] = useState("");
+
+  const filteredCatalog = useMemo(
+    () => IPHONE_CATALOG.filter((m) => m.name.toLowerCase().includes(search.toLowerCase())),
+    [search]
+  );
+
+  const currentModelData = useMemo(
+    () => IPHONE_CATALOG.find((m) => m.name === selectedModel),
+    [selectedModel]
+  );
+
+  const handleSelectModel = (name: string) => {
+    setSelectedModel(name);
+    setSelectedMemory(null);
+    setSelectedColor(null);
+  };
+
+  const handleSelectMemory = (memory: string) => {
+    setSelectedMemory(memory);
+    setSelectedColor(null);
+  };
+
+  const handleSelectColor = (color: string) => {
+    setSelectedColor(color);
+    setSheetOpen(false);
+    setDialogOpen(true);
+  };
+
+  const groupName = selectedModel && selectedMemory && selectedColor
+    ? `${selectedModel} ${selectedMemory} ${selectedColor}`
+    : "";
 
   const { data: listings = [], isLoading } = useQuery({
     queryKey: ["listings", companyId],
@@ -37,21 +120,30 @@ const ListingsPage = () => {
       if (!companyId) throw new Error("No company");
       const { error } = await supabase.from("listings").insert({
         company_id: companyId,
-        group_name: form.group_name,
-        avito_url: form.avito_url || null,
-        device_count: form.device_count ? Number(form.device_count) : 0,
-        last_refreshed: form.avito_url ? new Date().toISOString() : null,
+        group_name: groupName,
+        avito_url: avitoUrl || null,
+        device_count: deviceCount ? Number(deviceCount) : 0,
+        last_refreshed: avitoUrl ? new Date().toISOString() : null,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["listings"] });
       toast({ title: "Объявление добавлено" });
-      setOpen(false);
-      setForm({ group_name: "", avito_url: "", device_count: "" });
+      resetForm();
     },
     onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
+
+  const resetForm = () => {
+    setDialogOpen(false);
+    setSelectedModel(null);
+    setSelectedMemory(null);
+    setSelectedColor(null);
+    setAvitoUrl("");
+    setDeviceCount("");
+    setSearch("");
+  };
 
   const refreshListing = useMutation({
     mutationFn: async (id: string) => {
@@ -78,7 +170,7 @@ const ListingsPage = () => {
   const getDaysLeft = (lastRefreshed: string | null) => {
     if (!lastRefreshed) return null;
     const refreshed = new Date(lastRefreshed);
-    const expiry = new Date(refreshed.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    const expiry = new Date(refreshed.getTime() + 30 * 24 * 60 * 60 * 1000);
     const now = new Date();
     return Math.max(0, Math.ceil((expiry.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)));
   };
@@ -87,23 +179,126 @@ const ListingsPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Объявления</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
+        <Sheet open={sheetOpen} onOpenChange={(v) => { setSheetOpen(v); if (!v) setSearch(""); }}>
+          <SheetTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" /> Добавить объявление</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Новое объявление</DialogTitle></DialogHeader>
-            <form onSubmit={(e) => { e.preventDefault(); createListing.mutate(); }} className="space-y-3">
-              <div><Label>Группа (модель) *</Label><Input placeholder="iPhone 14 Pro 128GB Чёрный" value={form.group_name} onChange={(e) => setForm({ ...form, group_name: e.target.value })} required /></div>
-              <div><Label>Ссылка Avito</Label><Input placeholder="https://avito.ru/..." value={form.avito_url} onChange={(e) => setForm({ ...form, avito_url: e.target.value })} /></div>
-              <div><Label>Кол-во устройств</Label><Input type="number" value={form.device_count} onChange={(e) => setForm({ ...form, device_count: e.target.value })} /></div>
-              <Button type="submit" className="w-full" disabled={createListing.isPending || !form.group_name}>
-                {createListing.isPending ? "Добавление..." : "Добавить"}
+          </SheetTrigger>
+          <SheetContent className="w-full sm:max-w-md">
+            <SheetHeader>
+              <SheetTitle>
+                {!selectedModel ? "Выберите модель" : !selectedMemory ? `${selectedModel} — память` : `${selectedModel} ${selectedMemory} — цвет`}
+              </SheetTitle>
+            </SheetHeader>
+
+            {/* Back button */}
+            {selectedModel && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-2 mb-1"
+                onClick={() => {
+                  if (selectedMemory) {
+                    setSelectedMemory(null);
+                    setSelectedColor(null);
+                  } else {
+                    setSelectedModel(null);
+                  }
+                }}
+              >
+                ← Назад
               </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+            )}
+
+            {/* Step 1: Model selection */}
+            {!selectedModel && (
+              <>
+                <div className="relative mt-3 mb-2">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Поиск модели..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <ScrollArea className="h-[calc(100vh-200px)]">
+                  <div className="space-y-1 pr-3">
+                    {filteredCatalog.map((model) => (
+                      <button
+                        key={model.name}
+                        className="w-full flex items-center justify-between rounded-md px-3 py-2.5 text-sm hover:bg-accent transition-colors text-left"
+                        onClick={() => handleSelectModel(model.name)}
+                      >
+                        <span>{model.name}</span>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </>
+            )}
+
+            {/* Step 2: Memory selection */}
+            {selectedModel && !selectedMemory && currentModelData && (
+              <ScrollArea className="h-[calc(100vh-220px)] mt-3">
+                <div className="space-y-1 pr-3">
+                  {currentModelData.memories.map((mem) => (
+                    <button
+                      key={mem}
+                      className="w-full flex items-center justify-between rounded-md px-3 py-2.5 text-sm hover:bg-accent transition-colors text-left"
+                      onClick={() => handleSelectMemory(mem)}
+                    >
+                      <span>{mem}</span>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+
+            {/* Step 3: Color selection */}
+            {selectedModel && selectedMemory && currentModelData && (
+              <ScrollArea className="h-[calc(100vh-220px)] mt-3">
+                <div className="space-y-1 pr-3">
+                  {currentModelData.colors.map((color) => (
+                    <button
+                      key={color}
+                      className="w-full flex items-center justify-between rounded-md px-3 py-2.5 text-sm hover:bg-accent transition-colors text-left"
+                      onClick={() => handleSelectColor(color)}
+                    >
+                      <span>{color}</span>
+                    </button>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </SheetContent>
+        </Sheet>
       </div>
+
+      {/* Dialog for URL + count after model/memory/color selected */}
+      <Dialog open={dialogOpen} onOpenChange={(v) => { if (!v) resetForm(); else setDialogOpen(v); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Новое объявление</DialogTitle></DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); createListing.mutate(); }} className="space-y-3">
+            <div>
+              <Label>Группа (модель)</Label>
+              <Input value={groupName} readOnly className="bg-muted" />
+            </div>
+            <div>
+              <Label>Ссылка Avito</Label>
+              <Input placeholder="https://avito.ru/..." value={avitoUrl} onChange={(e) => setAvitoUrl(e.target.value)} />
+            </div>
+            <div>
+              <Label>Кол-во устройств</Label>
+              <Input type="number" value={deviceCount} onChange={(e) => setDeviceCount(e.target.value)} />
+            </div>
+            <Button type="submit" className="w-full" disabled={createListing.isPending || !groupName}>
+              {createListing.isPending ? "Добавление..." : "Добавить"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <p className="text-sm text-muted-foreground">
         Устройства группируются по модели, памяти и цвету. Привяжите ссылку на объявление Avito.
