@@ -1,52 +1,184 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-
-const sales = [
-  { id: 1, items: "iPhone 14 Pro 128GB", total: "52 000 ₽", payment: "Наличные", customer: "Иванов А.", employee: "Алексей", date: "09.03.2026, 14:23" },
-  { id: 2, items: "Samsung S23 256GB + чехол", total: "40 500 ₽", payment: "Карта", customer: "Петров Б.", employee: "Мария", date: "09.03.2026, 12:05" },
-  { id: 3, items: "iPhone 13 128GB", total: "32 000 ₽", payment: "Перевод", customer: "Сидорова В.", employee: "Алексей", date: "09.03.2026, 10:41" },
-  { id: 4, items: "Xiaomi 13T 256GB + стекло + чехол", total: "24 200 ₽", payment: "Смешанная", customer: "Козлов Д.", employee: "Мария", date: "08.03.2026, 18:30" },
-  { id: 5, items: "iPhone 15 256GB", total: "64 000 ₽", payment: "Рассрочка", customer: "Морозов Е.", employee: "Алексей", date: "08.03.2026, 16:12" },
-];
+import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const SalesPage = () => {
+  const { companyId, user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+
+  const { data: sales = [], isLoading } = useQuery({
+    queryKey: ["sales", companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data, error } = await supabase
+        .from("sales")
+        .select("*, clients(name), sale_items(*)")
+        .eq("company_id", companyId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!companyId,
+  });
+
+  const { data: availableDevices = [] } = useQuery({
+    queryKey: ["available-devices", companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data } = await supabase.from("devices").select("*").eq("company_id", companyId).eq("status", "available");
+      return data || [];
+    },
+    enabled: !!companyId && open,
+  });
+
+  const { data: clients = [] } = useQuery({
+    queryKey: ["clients-list", companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data } = await supabase.from("clients").select("id, name").eq("company_id", companyId);
+      return data || [];
+    },
+    enabled: !!companyId && open,
+  });
+
+  const [saleForm, setSaleForm] = useState({ device_id: "", client_id: "", payment_method: "cash" as string });
+
+  const createSale = useMutation({
+    mutationFn: async () => {
+      if (!companyId || !user) throw new Error("No company");
+      const device = availableDevices.find(d => d.id === saleForm.device_id);
+      if (!device || !device.sale_price) throw new Error("Выберите устройство с ценой продажи");
+
+      const { data: sale, error: saleError } = await supabase.from("sales").insert({
+        company_id: companyId,
+        client_id: saleForm.client_id || null,
+        employee_id: user.id,
+        total: device.sale_price,
+        payment_method: saleForm.payment_method as any,
+      }).select().single();
+      if (saleError) throw saleError;
+
+      const { error: itemError } = await supabase.from("sale_items").insert({
+        sale_id: sale.id,
+        item_type: "device" as any,
+        device_id: device.id,
+        name: `${device.model} ${device.memory || ""} ${device.color || ""}`.trim(),
+        price: device.sale_price,
+        cost_price: device.purchase_price || 0,
+      });
+      if (itemError) throw itemError;
+
+      await supabase.from("devices").update({ status: "sold" as any }).eq("id", device.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sales"] });
+      queryClient.invalidateQueries({ queryKey: ["devices"] });
+      queryClient.invalidateQueries({ queryKey: ["available-devices"] });
+      toast({ title: "Продажа оформлена!" });
+      setOpen(false);
+      setSaleForm({ device_id: "", client_id: "", payment_method: "cash" });
+    },
+    onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
+  });
+
+  const paymentLabels: Record<string, string> = { cash: "Наличные", card: "Карта", transfer: "Перевод", installments: "Рассрочка", mixed: "Смешанная" };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Продажи</h1>
-        <Button><Plus className="mr-2 h-4 w-4" /> Новая продажа</Button>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button><Plus className="mr-2 h-4 w-4" /> Новая продажа</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Оформить продажу</DialogTitle></DialogHeader>
+            <form onSubmit={(e) => { e.preventDefault(); createSale.mutate(); }} className="space-y-3">
+              <div>
+                <Label>Устройство *</Label>
+                <Select value={saleForm.device_id} onValueChange={(v) => setSaleForm({ ...saleForm, device_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Выберите устройство" /></SelectTrigger>
+                  <SelectContent>
+                    {availableDevices.map(d => (
+                      <SelectItem key={d.id} value={d.id}>{d.model} {d.memory} — {d.sale_price} ₽</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Клиент</Label>
+                <Select value={saleForm.client_id} onValueChange={(v) => setSaleForm({ ...saleForm, client_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Без клиента" /></SelectTrigger>
+                  <SelectContent>
+                    {clients.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Способ оплаты</Label>
+                <Select value={saleForm.payment_method} onValueChange={(v) => setSaleForm({ ...saleForm, payment_method: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Наличные</SelectItem>
+                    <SelectItem value="card">Карта / QR</SelectItem>
+                    <SelectItem value="transfer">Перевод</SelectItem>
+                    <SelectItem value="installments">Рассрочка</SelectItem>
+                    <SelectItem value="mixed">Смешанная</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" className="w-full" disabled={createSale.isPending || !saleForm.device_id}>
+                {createSale.isPending ? "Оформление..." : "Оформить продажу"}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card className="card-shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">№</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Товары</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Сумма</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Оплата</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Клиент</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Сотрудник</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Дата</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {sales.map((s) => (
-                <tr key={s.id} className="hover:bg-muted/30 transition-colors cursor-pointer">
-                  <td className="px-4 py-3 font-medium">{s.id}</td>
-                  <td className="px-4 py-3">{s.items}</td>
-                  <td className="px-4 py-3 font-semibold">{s.total}</td>
-                  <td className="px-4 py-3">{s.payment}</td>
-                  <td className="px-4 py-3">{s.customer}</td>
-                  <td className="px-4 py-3">{s.employee}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{s.date}</td>
+        {isLoading ? (
+          <div className="p-8 text-center text-muted-foreground">Загрузка...</div>
+        ) : sales.length === 0 ? (
+          <div className="p-8 text-center text-muted-foreground">Нет продаж</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Товары</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Сумма</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Оплата</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Клиент</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Дата</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y">
+                {sales.map((s: any) => (
+                  <tr key={s.id} className="hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-3">{s.sale_items?.map((i: any) => i.name).join(", ") || "—"}</td>
+                    <td className="px-4 py-3 font-semibold">{s.total} ₽</td>
+                    <td className="px-4 py-3">{paymentLabels[s.payment_method] || s.payment_method}</td>
+                    <td className="px-4 py-3">{s.clients?.name || "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{new Date(s.created_at).toLocaleString("ru")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
     </div>
   );
