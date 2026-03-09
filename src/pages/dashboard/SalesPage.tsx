@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, X, Smartphone, ShoppingBag, Wrench, Trash2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+type CartItem = {
+  id: string;
+  type: "device" | "accessory" | "service";
+  name: string;
+  price: number;
+  cost_price: number;
+  device_id?: string;
+  product_id?: string;
+  quantity: number;
+};
 
 const SalesPage = () => {
   const { companyId, user } = useAuth();
@@ -17,6 +29,12 @@ const SalesPage = () => {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [deviceSearch, setDeviceSearch] = useState("");
+  const [productSearch, setProductSearch] = useState("");
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [clientId, setClientId] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [serviceName, setServiceName] = useState("");
+  const [servicePrice, setServicePrice] = useState("");
 
   const { data: sales = [], isLoading } = useQuery({
     queryKey: ["sales", companyId],
@@ -43,6 +61,16 @@ const SalesPage = () => {
     enabled: !!companyId && open,
   });
 
+  const { data: products = [] } = useQuery({
+    queryKey: ["products", companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data } = await supabase.from("products").select("*").eq("company_id", companyId);
+      return data || [];
+    },
+    enabled: !!companyId && open,
+  });
+
   const { data: clients = [] } = useQuery({
     queryKey: ["clients-list", companyId],
     queryFn: async () => {
@@ -53,150 +81,293 @@ const SalesPage = () => {
     enabled: !!companyId && open,
   });
 
-  const [saleForm, setSaleForm] = useState({ device_id: "", client_id: "", payment_method: "cash" as string });
-
+  // Devices not already in cart
+  const devicesInCart = new Set(cart.filter(i => i.type === "device").map(i => i.device_id));
   const filteredDevices = useMemo(() => {
-    if (!deviceSearch.trim()) return availableDevices;
+    const available = availableDevices.filter(d => !devicesInCart.has(d.id));
+    if (!deviceSearch.trim()) return available;
     const q = deviceSearch.toLowerCase().trim();
-    return availableDevices.filter(d =>
+    return available.filter(d =>
       d.model.toLowerCase().includes(q) ||
       d.imei.toLowerCase().includes(q) ||
       (d.brand && d.brand.toLowerCase().includes(q)) ||
       (d.memory && d.memory.toLowerCase().includes(q))
     );
-  }, [availableDevices, deviceSearch]);
+  }, [availableDevices, deviceSearch, devicesInCart]);
 
-  const selectedDevice = availableDevices.find(d => d.id === saleForm.device_id);
+  const filteredProducts = useMemo(() => {
+    const avail = products.filter(p => (p.stock ?? 0) > 0);
+    if (!productSearch.trim()) return avail;
+    const q = productSearch.toLowerCase().trim();
+    return avail.filter(p => p.name.toLowerCase().includes(q) || (p.category && p.category.toLowerCase().includes(q)));
+  }, [products, productSearch]);
+
+  const addDevice = (d: any) => {
+    setCart(prev => [...prev, {
+      id: crypto.randomUUID(),
+      type: "device",
+      name: `${d.model} ${d.memory || ""} ${d.color || ""}`.trim(),
+      price: d.sale_price || 0,
+      cost_price: d.purchase_price || 0,
+      device_id: d.id,
+      quantity: 1,
+    }]);
+  };
+
+  const addProduct = (p: any) => {
+    const existing = cart.find(i => i.type === "accessory" && i.product_id === p.id);
+    if (existing) {
+      setCart(prev => prev.map(i => i.id === existing.id ? { ...i, quantity: i.quantity + 1 } : i));
+    } else {
+      setCart(prev => [...prev, {
+        id: crypto.randomUUID(),
+        type: "accessory",
+        name: p.name,
+        price: p.sale_price || 0,
+        cost_price: p.cost_price || 0,
+        product_id: p.id,
+        quantity: 1,
+      }]);
+    }
+  };
+
+  const addService = () => {
+    if (!serviceName.trim() || !servicePrice) return;
+    setCart(prev => [...prev, {
+      id: crypto.randomUUID(),
+      type: "service",
+      name: serviceName.trim(),
+      price: parseFloat(servicePrice),
+      cost_price: 0,
+      quantity: 1,
+    }]);
+    setServiceName("");
+    setServicePrice("");
+  };
+
+  const removeFromCart = (id: string) => setCart(prev => prev.filter(i => i.id !== id));
+
+  const cartTotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+  const resetForm = () => {
+    setCart([]);
+    setClientId("");
+    setPaymentMethod("cash");
+    setDeviceSearch("");
+    setProductSearch("");
+    setServiceName("");
+    setServicePrice("");
+  };
 
   const createSale = useMutation({
     mutationFn: async () => {
       if (!companyId || !user) throw new Error("No company");
-      const device = availableDevices.find(d => d.id === saleForm.device_id);
-      if (!device || !device.sale_price) throw new Error("Выберите устройство с ценой продажи");
+      if (cart.length === 0) throw new Error("Добавьте хотя бы один товар");
 
       const { data: sale, error: saleError } = await supabase.from("sales").insert({
         company_id: companyId,
-        client_id: saleForm.client_id || null,
+        client_id: clientId || null,
         employee_id: user.id,
-        total: device.sale_price,
-        payment_method: saleForm.payment_method as any,
+        total: cartTotal,
+        payment_method: paymentMethod as any,
       }).select().single();
       if (saleError) throw saleError;
 
-      const { error: itemError } = await supabase.from("sale_items").insert({
+      const saleItems = cart.map(i => ({
         sale_id: sale.id,
-        item_type: "device" as any,
-        device_id: device.id,
-        name: `${device.model} ${device.memory || ""} ${device.color || ""}`.trim(),
-        price: device.sale_price,
-        cost_price: device.purchase_price || 0,
-      });
+        item_type: i.type as any,
+        device_id: i.device_id || null,
+        product_id: i.product_id || null,
+        name: i.name,
+        price: i.price * i.quantity,
+        cost_price: i.cost_price * i.quantity,
+        quantity: i.quantity,
+      }));
+
+      const { error: itemError } = await supabase.from("sale_items").insert(saleItems);
       if (itemError) throw itemError;
 
-      await supabase.from("devices").update({ status: "sold" as any }).eq("id", device.id);
+      // Mark devices as sold
+      const deviceIds = cart.filter(i => i.type === "device" && i.device_id).map(i => i.device_id!);
+      for (const did of deviceIds) {
+        await supabase.from("devices").update({ status: "sold" as any }).eq("id", did);
+      }
+
+      // Decrease product stock
+      for (const item of cart.filter(i => i.type === "accessory" && i.product_id)) {
+        const prod = products.find(p => p.id === item.product_id);
+        if (prod) {
+          await supabase.from("products").update({ stock: (prod.stock ?? 0) - item.quantity }).eq("id", prod.id);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sales"] });
       queryClient.invalidateQueries({ queryKey: ["devices"] });
       queryClient.invalidateQueries({ queryKey: ["available-devices"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       toast({ title: "Продажа оформлена!" });
       setOpen(false);
-      setSaleForm({ device_id: "", client_id: "", payment_method: "cash" });
-      setDeviceSearch("");
+      resetForm();
     },
     onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
 
   const paymentLabels: Record<string, string> = { cash: "Наличные", card: "Карта", transfer: "Перевод", installments: "Рассрочка", mixed: "Смешанная" };
+  const typeIcons: Record<string, React.ReactNode> = {
+    device: <Smartphone className="h-3.5 w-3.5" />,
+    accessory: <ShoppingBag className="h-3.5 w-3.5" />,
+    service: <Wrench className="h-3.5 w-3.5" />,
+  };
+  const typeLabels: Record<string, string> = { device: "Устройство", accessory: "Аксессуар", service: "Услуга" };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Продажи</h1>
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setDeviceSearch(""); setSaleForm({ device_id: "", client_id: "", payment_method: "cash" }); } }}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" /> Новая продажа</Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
             <DialogHeader><DialogTitle>Оформить продажу</DialogTitle></DialogHeader>
-            <form onSubmit={(e) => { e.preventDefault(); createSale.mutate(); }} className="space-y-4">
-              {/* Device search & selection */}
-              <div className="space-y-2">
-                <Label>Устройство *</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Поиск по модели или IMEI..."
-                    className="pl-9"
-                    value={deviceSearch}
-                    onChange={(e) => setDeviceSearch(e.target.value)}
-                  />
-                </div>
-                <div className="max-h-[220px] overflow-y-auto rounded-lg border divide-y">
-                  {filteredDevices.length === 0 ? (
-                    <div className="p-4 text-center text-sm text-muted-foreground">
-                      {availableDevices.length === 0 ? "Нет устройств в наличии" : "Ничего не найдено"}
-                    </div>
-                  ) : (
-                    filteredDevices.map(d => (
-                      <button
-                        type="button"
-                        key={d.id}
-                        onClick={() => setSaleForm({ ...saleForm, device_id: d.id })}
-                        className={`w-full text-left px-3 py-2.5 hover:bg-muted/50 transition-colors ${saleForm.device_id === d.id ? "bg-primary/10 border-l-2 border-l-primary" : ""}`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium text-sm">{d.model}</span>
-                          <span className="font-semibold text-sm">{d.sale_price ? `${d.sale_price} ₽` : "—"}</span>
-                        </div>
-                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs text-muted-foreground">
-                          <span className="font-mono">IMEI: {d.imei}</span>
-                          {d.memory && <span>Память: {d.memory}</span>}
-                          {d.color && <span>Цвет: {d.color}</span>}
-                          {d.battery_health && <span>АКБ: {d.battery_health}</span>}
-                          {d.brand && <span>Бренд: {d.brand}</span>}
-                        </div>
-                      </button>
-                    ))
-                  )}
-                </div>
-                {selectedDevice && (
-                  <div className="rounded-lg bg-muted/30 border p-3 text-sm space-y-1">
-                    <p className="font-medium">Выбрано: {selectedDevice.model} {selectedDevice.memory || ""} {selectedDevice.color || ""}</p>
-                    <p className="text-xs text-muted-foreground font-mono">IMEI: {selectedDevice.imei}</p>
-                    <p className="font-semibold">Цена: {selectedDevice.sale_price ? `${selectedDevice.sale_price} ₽` : "Не указана"}</p>
-                  </div>
-                )}
-              </div>
 
-              <div>
-                <Label>Клиент</Label>
-                <Select value={saleForm.client_id} onValueChange={(v) => setSaleForm({ ...saleForm, client_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Без клиента" /></SelectTrigger>
-                  <SelectContent>
-                    {clients.map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+            <div className="flex-1 overflow-y-auto space-y-4">
+              {/* Add items tabs */}
+              <Tabs defaultValue="devices" className="w-full">
+                <TabsList className="w-full">
+                  <TabsTrigger value="devices" className="flex-1 gap-1.5"><Smartphone className="h-3.5 w-3.5" /> Устройства</TabsTrigger>
+                  <TabsTrigger value="accessories" className="flex-1 gap-1.5"><ShoppingBag className="h-3.5 w-3.5" /> Аксессуары</TabsTrigger>
+                  <TabsTrigger value="services" className="flex-1 gap-1.5"><Wrench className="h-3.5 w-3.5" /> Услуги</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="devices" className="space-y-2 mt-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input placeholder="Поиск по модели или IMEI..." className="pl-9" value={deviceSearch} onChange={(e) => setDeviceSearch(e.target.value)} />
+                  </div>
+                  <div className="max-h-[180px] overflow-y-auto rounded-lg border divide-y">
+                    {filteredDevices.length === 0 ? (
+                      <div className="p-3 text-center text-sm text-muted-foreground">
+                        {availableDevices.length === 0 ? "Нет устройств в наличии" : "Ничего не найдено"}
+                      </div>
+                    ) : (
+                      filteredDevices.map(d => (
+                        <button type="button" key={d.id} onClick={() => addDevice(d)}
+                          className="w-full text-left px-3 py-2 hover:bg-muted/50 transition-colors">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-sm">{d.model}</span>
+                            <span className="font-semibold text-sm">{d.sale_price ? `${d.sale_price} ₽` : "—"}</span>
+                          </div>
+                          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs text-muted-foreground">
+                            <span className="font-mono">IMEI: {d.imei}</span>
+                            {d.memory && <span>{d.memory}</span>}
+                            {d.color && <span>{d.color}</span>}
+                            {d.battery_health && <span>АКБ: {d.battery_health}</span>}
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="accessories" className="space-y-2 mt-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input placeholder="Поиск аксессуара..." className="pl-9" value={productSearch} onChange={(e) => setProductSearch(e.target.value)} />
+                  </div>
+                  <div className="max-h-[180px] overflow-y-auto rounded-lg border divide-y">
+                    {filteredProducts.length === 0 ? (
+                      <div className="p-3 text-center text-sm text-muted-foreground">Нет аксессуаров в наличии</div>
+                    ) : (
+                      filteredProducts.map(p => (
+                        <button type="button" key={p.id} onClick={() => addProduct(p)}
+                          className="w-full text-left px-3 py-2 hover:bg-muted/50 transition-colors flex items-center justify-between">
+                          <div>
+                            <span className="font-medium text-sm">{p.name}</span>
+                            {p.category && <span className="text-xs text-muted-foreground ml-2">{p.category}</span>}
+                            <span className="text-xs text-muted-foreground ml-2">Остаток: {p.stock ?? 0}</span>
+                          </div>
+                          <span className="font-semibold text-sm">{p.sale_price ? `${p.sale_price} ₽` : "—"}</span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="services" className="mt-3">
+                  <div className="flex gap-2">
+                    <Input placeholder="Название услуги" value={serviceName} onChange={(e) => setServiceName(e.target.value)} className="flex-1" />
+                    <Input placeholder="Цена" type="number" value={servicePrice} onChange={(e) => setServicePrice(e.target.value)} className="w-28" />
+                    <Button type="button" variant="outline" size="sm" onClick={addService} disabled={!serviceName.trim() || !servicePrice}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
+
+              {/* Cart */}
+              {cart.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Корзина ({cart.length})</Label>
+                  <div className="rounded-lg border divide-y">
+                    {cart.map(item => (
+                      <div key={item.id} className="flex items-center justify-between px-3 py-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-muted-foreground">{typeIcons[item.type]}</span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{item.name}</p>
+                            <p className="text-xs text-muted-foreground">{typeLabels[item.type]}{item.quantity > 1 ? ` × ${item.quantity}` : ""}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="font-semibold text-sm">{item.price * item.quantity} ₽</span>
+                          <button type="button" onClick={() => removeFromCart(item.id)} className="text-muted-foreground hover:text-destructive">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
+                    <div className="flex items-center justify-between px-3 py-2 bg-muted/30">
+                      <span className="font-semibold text-sm">Итого</span>
+                      <span className="font-bold">{cartTotal} ₽</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Client & payment */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Клиент</Label>
+                  <Select value={clientId} onValueChange={setClientId}>
+                    <SelectTrigger><SelectValue placeholder="Без клиента" /></SelectTrigger>
+                    <SelectContent>
+                      {clients.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Способ оплаты</Label>
+                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Наличные</SelectItem>
+                      <SelectItem value="card">Карта / QR</SelectItem>
+                      <SelectItem value="transfer">Перевод</SelectItem>
+                      <SelectItem value="installments">Рассрочка</SelectItem>
+                      <SelectItem value="mixed">Смешанная</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div>
-                <Label>Способ оплаты</Label>
-                <Select value={saleForm.payment_method} onValueChange={(v) => setSaleForm({ ...saleForm, payment_method: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cash">Наличные</SelectItem>
-                    <SelectItem value="card">Карта / QR</SelectItem>
-                    <SelectItem value="transfer">Перевод</SelectItem>
-                    <SelectItem value="installments">Рассрочка</SelectItem>
-                    <SelectItem value="mixed">Смешанная</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button type="submit" className="w-full" disabled={createSale.isPending || !saleForm.device_id}>
-                {createSale.isPending ? "Оформление..." : "Оформить продажу"}
-              </Button>
-            </form>
+            </div>
+
+            <Button onClick={() => createSale.mutate()} className="w-full mt-4" disabled={createSale.isPending || cart.length === 0}>
+              {createSale.isPending ? "Оформление..." : `Оформить продажу — ${cartTotal} ₽`}
+            </Button>
           </DialogContent>
         </Dialog>
       </div>
