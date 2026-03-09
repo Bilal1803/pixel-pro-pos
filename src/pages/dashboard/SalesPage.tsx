@@ -161,6 +161,8 @@ const SalesPage = () => {
     setProductSearch("");
     setServiceName("");
     setServicePrice("");
+    setDiscountType("percent");
+    setDiscountValue("");
   };
 
   const createSale = useMutation({
