@@ -294,12 +294,26 @@ const PriceTagsPage = () => {
                     { key: "showBattery" as const, label: "Состояние АКБ" },
                     { key: "showImei" as const, label: "IMEI" },
                     { key: "showBrand" as const, label: "Бренд" },
+                    { key: "showSim" as const, label: "2Sim" },
+                    { key: "showOldPrice" as const, label: "Старая цена (зачёркнутая)" },
+                    { key: "showPromoPrice" as const, label: "Акционная цена" },
                   ].map(f => (
                     <div key={f.key} className="flex items-center justify-between">
                       <span className="text-sm">{f.label}</span>
                       <Switch checked={settings[f.key]} onCheckedChange={(v) => setSettings(s => ({ ...s, [f.key]: v }))} />
                     </div>
                   ))}
+                  {settings.showPromoPrice && (
+                    <div className="flex items-center justify-between pl-4">
+                      <span className="text-sm text-muted-foreground">Скидка %</span>
+                      <Input
+                        type="number"
+                        value={settings.promoPricePercent}
+                        onChange={(e) => setSettings(s => ({ ...s, promoPricePercent: Number(e.target.value) || 0 }))}
+                        className="w-20 h-8 text-sm"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Logo */}
