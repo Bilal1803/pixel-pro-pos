@@ -20,6 +20,7 @@ const navItems = [
   { to: "/dashboard/finances", label: "Финансы", icon: DollarSign },
   { to: "/dashboard/employees", label: "Сотрудники", icon: UserCog },
   { to: "/dashboard/shifts", label: "Смены", icon: Clock },
+  { to: "/dashboard/reports", label: "Отчёты", icon: FileBarChart },
   { to: "/dashboard/settings", label: "Настройки", icon: Settings },
   { to: "/dashboard/support", label: "Поддержка", icon: HelpCircle },
 ];
