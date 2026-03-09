@@ -1,0 +1,54 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Smartphone } from "lucide-react";
+
+const RegisterPage = () => {
+  const navigate = useNavigate();
+  const [companyName, setCompanyName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    navigate("/dashboard");
+  };
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-secondary/30 p-4">
+      <div className="w-full max-w-md rounded-xl border bg-card p-8 card-shadow">
+        <div className="mb-8 text-center">
+          <Link to="/" className="inline-flex items-center gap-2">
+            <Smartphone className="h-6 w-6 text-primary" />
+            <span className="text-xl font-bold">PhoneCRM</span>
+          </Link>
+          <h1 className="mt-4 text-2xl font-bold">Регистрация</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Создайте аккаунт компании</p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="company">Название компании</Label>
+            <Input id="company" placeholder="Мой магазин" value={companyName} onChange={(e) => setCompanyName(e.target.value)} required className="mt-1" />
+          </div>
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1" />
+          </div>
+          <div>
+            <Label htmlFor="password">Пароль</Label>
+            <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required className="mt-1" />
+          </div>
+          <Button type="submit" className="w-full">Создать аккаунт</Button>
+        </form>
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          Уже есть аккаунт?{" "}
+          <Link to="/login" className="font-medium text-primary hover:underline">Войти</Link>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default RegisterPage;
