@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -28,35 +29,37 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/dashboard" element={<DashboardLayout />}>
-            <Route index element={<DashboardHome />} />
-            <Route path="inventory" element={<InventoryPage />} />
-            <Route path="sales" element={<SalesPage />} />
-            <Route path="buyback" element={<BuybackPage />} />
-            <Route path="customers" element={<CustomersPage />} />
-            <Route path="accessories" element={<AccessoriesPage />} />
-            <Route path="repairs" element={<RepairsPage />} />
-            <Route path="price-tags" element={<PriceTagsPage />} />
-            <Route path="monitoring" element={<MonitoringPage />} />
-            <Route path="listings" element={<ListingsPage />} />
-            <Route path="finances" element={<FinancesPage />} />
-            <Route path="employees" element={<EmployeesPage />} />
-            <Route path="shifts" element={<ShiftsPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-            <Route path="support" element={<SupportPage />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/dashboard" element={<DashboardLayout />}>
+              <Route index element={<DashboardHome />} />
+              <Route path="inventory" element={<InventoryPage />} />
+              <Route path="sales" element={<SalesPage />} />
+              <Route path="buyback" element={<BuybackPage />} />
+              <Route path="customers" element={<CustomersPage />} />
+              <Route path="accessories" element={<AccessoriesPage />} />
+              <Route path="repairs" element={<RepairsPage />} />
+              <Route path="price-tags" element={<PriceTagsPage />} />
+              <Route path="monitoring" element={<MonitoringPage />} />
+              <Route path="listings" element={<ListingsPage />} />
+              <Route path="finances" element={<FinancesPage />} />
+              <Route path="employees" element={<EmployeesPage />} />
+              <Route path="shifts" element={<ShiftsPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+              <Route path="support" element={<SupportPage />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
