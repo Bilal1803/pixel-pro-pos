@@ -209,8 +209,17 @@ const ReportsPage = () => {
       ws["!cols"] = [{ wch: 35 }, { wch: 22 }, { wch: 20 }, { wch: 20 }, { wch: 16 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 30 }];
       XLSX.utils.book_append_sheet(wb, ws, "Отчёт");
 
-      const fileName = `Отчёт_${format(dateRange.from, "dd.MM.yyyy")}_${format(dateRange.to, "dd.MM.yyyy")}.xlsx`;
-      XLSX.writeFile(wb, fileName);
+      const fileName = `Report_${format(dateRange.from, "dd-MM-yyyy")}_${format(dateRange.to, "dd-MM-yyyy")}.xlsx`;
+      const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
 
       toast({ title: "Отчёт скачан", description: fileName });
     } catch (err: any) {
