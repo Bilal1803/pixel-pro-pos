@@ -492,6 +492,7 @@ const InventoryPage = () => {
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Закупка</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Продажа</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Статус</th>
+                  <th className="px-4 py-3"></th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -520,6 +521,11 @@ const InventoryPage = () => {
                         </SelectContent>
                       </Select>
                     </td>
+                    <td className="px-4 py-3">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(d)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -527,6 +533,42 @@ const InventoryPage = () => {
           </div>
         )}
       </Card>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Редактировать устройство</DialogTitle></DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); updateDevice.mutate(); }} className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Модель *</Label><Input value={editForm.model} onChange={(e) => setEditForm({ ...editForm, model: e.target.value })} required /></div>
+              <div><Label>Бренд</Label><Input value={editForm.brand} onChange={(e) => setEditForm({ ...editForm, brand: e.target.value })} /></div>
+              <div><Label>Память</Label><Input placeholder="128GB" value={editForm.memory} onChange={(e) => setEditForm({ ...editForm, memory: e.target.value })} /></div>
+              <div><Label>Цвет</Label><Input value={editForm.color} onChange={(e) => setEditForm({ ...editForm, color: e.target.value })} /></div>
+              <div><Label>IMEI *</Label><Input value={editForm.imei} onChange={(e) => setEditForm({ ...editForm, imei: e.target.value })} required /></div>
+              <div><Label>АКБ</Label><Input placeholder="94%" value={editForm.battery_health} onChange={(e) => setEditForm({ ...editForm, battery_health: e.target.value })} /></div>
+              <div><Label>Цена закупки</Label><Input type="number" value={editForm.purchase_price} onChange={(e) => setEditForm({ ...editForm, purchase_price: e.target.value })} /></div>
+              <div><Label>Цена продажи</Label><Input type="number" value={editForm.sale_price} onChange={(e) => setEditForm({ ...editForm, sale_price: e.target.value })} /></div>
+            </div>
+            <div>
+              <Label>Статус</Label>
+              <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="testing">Проверка</SelectItem>
+                  <SelectItem value="available">В наличии</SelectItem>
+                  <SelectItem value="reserved">Резерв</SelectItem>
+                  <SelectItem value="sold">Продано</SelectItem>
+                  <SelectItem value="defective">Дефект</SelectItem>
+                  <SelectItem value="rental">Аренда</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>Заметки</Label><Textarea value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} /></div>
+            <Button type="submit" className="w-full" disabled={updateDevice.isPending}>
+              {updateDevice.isPending ? "Сохранение..." : "Сохранить изменения"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
