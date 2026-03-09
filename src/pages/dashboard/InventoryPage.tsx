@@ -113,6 +113,30 @@ const InventoryPage = () => {
     onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
 
+  const updateDevice = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("devices").update({
+        model: editForm.model,
+        brand: editForm.brand || null,
+        memory: editForm.memory || null,
+        color: editForm.color || null,
+        imei: editForm.imei,
+        battery_health: editForm.battery_health || null,
+        purchase_price: editForm.purchase_price ? parseFloat(editForm.purchase_price) : null,
+        sale_price: editForm.sale_price ? parseFloat(editForm.sale_price) : null,
+        status: editForm.status as any,
+        notes: editForm.notes || null,
+      }).eq("id", editForm.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["devices"] });
+      toast({ title: "Устройство обновлено" });
+      setEditOpen(false);
+    },
+    onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
+  });
+
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const { error } = await supabase.from("devices").update({ status: status as any }).eq("id", id);
@@ -120,6 +144,23 @@ const InventoryPage = () => {
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["devices"] }),
   });
+
+  const openEdit = (device: any) => {
+    setEditForm({
+      id: device.id,
+      model: device.model || "",
+      brand: device.brand || "",
+      memory: device.memory || "",
+      color: device.color || "",
+      imei: device.imei || "",
+      battery_health: device.battery_health || "",
+      purchase_price: device.purchase_price?.toString() || "",
+      sale_price: device.sale_price?.toString() || "",
+      status: device.status || "testing",
+      notes: device.notes || "",
+    });
+    setEditOpen(true);
+  };
 
   // --- Import logic ---
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
