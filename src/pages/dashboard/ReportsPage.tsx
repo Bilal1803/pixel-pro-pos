@@ -174,32 +174,40 @@ const ReportsPage = () => {
         e.category, Number(e.amount), e.description || "—",
       ]);
 
-      // Build workbook
+      // Build single sheet with all sections
       const wb = XLSX.utils.book_new();
+      const allRows: any[][] = [
+        ...summaryRows,
+        [],
+        [],
+        ["═══ ПРОДАЖИ ═══"],
+        salesHeader,
+        ...salesData,
+        [],
+        [],
+        ["═══ УСТРОЙСТВА ═══"],
+        devicesHeader,
+        ...devicesData,
+        [],
+        [],
+        ["═══ СОТРУДНИКИ ═══"],
+        empHeader,
+        ...empData,
+        [],
+        [],
+        ["═══ СКУПКИ ═══"],
+        buybackHeader,
+        ...buybackData,
+        [],
+        [],
+        ["═══ РАСХОДЫ ═══"],
+        expHeader,
+        ...expData,
+      ];
 
-      const ws1 = XLSX.utils.aoa_to_sheet(summaryRows);
-      ws1["!cols"] = [{ wch: 35 }, { wch: 25 }];
-      XLSX.utils.book_append_sheet(wb, ws1, "Сводка");
-
-      const ws2 = XLSX.utils.aoa_to_sheet([salesHeader, ...salesData]);
-      ws2["!cols"] = [{ wch: 5 }, { wch: 18 }, { wch: 20 }, { wch: 20 }, { wch: 16 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 60 }];
-      XLSX.utils.book_append_sheet(wb, ws2, "Продажи");
-
-      const ws3 = XLSX.utils.aoa_to_sheet([devicesHeader, ...devicesData]);
-      ws3["!cols"] = [{ wch: 18 }, { wch: 22 }, { wch: 10 }, { wch: 12 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 12 }];
-      XLSX.utils.book_append_sheet(wb, ws3, "Устройства");
-
-      const ws4 = XLSX.utils.aoa_to_sheet([empHeader, ...empData]);
-      ws4["!cols"] = [{ wch: 25 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 60 }];
-      XLSX.utils.book_append_sheet(wb, ws4, "Сотрудники");
-
-      const ws5 = XLSX.utils.aoa_to_sheet([buybackHeader, ...buybackData]);
-      ws5["!cols"] = [{ wch: 18 }, { wch: 22 }, { wch: 18 }, { wch: 10 }, { wch: 12 }, { wch: 8 }, { wch: 14 }, { wch: 20 }, { wch: 16 }, { wch: 30 }];
-      XLSX.utils.book_append_sheet(wb, ws5, "Скупки");
-
-      const ws6 = XLSX.utils.aoa_to_sheet([expHeader, ...expData]);
-      ws6["!cols"] = [{ wch: 14 }, { wch: 20 }, { wch: 12 }, { wch: 40 }];
-      XLSX.utils.book_append_sheet(wb, ws6, "Расходы");
+      const ws = XLSX.utils.aoa_to_sheet(allRows);
+      ws["!cols"] = [{ wch: 35 }, { wch: 22 }, { wch: 20 }, { wch: 20 }, { wch: 16 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 30 }];
+      XLSX.utils.book_append_sheet(wb, ws, "Отчёт");
 
       const fileName = `Отчёт_${format(dateRange.from, "dd.MM.yyyy")}_${format(dateRange.to, "dd.MM.yyyy")}.xlsx`;
       XLSX.writeFile(wb, fileName);
@@ -272,7 +280,7 @@ const ReportsPage = () => {
           </div>
 
           <div className="rounded-lg border p-4 space-y-2">
-            <p className="font-medium flex items-center gap-2"><FileSpreadsheet className="h-4 w-4 text-primary" /> Содержание отчёта (Excel, 6 листов):</p>
+            <p className="font-medium flex items-center gap-2"><FileSpreadsheet className="h-4 w-4 text-primary" /> Содержание отчёта (Excel, 1 лист):</p>
             <ul className="text-sm text-muted-foreground space-y-1 ml-6 list-disc">
               <li><strong>Сводка</strong> — выручка, себестоимость, расходы, чистая прибыль, скупки</li>
               <li><strong>Продажи</strong> — детали каждой продажи, позиции, клиенты, сотрудники</li>
