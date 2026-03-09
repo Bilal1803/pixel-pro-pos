@@ -344,6 +344,17 @@ const PriceTagsPage = () => {
                   <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
                   <p className="text-[11px] text-muted-foreground">PNG или JPG, рекомендуется прозрачный фон</p>
                 </div>
+
+                {/* Promo text */}
+                <div className="space-y-2">
+                  <Label>Текст акции</Label>
+                  <Input
+                    placeholder="при покупке аксессуаров скидка 2.000"
+                    value={settings.promoText}
+                    onChange={(e) => setSettings(s => ({ ...s, promoText: e.target.value }))}
+                  />
+                  <p className="text-[11px] text-muted-foreground">Отображается внизу ценника</p>
+                </div>
               </div>
             </SheetContent>
           </Sheet>
