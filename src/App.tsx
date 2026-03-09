@@ -12,10 +12,16 @@ import InventoryPage from "./pages/dashboard/InventoryPage";
 import SalesPage from "./pages/dashboard/SalesPage";
 import BuybackPage from "./pages/dashboard/BuybackPage";
 import CustomersPage from "./pages/dashboard/CustomersPage";
+import AccessoriesPage from "./pages/dashboard/AccessoriesPage";
+import RepairsPage from "./pages/dashboard/RepairsPage";
+import PriceTagsPage from "./pages/dashboard/PriceTagsPage";
+import MonitoringPage from "./pages/dashboard/MonitoringPage";
+import ListingsPage from "./pages/dashboard/ListingsPage";
 import FinancesPage from "./pages/dashboard/FinancesPage";
 import EmployeesPage from "./pages/dashboard/EmployeesPage";
 import ShiftsPage from "./pages/dashboard/ShiftsPage";
-import PlaceholderPage from "./pages/dashboard/PlaceholderPage";
+import SettingsPage from "./pages/dashboard/SettingsPage";
+import SupportPage from "./pages/dashboard/SupportPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,16 +42,16 @@ const App = () => (
             <Route path="sales" element={<SalesPage />} />
             <Route path="buyback" element={<BuybackPage />} />
             <Route path="customers" element={<CustomersPage />} />
-            <Route path="accessories" element={<PlaceholderPage title="Аксессуары" />} />
-            <Route path="repairs" element={<PlaceholderPage title="Ремонт" />} />
-            <Route path="price-tags" element={<PlaceholderPage title="Ценники" />} />
-            <Route path="monitoring" element={<PlaceholderPage title="Мониторинг цен" />} />
-            <Route path="listings" element={<PlaceholderPage title="Объявления" />} />
+            <Route path="accessories" element={<AccessoriesPage />} />
+            <Route path="repairs" element={<RepairsPage />} />
+            <Route path="price-tags" element={<PriceTagsPage />} />
+            <Route path="monitoring" element={<MonitoringPage />} />
+            <Route path="listings" element={<ListingsPage />} />
             <Route path="finances" element={<FinancesPage />} />
             <Route path="employees" element={<EmployeesPage />} />
             <Route path="shifts" element={<ShiftsPage />} />
-            <Route path="settings" element={<PlaceholderPage title="Настройки" />} />
-            <Route path="support" element={<PlaceholderPage title="Поддержка" />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="support" element={<SupportPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
