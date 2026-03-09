@@ -57,7 +57,8 @@ const MonitoringPage = () => {
   const [search, setSearch] = useState("");
   const [selectedModel, setSelectedModel] = useState<{ name: string; memory: string } | null>(null);
   const [priceDialogOpen, setPriceDialogOpen] = useState(false);
-  const [form, setForm] = useState({ our_price: "", prices: "" });
+  const [ourPrice, setOurPrice] = useState("");
+  const [priceSlots, setPriceSlots] = useState<string[]>(Array(10).fill(""));
 
   const filteredCatalog = useMemo(() => {
     if (!search.trim()) return IPHONE_CATALOG;
@@ -84,12 +85,12 @@ const MonitoringPage = () => {
     mutationFn: async () => {
       if (!companyId || !selectedModel) throw new Error("No company or model");
       const modelName = `${selectedModel.name} ${selectedModel.memory}`;
-      const pricesArr = form.prices.split(/[,;\s]+/).map(Number).filter(n => !isNaN(n) && n > 0);
+      const pricesArr = priceSlots.map(Number).filter(n => !isNaN(n) && n > 0);
       const avg = pricesArr.length > 0 ? Math.round(pricesArr.reduce((a, b) => a + b, 0) / pricesArr.length) : null;
       const { error } = await supabase.from("price_monitoring").insert({
         company_id: companyId,
         model: modelName,
-        our_price: form.our_price ? Number(form.our_price) : null,
+        our_price: ourPrice ? Number(ourPrice) : null,
         prices: pricesArr,
         avg_price: avg,
       });
@@ -101,7 +102,8 @@ const MonitoringPage = () => {
       setPriceDialogOpen(false);
       setSheetOpen(false);
       setSelectedModel(null);
-      setForm({ our_price: "", prices: "" });
+      setOurPrice("");
+      setPriceSlots(Array(10).fill(""));
       setSearch("");
     },
     onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
@@ -184,16 +186,33 @@ const MonitoringPage = () => {
               {selectedModel ? `${selectedModel.name} ${selectedModel.memory}` : "Модель"}
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); createEntry.mutate(); }} className="space-y-3">
+          <form onSubmit={(e) => { e.preventDefault(); createEntry.mutate(); }} className="space-y-4">
             <div>
               <Label>Наша цена</Label>
-              <Input type="number" placeholder="55000" value={form.our_price} onChange={(e) => setForm({ ...form, our_price: e.target.value })} />
+              <Input type="number" placeholder="55000" value={ourPrice} onChange={(e) => setOurPrice(e.target.value)} />
             </div>
             <div>
-              <Label>Цены с Avito (через запятую)</Label>
-              <Input placeholder="49000, 50000, 51000, ..." value={form.prices} onChange={(e) => setForm({ ...form, prices: e.target.value })} />
+              <Label className="mb-2 block">Цены с Avito (10 позиций)</Label>
+              <div className="grid grid-cols-5 gap-2">
+                {priceSlots.map((val, i) => (
+                  <div key={i} className="relative">
+                    <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] font-mono text-muted-foreground">{i + 1}</span>
+                    <Input
+                      type="number"
+                      className="pl-6 text-xs h-9 font-mono"
+                      placeholder="—"
+                      value={val}
+                      onChange={(e) => {
+                        const next = [...priceSlots];
+                        next[i] = e.target.value;
+                        setPriceSlots(next);
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-            <Button type="submit" className="w-full" disabled={createEntry.isPending}>
+            <Button type="submit" className="w-full" disabled={createEntry.isPending || priceSlots.every(v => !v)}>
               {createEntry.isPending ? "Добавление..." : "Добавить"}
             </Button>
           </form>
