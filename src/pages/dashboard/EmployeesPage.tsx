@@ -5,11 +5,27 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Copy } from "lucide-react";
+import { Plus, Copy, MoreVertical, Pencil, Trash2 } from "lucide-react";
 
 const roleLabels: Record<string, string> = {
   owner: "Владелец",
@@ -18,12 +34,20 @@ const roleLabels: Record<string, string> = {
 };
 
 const EmployeesPage = () => {
-  const { companyId } = useAuth();
+  const { companyId, user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ fullName: "", email: "", phone: "", role: "employee" });
   const [tempPassword, setTempPassword] = useState<string | null>(null);
+
+  // Edit state
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ fullName: "", phone: "", role: "employee", userId: "" });
+
+  // Delete state
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ userId: string; name: string } | null>(null);
 
   const { data: profiles = [], isLoading } = useQuery({
     queryKey: ["employees", companyId],
@@ -81,6 +105,56 @@ const EmployeesPage = () => {
     },
   });
 
+  const updateEmployee = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("manage-employee", {
+        body: {
+          action: "update",
+          targetUserId: editForm.userId,
+          fullName: editForm.fullName,
+          phone: editForm.phone || null,
+          role: editForm.role,
+        },
+      });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-roles"] });
+      setEditOpen(false);
+      toast({ title: "Сотрудник обновлён" });
+    },
+    onError: (e: any) => {
+      toast({ title: "Ошибка", description: e.message, variant: "destructive" });
+    },
+  });
+
+  const deleteEmployee = useMutation({
+    mutationFn: async (targetUserId: string) => {
+      const { data, error } = await supabase.functions.invoke("manage-employee", {
+        body: {
+          action: "delete",
+          targetUserId,
+        },
+      });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-roles"] });
+      setDeleteOpen(false);
+      setDeleteTarget(null);
+      toast({ title: "Сотрудник удалён" });
+    },
+    onError: (e: any) => {
+      toast({ title: "Ошибка", description: e.message, variant: "destructive" });
+    },
+  });
+
   const handleSubmit = () => {
     if (!form.email || !form.fullName) return;
     addEmployee.mutate();
@@ -97,6 +171,22 @@ const EmployeesPage = () => {
       navigator.clipboard.writeText(tempPassword);
       toast({ title: "Пароль скопирован" });
     }
+  };
+
+  const openEdit = (profile: any) => {
+    const role = getRoleForUser(profile.user_id);
+    setEditForm({
+      fullName: profile.full_name || "",
+      phone: profile.phone || "",
+      role,
+      userId: profile.user_id,
+    });
+    setEditOpen(true);
+  };
+
+  const openDelete = (profile: any) => {
+    setDeleteTarget({ userId: profile.user_id, name: profile.full_name });
+    setDeleteOpen(true);
   };
 
   return (
@@ -176,9 +266,30 @@ const EmployeesPage = () => {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {profiles.map((e: any) => {
             const role = getRoleForUser(e.user_id);
+            const isOwner = role === "owner";
+            const isSelf = e.user_id === user?.id;
             return (
-              <Card key={e.id} className="p-5 card-shadow">
-                <h3 className="font-semibold">{e.full_name}</h3>
+              <Card key={e.id} className="p-5 card-shadow relative">
+                {!isOwner && !isSelf && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="absolute top-3 right-3 h-8 w-8">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => openEdit(e)}>
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Редактировать
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openDelete(e)} className="text-destructive">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Удалить
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+                <h3 className="font-semibold pr-8">{e.full_name}</h3>
                 <p className="mt-1 text-sm text-primary font-medium">{roleLabels[role] || role}</p>
                 <div className="mt-3 space-y-1 text-sm text-muted-foreground">
                   {e.email && <p>{e.email}</p>}
@@ -189,6 +300,62 @@ const EmployeesPage = () => {
           })}
         </div>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Редактировать сотрудника</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Имя</Label>
+              <Input value={editForm.fullName} onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })} className="mt-1" />
+            </div>
+            <div>
+              <Label>Телефон</Label>
+              <Input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className="mt-1" />
+            </div>
+            <div>
+              <Label>Роль</Label>
+              <Select value={editForm.role} onValueChange={(v) => setEditForm({ ...editForm, role: v })}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="employee">Сотрудник</SelectItem>
+                  <SelectItem value="manager">Менеджер</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditOpen(false)}>Отмена</Button>
+              <Button onClick={() => updateEmployee.mutate()} disabled={updateEmployee.isPending}>
+                {updateEmployee.isPending ? "Сохранение..." : "Сохранить"}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить сотрудника?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Аккаунт <strong>{deleteTarget?.name}</strong> будет удалён безвозвратно. Это действие нельзя отменить.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteTarget && deleteEmployee.mutate(deleteTarget.userId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteEmployee.isPending ? "Удаление..." : "Удалить"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
