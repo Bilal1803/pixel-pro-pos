@@ -271,7 +271,17 @@ const PriceTagsPage = () => {
               <SheetHeader>
                 <SheetTitle>Настройка шаблона</SheetTitle>
               </SheetHeader>
-              <div className="space-y-6 mt-6">
+              <div className="space-y-6 mt-6 overflow-y-auto max-h-[calc(100vh-100px)]">
+                {/* Store name */}
+                <div className="space-y-2">
+                  <Label>Название магазина</Label>
+                  <Input
+                    placeholder="Например: PRO APPLE"
+                    value={settings.storeName}
+                    onChange={(e) => setSettings(s => ({ ...s, storeName: e.target.value }))}
+                  />
+                </div>
+
                 {/* Size */}
                 <div className="space-y-2">
                   <Label>Размер ценника</Label>
