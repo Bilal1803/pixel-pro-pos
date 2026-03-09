@@ -9,6 +9,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const CATEGORIES = [
+  "Чехлы",
+  "Защитные стёкла",
+  "Кабели",
+  "Зарядные устройства",
+  "Наушники",
+  "Держатели",
+  "Плёнки",
+  "Аккумуляторы",
+  "Адаптеры",
+  "Прочее",
+];
 
 const AccessoriesPage = () => {
   const { companyId } = useAuth();
