@@ -391,8 +391,26 @@ const SalesPage = () => {
               </thead>
               <tbody className="divide-y">
                 {sales.map((s: any) => (
-                  <tr key={s.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3">{s.sale_items?.map((i: any) => i.name).join(", ") || "—"}</td>
+                  <tr key={s.id} className="hover:bg-muted/30 transition-colors align-top">
+                    <td className="px-4 py-3">
+                      <div className="space-y-1">
+                        {(s.sale_items || []).map((item: any, idx: number) => {
+                          const dev = item.devices;
+                          const icon = item.item_type === "device" ? "📱" : item.item_type === "accessory" ? "🎧" : item.item_type === "service" ? "🔧" : "";
+                          return (
+                            <div key={idx}>
+                              <span className="text-sm">{icon} {item.name}</span>
+                              {dev && (
+                                <p className="text-xs text-muted-foreground">
+                                  IMEI: {dev.imei}{dev.memory && ` · ${dev.memory}`}{dev.color && ` · ${dev.color}`}{dev.battery_health && ` · АКБ ${dev.battery_health}`}
+                                </p>
+                              )}
+                              {item.quantity > 1 && <span className="text-xs text-muted-foreground"> ×{item.quantity}</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 font-semibold">{s.total} ₽</td>
                     <td className="px-4 py-3">{paymentLabels[s.payment_method] || s.payment_method}</td>
                     <td className="px-4 py-3">{s.clients?.name || "—"}</td>
