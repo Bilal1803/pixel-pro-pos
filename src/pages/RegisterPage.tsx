@@ -4,16 +4,30 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Smartphone } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
+  const { signUp } = useAuth();
+  const { toast } = useToast();
   const [companyName, setCompanyName] = useState("");
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate("/dashboard");
+    setLoading(true);
+    const { error } = await signUp(email, password, companyName, fullName);
+    setLoading(false);
+    if (error) {
+      toast({ title: "Ошибка регистрации", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Аккаунт создан!", description: "Проверьте почту для подтверждения или войдите в систему." });
+      navigate("/dashboard");
+    }
   };
 
   return (
@@ -33,14 +47,20 @@ const RegisterPage = () => {
             <Input id="company" placeholder="Мой магазин" value={companyName} onChange={(e) => setCompanyName(e.target.value)} required className="mt-1" />
           </div>
           <div>
+            <Label htmlFor="fullName">Ваше имя</Label>
+            <Input id="fullName" placeholder="Иван Иванов" value={fullName} onChange={(e) => setFullName(e.target.value)} required className="mt-1" />
+          </div>
+          <div>
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1" />
           </div>
           <div>
             <Label htmlFor="password">Пароль</Label>
-            <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required className="mt-1" />
+            <Input id="password" type="password" placeholder="Минимум 6 символов" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="mt-1" />
           </div>
-          <Button type="submit" className="w-full">Создать аккаунт</Button>
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "Создание..." : "Создать аккаунт"}
+          </Button>
         </form>
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Уже есть аккаунт?{" "}
