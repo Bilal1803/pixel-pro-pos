@@ -254,25 +254,74 @@ const InventoryPage = () => {
               <DialogHeader><DialogTitle>Импорт склада из таблицы</DialogTitle></DialogHeader>
 
               {parsedRows.length === 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-5">
                   <p className="text-sm text-muted-foreground">
-                    Загрузите файл Excel (.xlsx, .xls) или CSV. Таблица должна содержать столбцы:
+                    Загрузите файл Excel (.xlsx, .xls) или CSV. Первая строка — заголовки столбцов.
                   </p>
-                  <div className="rounded-lg border bg-muted/30 p-4">
-                    <p className="text-sm font-medium mb-2">Поддерживаемые столбцы:</p>
-                    <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
-                      <span><strong>Модель</strong> (обязательно) — model, название</span>
-                      <span><strong>IMEI</strong> (обязательно) — imei, серийный номер</span>
+
+                  {/* Example table */}
+                  <div>
+                    <p className="text-sm font-medium mb-2">Пример таблицы:</p>
+                    <div className="overflow-x-auto rounded-lg border">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-muted">
+                            <th className="px-2.5 py-2 text-left font-semibold text-primary">Модель ✱</th>
+                            <th className="px-2.5 py-2 text-left font-semibold text-primary">IMEI ✱</th>
+                            <th className="px-2.5 py-2 text-left font-medium">Память</th>
+                            <th className="px-2.5 py-2 text-left font-medium">Цвет</th>
+                            <th className="px-2.5 py-2 text-left font-medium">АКБ</th>
+                            <th className="px-2.5 py-2 text-left font-medium">Цена закупки</th>
+                            <th className="px-2.5 py-2 text-left font-medium">Цена продажи</th>
+                            <th className="px-2.5 py-2 text-left font-medium">Статус</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          <tr>
+                            <td className="px-2.5 py-1.5">iPhone 14 Pro</td>
+                            <td className="px-2.5 py-1.5 font-mono">353456789012345</td>
+                            <td className="px-2.5 py-1.5">128GB</td>
+                            <td className="px-2.5 py-1.5">Чёрный</td>
+                            <td className="px-2.5 py-1.5">92%</td>
+                            <td className="px-2.5 py-1.5">45000</td>
+                            <td className="px-2.5 py-1.5">55000</td>
+                            <td className="px-2.5 py-1.5">В наличии</td>
+                          </tr>
+                          <tr className="bg-muted/20">
+                            <td className="px-2.5 py-1.5">Samsung S24</td>
+                            <td className="px-2.5 py-1.5 font-mono">357891234567890</td>
+                            <td className="px-2.5 py-1.5">256GB</td>
+                            <td className="px-2.5 py-1.5">Белый</td>
+                            <td className="px-2.5 py-1.5">97%</td>
+                            <td className="px-2.5 py-1.5">38000</td>
+                            <td className="px-2.5 py-1.5">48000</td>
+                            <td className="px-2.5 py-1.5">Проверка</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="mt-1.5 text-[11px] text-muted-foreground">✱ Обязательные столбцы. Остальные можно не заполнять.</p>
+                  </div>
+
+                  {/* Accepted column names */}
+                  <details className="group">
+                    <summary className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                      Какие названия столбцов распознаются? ▾
+                    </summary>
+                    <div className="mt-2 rounded-lg border bg-muted/20 p-3 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+                      <span><strong className="text-foreground">Модель</strong> — model, название, name</span>
+                      <span><strong className="text-foreground">IMEI</strong> — imei, серийный номер, serial</span>
                       <span>Бренд — brand, марка</span>
                       <span>Память — memory, объём, storage</span>
                       <span>Цвет — color</span>
-                      <span>АКБ — battery, батарея</span>
-                      <span>Цена закупки — purchase_price, cost</span>
-                      <span>Цена продажи — sale_price, price</span>
-                      <span>Статус — status</span>
-                      <span>Заметки — notes, примечание</span>
+                      <span>АКБ — battery, батарея, battery_health</span>
+                      <span>Цена закупки — purchase_price, cost, себестоимость</span>
+                      <span>Цена продажи — sale_price, price, цена</span>
+                      <span>Статус — status (В наличии / Проверка / Резерв / Дефект)</span>
+                      <span>Заметки — notes, примечание, комментарий</span>
                     </div>
-                  </div>
+                  </details>
+
                   <label className="flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed border-muted-foreground/30 p-8 hover:border-primary/50 hover:bg-muted/20 transition-colors">
                     <FileSpreadsheet className="h-10 w-10 text-muted-foreground" />
                     <span className="text-sm font-medium">Нажмите для выбора файла</span>
