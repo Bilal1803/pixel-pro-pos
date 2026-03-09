@@ -85,12 +85,12 @@ const MonitoringPage = () => {
     mutationFn: async () => {
       if (!companyId || !selectedModel) throw new Error("No company or model");
       const modelName = `${selectedModel.name} ${selectedModel.memory}`;
-      const pricesArr = form.prices.split(/[,;\s]+/).map(Number).filter(n => !isNaN(n) && n > 0);
+      const pricesArr = priceSlots.map(Number).filter(n => !isNaN(n) && n > 0);
       const avg = pricesArr.length > 0 ? Math.round(pricesArr.reduce((a, b) => a + b, 0) / pricesArr.length) : null;
       const { error } = await supabase.from("price_monitoring").insert({
         company_id: companyId,
         model: modelName,
-        our_price: form.our_price ? Number(form.our_price) : null,
+        our_price: ourPrice ? Number(ourPrice) : null,
         prices: pricesArr,
         avg_price: avg,
       });
