@@ -75,12 +75,29 @@ const DashboardHome = () => {
           ) : (
             <div className="divide-y">
               {sales.slice(0, 5).map((s: any) => (
-                <div key={s.id} className="flex items-center justify-between p-4">
-                  <div>
-                    <p className="text-sm font-medium">{s.sale_items?.map((i: any) => i.name).join(", ") || "—"}</p>
+                <div key={s.id} className="p-4">
+                  <div className="flex items-center justify-between mb-1">
                     <p className="text-xs text-muted-foreground">{s.clients?.name || "Без клиента"} · {new Date(s.created_at).toLocaleString("ru")}</p>
+                    <span className="text-sm font-semibold">{s.total} ₽</span>
                   </div>
-                  <span className="text-sm font-semibold">{s.total} ₽</span>
+                  <div className="space-y-1">
+                    {(s.sale_items || []).map((item: any, idx: number) => {
+                      const dev = item.devices;
+                      const typeLabel = item.item_type === "device" ? "📱" : item.item_type === "accessory" ? "🎧" : item.item_type === "service" ? "🔧" : "";
+                      return (
+                        <div key={idx} className="text-sm">
+                          <span>{typeLabel} {item.name}</span>
+                          {dev && (
+                            <span className="text-xs text-muted-foreground ml-1">
+                              {dev.memory && ` · ${dev.memory}`}{dev.color && ` · ${dev.color}`}{dev.battery_health && ` · АКБ ${dev.battery_health}`} · IMEI: {dev.imei}
+                            </span>
+                          )}
+                          {item.quantity > 1 && <span className="text-xs text-muted-foreground"> ×{item.quantity}</span>}
+                          <span className="text-xs text-muted-foreground ml-1">— {item.price} ₽</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               ))}
             </div>
