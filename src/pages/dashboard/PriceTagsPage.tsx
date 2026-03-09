@@ -138,35 +138,99 @@ const PriceTagsPage = () => {
   const removeLogo = () => setSettings(s => ({ ...s, logoUrl: null }));
 
   const PriceTag = ({ device, forPrint = false }: { device: any; forPrint?: boolean }) => {
-    const details: string[] = [];
-    if (settings.showMemory && device.memory) details.push(device.memory);
-    if (settings.showColor && device.color) details.push(device.color);
-    if (settings.showBattery && device.battery_health) details.push(`АКБ ${device.battery_health}`);
+    const salePrice = device.sale_price ? Number(device.sale_price) : null;
+    const oldPrice = settings.showOldPrice && salePrice ? Math.round(salePrice * 1.15) : null;
+    const promoPrice = settings.showPromoPrice && salePrice ? Math.round(salePrice * (1 - settings.promoPricePercent / 100)) : null;
+    const fmt = (n: number) => n.toLocaleString("ru");
 
     return (
-      <Card className={`${sizeConf.cardClass} ${forPrint ? "shadow-none border" : "card-shadow"}`}>
-        <div className="space-y-1.5">
-          {settings.logoUrl && (
-            <div className="flex justify-center pb-1">
-              <img src={settings.logoUrl} alt="logo" className={settings.size === "small" ? "h-4" : settings.size === "medium" ? "h-6" : "h-8"} />
-            </div>
-          )}
-          <h3 className={`${sizeConf.titleClass} ${forPrint ? "" : "truncate"}`}>
-            {settings.showBrand && device.brand ? `${device.brand} ` : ""}{device.model}
-          </h3>
-          {details.length > 0 && (
-            <p className={`${sizeConf.textClass} text-muted-foreground`}>{details.join(" · ")}</p>
-          )}
-          {settings.showImei && (
-            <p className={`font-mono ${settings.size === "small" ? "text-[8px]" : "text-[10px]"} text-muted-foreground`}>{device.imei}</p>
-          )}
-          <div className="border-t pt-1.5 mt-1">
-            <span className={sizeConf.priceClass}>
-              {device.sale_price ? `${Number(device.sale_price).toLocaleString("ru")} ₽` : "—"}
+      <div className={`border border-foreground/40 ${sizeConf.cardClass} ${forPrint ? "" : "bg-card"}`}>
+        {/* Store name */}
+        {settings.storeName && (
+          <div className="text-center border-b border-foreground/20 pb-1 mb-0.5">
+            <span className={`${settings.size === "small" ? "text-[9px]" : settings.size === "medium" ? "text-xs" : "text-sm"} font-bold uppercase tracking-wider`}>
+              {settings.storeName}
             </span>
           </div>
+        )}
+        {settings.logoUrl && !settings.storeName && (
+          <div className="flex justify-center border-b border-foreground/20 pb-1 mb-0.5">
+            <img src={settings.logoUrl} alt="logo" className={settings.size === "small" ? "h-4" : settings.size === "medium" ? "h-6" : "h-8"} />
+          </div>
+        )}
+
+        {/* Model */}
+        <div className="text-center border-b border-foreground/20 py-1">
+          <h3 className={sizeConf.titleClass}>
+            {settings.showBrand && device.brand ? `${device.brand} ` : ""}{device.model}
+          </h3>
         </div>
-      </Card>
+
+        {/* Specs row */}
+        {(settings.showColor || settings.showMemory || settings.showBattery) && (
+          <div className="grid grid-cols-3 border-b border-foreground/20">
+            <div className={`${sizeConf.textClass} py-1 text-center border-r border-foreground/20`}>
+              {settings.showColor ? (device.color || "") : ""}
+            </div>
+            <div className={`${sizeConf.textClass} py-1 text-center border-r border-foreground/20`}>
+              {settings.showMemory ? (device.memory || "") : ""}
+            </div>
+            <div className={`${sizeConf.textClass} py-1 text-center`}>
+              {settings.showBattery && device.battery_health ? device.battery_health : ""}
+            </div>
+          </div>
+        )}
+
+        {/* IMEI row */}
+        {(settings.showImei || settings.showSim) && (
+          <div className={`grid ${settings.showImei && settings.showSim ? "grid-cols-[1fr_auto]" : "grid-cols-1"} border-b border-foreground/20`}>
+            {settings.showImei && (
+              <div className={`font-mono ${settings.size === "small" ? "text-[7px]" : "text-[9px]"} py-1 text-center ${settings.showSim ? "border-r border-foreground/20" : ""}`}>
+                {device.imei}
+              </div>
+            )}
+            {settings.showSim && (
+              <div className={`${sizeConf.textClass} py-1 px-2 text-center`}>2Sim</div>
+            )}
+          </div>
+        )}
+
+        {/* Old price (strikethrough) */}
+        {oldPrice && (
+          <div className="grid grid-cols-[1fr_auto] border-b border-foreground/20">
+            <div className={`${settings.size === "small" ? "text-sm" : settings.size === "medium" ? "text-lg" : "text-2xl"} font-bold text-center py-1 line-through italic text-muted-foreground`}>
+              {fmt(oldPrice)}
+            </div>
+            <div className={`${sizeConf.textClass} py-1 px-2 flex items-center text-muted-foreground`}>Цена</div>
+          </div>
+        )}
+
+        {/* Sale price */}
+        {salePrice && (
+          <div className={`${promoPrice ? "grid grid-cols-[1fr_auto] border-b border-foreground/20" : "text-center py-1"}`}>
+            <div className={`${sizeConf.priceClass} text-center py-1`}>{fmt(salePrice)}</div>
+            {!oldPrice && !promoPrice && null}
+          </div>
+        )}
+        {!salePrice && <div className={`${sizeConf.priceClass} text-center py-1`}>—</div>}
+
+        {/* Promo price */}
+        {promoPrice && salePrice && (
+          <div className="grid grid-cols-[1fr_auto] border-b border-foreground/20">
+            <div className={`${settings.size === "small" ? "text-sm" : settings.size === "medium" ? "text-lg" : "text-2xl"} font-bold text-center py-1 text-success`}>
+              {fmt(promoPrice)}
+            </div>
+            <div className={`${sizeConf.textClass} py-1 px-2 flex items-center text-success font-medium`}>акция</div>
+          </div>
+        )}
+
+        {/* Promo text */}
+        {settings.promoText && (
+          <div className="pt-1">
+            <p className={`${settings.size === "small" ? "text-[7px]" : "text-[9px]"} text-center italic`}>{settings.promoText}</p>
+          </div>
+        )}
+      </div>
     );
   };
 
