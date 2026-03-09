@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Upload, FileSpreadsheet, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import * as XLSX from "xlsx";
 
 const statusLabels: Record<string, { label: string; className: string }> = {
   available: { label: "В наличии", className: "bg-success/10 text-success" },
@@ -21,12 +22,55 @@ const statusLabels: Record<string, { label: string; className: string }> = {
   rental: { label: "Аренда", className: "bg-primary/10 text-primary" },
 };
 
+type ParsedDevice = {
+  model: string;
+  brand?: string;
+  memory?: string;
+  color?: string;
+  imei: string;
+  battery_health?: string;
+  purchase_price?: number;
+  sale_price?: number;
+  status?: string;
+  notes?: string;
+};
+
+const COLUMN_MAP: Record<string, keyof ParsedDevice> = {
+  "модель": "model", "model": "model", "название": "model", "name": "model",
+  "бренд": "brand", "brand": "brand", "марка": "brand",
+  "память": "memory", "memory": "memory", "storage": "memory", "объём": "memory", "объем": "memory",
+  "цвет": "color", "color": "color",
+  "imei": "imei", "имей": "imei", "серийный номер": "imei", "serial": "imei",
+  "акб": "battery_health", "battery": "battery_health", "батарея": "battery_health", "battery_health": "battery_health",
+  "закупка": "purchase_price", "цена закупки": "purchase_price", "purchase_price": "purchase_price", "cost": "purchase_price", "себестоимость": "purchase_price",
+  "продажа": "sale_price", "цена продажи": "sale_price", "sale_price": "sale_price", "price": "sale_price", "цена": "sale_price",
+  "статус": "status", "status": "status",
+  "заметки": "notes", "notes": "notes", "примечание": "notes", "комментарий": "notes",
+};
+
+const normalizeStatus = (s?: string): string => {
+  if (!s) return "testing";
+  const lower = s.toLowerCase().trim();
+  const map: Record<string, string> = {
+    "в наличии": "available", "available": "available", "наличие": "available",
+    "проверка": "testing", "testing": "testing", "тест": "testing",
+    "резерв": "reserved", "reserved": "reserved",
+    "продано": "sold", "sold": "sold",
+    "дефект": "defective", "defective": "defective", "брак": "defective",
+    "аренда": "rental", "rental": "rental",
+  };
+  return map[lower] || "testing";
+};
+
 const InventoryPage = () => {
   const { companyId } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [parsedRows, setParsedRows] = useState<ParsedDevice[]>([]);
+  const [fileName, setFileName] = useState("");
   const [form, setForm] = useState({ model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing" as string, notes: "" });
 
   const { data: devices = [], isLoading } = useQuery({
@@ -75,6 +119,124 @@ const InventoryPage = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["devices"] }),
   });
 
+  // --- Import logic ---
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFileName(file.name);
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = new Uint8Array(evt.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json: Record<string, any>[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+        if (json.length === 0) {
+          toast({ title: "Файл пуст", variant: "destructive" });
+          return;
+        }
+
+        // Map columns
+        const headerMap = new Map<string, keyof ParsedDevice>();
+        const rawHeaders = Object.keys(json[0]);
+        for (const h of rawHeaders) {
+          const normalized = h.toLowerCase().trim();
+          if (COLUMN_MAP[normalized]) {
+            headerMap.set(h, COLUMN_MAP[normalized]);
+          }
+        }
+
+        if (!headerMap.size) {
+          toast({ title: "Не удалось распознать столбцы", description: "Убедитесь что в таблице есть столбцы: Модель, IMEI, Память, Цвет и т.д.", variant: "destructive" });
+          return;
+        }
+
+        const parsed: ParsedDevice[] = [];
+        for (const row of json) {
+          const device: Partial<ParsedDevice> = {};
+          for (const [rawH, field] of headerMap) {
+            const val = String(row[rawH] ?? "").trim();
+            if (!val) continue;
+            if (field === "purchase_price" || field === "sale_price") {
+              const num = parseFloat(val.replace(/[^\d.,]/g, "").replace(",", "."));
+              if (!isNaN(num)) (device as any)[field] = num;
+            } else if (field === "status") {
+              device.status = normalizeStatus(val);
+            } else {
+              (device as any)[field] = val;
+            }
+          }
+          if (device.model && device.imei) {
+            parsed.push({
+              model: device.model,
+              imei: device.imei,
+              brand: device.brand,
+              memory: device.memory,
+              color: device.color,
+              battery_health: device.battery_health,
+              purchase_price: device.purchase_price,
+              sale_price: device.sale_price,
+              status: device.status || "testing",
+              notes: device.notes,
+            });
+          }
+        }
+
+        if (parsed.length === 0) {
+          toast({ title: "Нет валидных строк", description: "Каждая строка должна содержать как минимум Модель и IMEI.", variant: "destructive" });
+          return;
+        }
+
+        setParsedRows(parsed);
+      } catch {
+        toast({ title: "Ошибка чтения файла", variant: "destructive" });
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    // Reset input
+    e.target.value = "";
+  };
+
+  const importDevices = useMutation({
+    mutationFn: async () => {
+      if (!companyId || parsedRows.length === 0) throw new Error("Нет данных");
+      const toInsert = parsedRows.map((d) => ({
+        company_id: companyId,
+        model: d.model,
+        imei: d.imei,
+        brand: d.brand || null,
+        memory: d.memory || null,
+        color: d.color || null,
+        battery_health: d.battery_health || null,
+        purchase_price: d.purchase_price ?? null,
+        sale_price: d.sale_price ?? null,
+        status: (d.status || "testing") as any,
+        notes: d.notes || null,
+      }));
+
+      // Insert in batches of 50
+      for (let i = 0; i < toInsert.length; i += 50) {
+        const batch = toInsert.slice(i, i + 50);
+        const { error } = await supabase.from("devices").insert(batch);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["devices"] });
+      toast({ title: `Импортировано ${parsedRows.length} устройств` });
+      setParsedRows([]);
+      setFileName("");
+      setImportOpen(false);
+    },
+    onError: (e: Error) => toast({ title: "Ошибка импорта", description: e.message, variant: "destructive" }),
+  });
+
+  const removeRow = (idx: number) => {
+    setParsedRows((prev) => prev.filter((_, i) => i !== idx));
+  };
+
   const filtered = devices.filter((d) =>
     d.model.toLowerCase().includes(search.toLowerCase()) || d.imei.includes(search)
   );
@@ -83,42 +245,136 @@ const InventoryPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Склад устройств</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="mr-2 h-4 w-4" /> Добавить устройство</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader><DialogTitle>Новое устройство</DialogTitle></DialogHeader>
-            <form onSubmit={(e) => { e.preventDefault(); addDevice.mutate(); }} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Модель *</Label><Input value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} required /></div>
-                <div><Label>Бренд</Label><Input value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} /></div>
-                <div><Label>Память</Label><Input placeholder="128GB" value={form.memory} onChange={(e) => setForm({ ...form, memory: e.target.value })} /></div>
-                <div><Label>Цвет</Label><Input value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} /></div>
-                <div><Label>IMEI *</Label><Input value={form.imei} onChange={(e) => setForm({ ...form, imei: e.target.value })} required /></div>
-                <div><Label>АКБ</Label><Input placeholder="94%" value={form.battery_health} onChange={(e) => setForm({ ...form, battery_health: e.target.value })} /></div>
-                <div><Label>Цена закупки</Label><Input type="number" value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} /></div>
-                <div><Label>Цена продажи</Label><Input type="number" value={form.sale_price} onChange={(e) => setForm({ ...form, sale_price: e.target.value })} /></div>
-              </div>
-              <div>
-                <Label>Статус</Label>
-                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="testing">Проверка</SelectItem>
-                    <SelectItem value="available">В наличии</SelectItem>
-                    <SelectItem value="reserved">Резерв</SelectItem>
-                    <SelectItem value="defective">Дефект</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div><Label>Заметки</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-              <Button type="submit" className="w-full" disabled={addDevice.isPending}>
-                {addDevice.isPending ? "Сохранение..." : "Добавить"}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <Dialog open={importOpen} onOpenChange={(v) => { setImportOpen(v); if (!v) { setParsedRows([]); setFileName(""); } }}>
+            <DialogTrigger asChild>
+              <Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Импорт</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+              <DialogHeader><DialogTitle>Импорт склада из таблицы</DialogTitle></DialogHeader>
+
+              {parsedRows.length === 0 ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Загрузите файл Excel (.xlsx, .xls) или CSV. Таблица должна содержать столбцы:
+                  </p>
+                  <div className="rounded-lg border bg-muted/30 p-4">
+                    <p className="text-sm font-medium mb-2">Поддерживаемые столбцы:</p>
+                    <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
+                      <span><strong>Модель</strong> (обязательно) — model, название</span>
+                      <span><strong>IMEI</strong> (обязательно) — imei, серийный номер</span>
+                      <span>Бренд — brand, марка</span>
+                      <span>Память — memory, объём, storage</span>
+                      <span>Цвет — color</span>
+                      <span>АКБ — battery, батарея</span>
+                      <span>Цена закупки — purchase_price, cost</span>
+                      <span>Цена продажи — sale_price, price</span>
+                      <span>Статус — status</span>
+                      <span>Заметки — notes, примечание</span>
+                    </div>
+                  </div>
+                  <label className="flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed border-muted-foreground/30 p-8 hover:border-primary/50 hover:bg-muted/20 transition-colors">
+                    <FileSpreadsheet className="h-10 w-10 text-muted-foreground" />
+                    <span className="text-sm font-medium">Нажмите для выбора файла</span>
+                    <span className="text-xs text-muted-foreground">.xlsx, .xls, .csv</span>
+                    <input type="file" className="hidden" accept=".xlsx,.xls,.csv" onChange={handleFileSelect} />
+                  </label>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4 overflow-hidden">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      <strong>{fileName}</strong> — {parsedRows.length} устройств готово к импорту
+                    </p>
+                    <Button variant="ghost" size="sm" onClick={() => { setParsedRows([]); setFileName(""); }}>
+                      Выбрать другой файл
+                    </Button>
+                  </div>
+
+                  <div className="flex-1 overflow-auto rounded border max-h-[400px]">
+                    <table className="w-full text-xs">
+                      <thead className="sticky top-0 bg-muted">
+                        <tr>
+                          <th className="px-3 py-2 text-left font-medium">Модель</th>
+                          <th className="px-3 py-2 text-left font-medium">IMEI</th>
+                          <th className="px-3 py-2 text-left font-medium">Память</th>
+                          <th className="px-3 py-2 text-left font-medium">Цвет</th>
+                          <th className="px-3 py-2 text-left font-medium">Закупка</th>
+                          <th className="px-3 py-2 text-left font-medium">Продажа</th>
+                          <th className="px-3 py-2 text-left font-medium">Статус</th>
+                          <th className="px-3 py-2"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {parsedRows.map((r, i) => (
+                          <tr key={i} className="hover:bg-muted/30">
+                            <td className="px-3 py-1.5 font-medium">{r.model}</td>
+                            <td className="px-3 py-1.5 font-mono">{r.imei}</td>
+                            <td className="px-3 py-1.5">{r.memory || "—"}</td>
+                            <td className="px-3 py-1.5">{r.color || "—"}</td>
+                            <td className="px-3 py-1.5">{r.purchase_price ? `${r.purchase_price} ₽` : "—"}</td>
+                            <td className="px-3 py-1.5">{r.sale_price ? `${r.sale_price} ₽` : "—"}</td>
+                            <td className="px-3 py-1.5">
+                              <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusLabels[r.status || "testing"]?.className || ""}`}>
+                                {statusLabels[r.status || "testing"]?.label || r.status}
+                              </span>
+                            </td>
+                            <td className="px-3 py-1.5">
+                              <button onClick={() => removeRow(i)} className="text-muted-foreground hover:text-destructive">
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <Button onClick={() => importDevices.mutate()} disabled={importDevices.isPending} className="w-full">
+                    {importDevices.isPending ? "Импорт..." : `Импортировать ${parsedRows.length} устройств`}
+                  </Button>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button><Plus className="mr-2 h-4 w-4" /> Добавить устройство</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader><DialogTitle>Новое устройство</DialogTitle></DialogHeader>
+              <form onSubmit={(e) => { e.preventDefault(); addDevice.mutate(); }} className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>Модель *</Label><Input value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} required /></div>
+                  <div><Label>Бренд</Label><Input value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} /></div>
+                  <div><Label>Память</Label><Input placeholder="128GB" value={form.memory} onChange={(e) => setForm({ ...form, memory: e.target.value })} /></div>
+                  <div><Label>Цвет</Label><Input value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} /></div>
+                  <div><Label>IMEI *</Label><Input value={form.imei} onChange={(e) => setForm({ ...form, imei: e.target.value })} required /></div>
+                  <div><Label>АКБ</Label><Input placeholder="94%" value={form.battery_health} onChange={(e) => setForm({ ...form, battery_health: e.target.value })} /></div>
+                  <div><Label>Цена закупки</Label><Input type="number" value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} /></div>
+                  <div><Label>Цена продажи</Label><Input type="number" value={form.sale_price} onChange={(e) => setForm({ ...form, sale_price: e.target.value })} /></div>
+                </div>
+                <div>
+                  <Label>Статус</Label>
+                  <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="testing">Проверка</SelectItem>
+                      <SelectItem value="available">В наличии</SelectItem>
+                      <SelectItem value="reserved">Резерв</SelectItem>
+                      <SelectItem value="defective">Дефект</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Заметки</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+                <Button type="submit" className="w-full" disabled={addDevice.isPending}>
+                  {addDevice.isPending ? "Сохранение..." : "Добавить"}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="relative max-w-sm">
