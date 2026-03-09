@@ -57,7 +57,8 @@ const MonitoringPage = () => {
   const [search, setSearch] = useState("");
   const [selectedModel, setSelectedModel] = useState<{ name: string; memory: string } | null>(null);
   const [priceDialogOpen, setPriceDialogOpen] = useState(false);
-  const [form, setForm] = useState({ our_price: "", prices: "" });
+  const [ourPrice, setOurPrice] = useState("");
+  const [priceSlots, setPriceSlots] = useState<string[]>(Array(10).fill(""));
 
   const filteredCatalog = useMemo(() => {
     if (!search.trim()) return IPHONE_CATALOG;
