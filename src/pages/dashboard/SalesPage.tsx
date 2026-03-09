@@ -174,7 +174,8 @@ const SalesPage = () => {
         company_id: companyId,
         client_id: clientId || null,
         employee_id: user.id,
-        total: cartTotal,
+        total: finalTotal,
+        discount: discountAmount || null,
         payment_method: paymentMethod as any,
       }).select().single();
       if (saleError) throw saleError;
