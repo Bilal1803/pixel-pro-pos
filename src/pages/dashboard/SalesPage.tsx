@@ -35,6 +35,8 @@ const SalesPage = () => {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [serviceName, setServiceName] = useState("");
   const [servicePrice, setServicePrice] = useState("");
+  const [discountType, setDiscountType] = useState<"percent" | "fixed">("percent");
+  const [discountValue, setDiscountValue] = useState("");
 
   const { data: sales = [], isLoading } = useQuery({
     queryKey: ["sales", companyId],
@@ -148,6 +150,8 @@ const SalesPage = () => {
   const removeFromCart = (id: string) => setCart(prev => prev.filter(i => i.id !== id));
 
   const cartTotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const discountAmount = discountValue ? (discountType === "percent" ? Math.round(cartTotal * parseFloat(discountValue) / 100) : parseFloat(discountValue)) : 0;
+  const finalTotal = Math.max(0, cartTotal - discountAmount);
 
   const resetForm = () => {
     setCart([]);
@@ -157,6 +161,8 @@ const SalesPage = () => {
     setProductSearch("");
     setServiceName("");
     setServicePrice("");
+    setDiscountType("percent");
+    setDiscountValue("");
   };
 
   const createSale = useMutation({
@@ -168,7 +174,8 @@ const SalesPage = () => {
         company_id: companyId,
         client_id: clientId || null,
         employee_id: user.id,
-        total: cartTotal,
+        total: finalTotal,
+        discount: discountAmount || null,
         payment_method: paymentMethod as any,
       }).select().single();
       if (saleError) throw saleError;
@@ -329,9 +336,40 @@ const SalesPage = () => {
                       </div>
                     ))}
                     <div className="flex items-center justify-between px-3 py-2 bg-muted/30">
-                      <span className="font-semibold text-sm">Итого</span>
-                      <span className="font-bold">{cartTotal} ₽</span>
+                      <span className="text-sm">Подытог</span>
+                      <span className="text-sm">{cartTotal} ₽</span>
                     </div>
+                    {discountAmount > 0 && (
+                      <div className="flex items-center justify-between px-3 py-1.5 text-sm text-destructive">
+                        <span>Скидка {discountType === "percent" ? `${discountValue}%` : ""}</span>
+                        <span>−{discountAmount} ₽</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between px-3 py-2 bg-muted/50">
+                      <span className="font-semibold text-sm">Итого</span>
+                      <span className="font-bold">{finalTotal} ₽</span>
+                    </div>
+                  </div>
+
+                  {/* Discount */}
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <Label className="text-xs">Скидка</Label>
+                      <Input
+                        type="number"
+                        placeholder={discountType === "percent" ? "%" : "₽"}
+                        value={discountValue}
+                        onChange={(e) => setDiscountValue(e.target.value)}
+                        min="0"
+                      />
+                    </div>
+                    <Select value={discountType} onValueChange={(v) => { setDiscountType(v as any); setDiscountValue(""); }}>
+                      <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="percent">Процент %</SelectItem>
+                        <SelectItem value="fixed">Сумма ₽</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               )}
@@ -366,7 +404,7 @@ const SalesPage = () => {
             </div>
 
             <Button onClick={() => createSale.mutate()} className="w-full mt-4" disabled={createSale.isPending || cart.length === 0}>
-              {createSale.isPending ? "Оформление..." : `Оформить продажу — ${cartTotal} ₽`}
+              {createSale.isPending ? "Оформление..." : `Оформить продажу — ${finalTotal} ₽`}
             </Button>
           </DialogContent>
         </Dialog>
