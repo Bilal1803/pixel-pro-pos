@@ -144,7 +144,7 @@ const PriceTagsPage = () => {
     const fmt = (n: number) => n.toLocaleString("ru");
 
     return (
-      <div className={`border border-foreground/40 ${sizeConf.cardClass} ${forPrint ? "" : "bg-card"}`}>
+      <div className={`border border-foreground/40 ${sizeConf.cardClass} ${forPrint ? "" : "bg-card"} font-bold`}>
         {/* Store name */}
         {settings.storeName && (
           <div className="text-center border-b border-foreground/20 pb-1 mb-0.5">

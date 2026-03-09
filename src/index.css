@@ -86,8 +86,11 @@
 @media print {
   /* Hide sidebar, header, and all non-print elements */
   body {
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
+    background: white !important;
+    color: black !important;
+  }
+  @page {
+    margin: 5mm;
   }
   nav, aside, header, .print\\:hidden, [data-sidebar] {
     display: none !important;
