@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
 
     // If initData is provided, validate it cryptographically
     if (initData && botToken) {
-      const validated = validateInitData(initData, botToken);
+      const validated = await validateInitData(initData, botToken);
       if (!validated) {
         return new Response(JSON.stringify({ error: "Невалидные данные Telegram" }), {
           status: 401,
