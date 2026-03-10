@@ -282,7 +282,7 @@ const SupportPage = () => {
                   Новый
                 </Button>
                 {conversations.length > 0 && (
-                  <ScrollArea className="flex-1" orientation="horizontal">
+                  <div className="flex-1 overflow-x-auto">
                     <div className="flex gap-1">
                       {conversations.slice(0, 5).map((conv) => (
                         <Button
