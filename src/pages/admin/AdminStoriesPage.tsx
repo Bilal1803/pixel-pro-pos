@@ -18,6 +18,7 @@ interface Story {
   image_url: string;
   action_url: string | null;
   action_label: string | null;
+  text_color: string | null;
   is_active: boolean;
   created_at: string;
   expires_at: string | null;
