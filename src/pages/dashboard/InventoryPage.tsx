@@ -7,6 +7,7 @@ import { Plus, Search, Upload, FileSpreadsheet, X, Pencil } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import ComboboxInput from "@/components/ComboboxInput";
+import { ALL_CATALOG_MODELS, ALL_CATALOG_MEMORIES, ALL_CATALOG_COLORS, PRESET_BRANDS, getModelData } from "@/data/deviceCatalog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -109,10 +110,29 @@ const InventoryPage = () => {
     return counts;
   }, [devices]);
 
-  const uniqueModels = useMemo(() => [...new Set(devices.map(d => d.model).filter(Boolean))].sort(), [devices]);
-  const uniqueBrands = useMemo(() => [...new Set(devices.map(d => d.brand).filter(Boolean) as string[])].sort(), [devices]);
-  const uniqueMemory = useMemo(() => [...new Set(devices.map(d => d.memory).filter(Boolean) as string[])].sort(), [devices]);
-  const uniqueColors = useMemo(() => [...new Set(devices.map(d => d.color).filter(Boolean) as string[])].sort(), [devices]);
+  const modelOptions = useMemo(() => {
+    const fromDb = devices.map(d => d.model).filter(Boolean);
+    return [...new Set([...ALL_CATALOG_MODELS, ...fromDb])];
+  }, [devices]);
+
+  const brandOptions = useMemo(() => {
+    const fromDb = devices.map(d => d.brand).filter(Boolean) as string[];
+    return [...new Set([...PRESET_BRANDS, ...fromDb])];
+  }, [devices]);
+
+  const getMemoryOptions = (model: string) => {
+    const catalogData = getModelData(model);
+    const fromDb = [...new Set(devices.filter(d => d.memory).map(d => d.memory!) )];
+    if (catalogData) return [...new Set([...catalogData.memories, ...fromDb])];
+    return [...new Set([...ALL_CATALOG_MEMORIES, ...fromDb])];
+  };
+
+  const getColorOptions = (model: string) => {
+    const catalogData = getModelData(model);
+    const fromDb = [...new Set(devices.filter(d => d.color).map(d => d.color!))];
+    if (catalogData) return [...new Set([...catalogData.colors, ...fromDb])];
+    return [...new Set([...ALL_CATALOG_COLORS, ...fromDb])];
+  };
 
   const addDevice = useMutation({
     mutationFn: async () => {
@@ -478,10 +498,10 @@ const InventoryPage = () => {
               <DialogHeader><DialogTitle>Новое устройство</DialogTitle></DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); addDevice.mutate(); }} className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Модель *</Label><ComboboxInput value={form.model} onChange={(v) => setForm({ ...form, model: v })} options={uniqueModels} required /></div>
-                  <div><Label>Бренд</Label><ComboboxInput value={form.brand} onChange={(v) => setForm({ ...form, brand: v })} options={uniqueBrands} /></div>
-                  <div><Label>Память</Label><ComboboxInput value={form.memory} onChange={(v) => setForm({ ...form, memory: v })} options={uniqueMemory} placeholder="128GB" /></div>
-                  <div><Label>Цвет</Label><ComboboxInput value={form.color} onChange={(v) => setForm({ ...form, color: v })} options={uniqueColors} /></div>
+                  <div><Label>Модель *</Label><ComboboxInput value={form.model} onChange={(v) => setForm({ ...form, model: v })} options={modelOptions} required /></div>
+                  <div><Label>Бренд</Label><ComboboxInput value={form.brand} onChange={(v) => setForm({ ...form, brand: v })} options={brandOptions} /></div>
+                  <div><Label>Память</Label><ComboboxInput value={form.memory} onChange={(v) => setForm({ ...form, memory: v })} options={getMemoryOptions(form.model)} placeholder="128GB" /></div>
+                  <div><Label>Цвет</Label><ComboboxInput value={form.color} onChange={(v) => setForm({ ...form, color: v })} options={getColorOptions(form.model)} /></div>
                   <div><Label>IMEI *</Label><Input value={form.imei} onChange={(e) => setForm({ ...form, imei: e.target.value })} required /></div>
                   <div><Label>АКБ</Label><Input placeholder="94%" value={form.battery_health} onChange={(e) => setForm({ ...form, battery_health: e.target.value })} /></div>
                   <div><Label>Цена закупки</Label><Input type="number" value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} /></div>
@@ -595,10 +615,10 @@ const InventoryPage = () => {
           <DialogHeader><DialogTitle>Редактировать устройство</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); updateDevice.mutate(); }} className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Модель *</Label><ComboboxInput value={editForm.model} onChange={(v) => setEditForm({ ...editForm, model: v })} options={uniqueModels} required /></div>
-              <div><Label>Бренд</Label><ComboboxInput value={editForm.brand} onChange={(v) => setEditForm({ ...editForm, brand: v })} options={uniqueBrands} /></div>
-              <div><Label>Память</Label><ComboboxInput value={editForm.memory} onChange={(v) => setEditForm({ ...editForm, memory: v })} options={uniqueMemory} placeholder="128GB" /></div>
-              <div><Label>Цвет</Label><ComboboxInput value={editForm.color} onChange={(v) => setEditForm({ ...editForm, color: v })} options={uniqueColors} /></div>
+              <div><Label>Модель *</Label><ComboboxInput value={editForm.model} onChange={(v) => setEditForm({ ...editForm, model: v })} options={modelOptions} required /></div>
+              <div><Label>Бренд</Label><ComboboxInput value={editForm.brand} onChange={(v) => setEditForm({ ...editForm, brand: v })} options={brandOptions} /></div>
+              <div><Label>Память</Label><ComboboxInput value={editForm.memory} onChange={(v) => setEditForm({ ...editForm, memory: v })} options={getMemoryOptions(editForm.model)} placeholder="128GB" /></div>
+              <div><Label>Цвет</Label><ComboboxInput value={editForm.color} onChange={(v) => setEditForm({ ...editForm, color: v })} options={getColorOptions(editForm.model)} /></div>
               <div><Label>IMEI *</Label><Input value={editForm.imei} onChange={(e) => setEditForm({ ...editForm, imei: e.target.value })} required /></div>
               <div><Label>АКБ</Label><Input placeholder="94%" value={editForm.battery_health} onChange={(e) => setEditForm({ ...editForm, battery_health: e.target.value })} /></div>
               <div><Label>Цена закупки</Label><Input type="number" value={editForm.purchase_price} onChange={(e) => setEditForm({ ...editForm, purchase_price: e.target.value })} /></div>
