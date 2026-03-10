@@ -538,6 +538,7 @@ export type Database = {
         Row: {
           avg_price: number | null
           company_id: string
+          hidden: boolean
           id: string
           margin_new: number | null
           margin_used: number | null
@@ -549,6 +550,7 @@ export type Database = {
         Insert: {
           avg_price?: number | null
           company_id: string
+          hidden?: boolean
           id?: string
           margin_new?: number | null
           margin_used?: number | null
@@ -560,6 +562,7 @@ export type Database = {
         Update: {
           avg_price?: number | null
           company_id?: string
+          hidden?: boolean
           id?: string
           margin_new?: number | null
           margin_used?: number | null
