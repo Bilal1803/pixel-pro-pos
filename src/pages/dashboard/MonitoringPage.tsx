@@ -37,7 +37,7 @@ const MonitoringPage = () => {
   const [newMemory, setNewMemory] = useState("");
 
   // Delete confirmation
-  const [deleteTarget, setDeleteTarget] = useState<{ key: string; id?: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ key: string; id?: string; isCustom?: boolean } | null>(null);
 
   // Import state
   type ImportRow = { model: string; memory: string; our_price?: number };
@@ -68,6 +68,15 @@ const MonitoringPage = () => {
     return map;
   }, [monitoring]);
 
+  // Set of hidden model keys
+  const hiddenKeys = useMemo(() => {
+    const s = new Set<string>();
+    for (const m of monitoring) {
+      if ((m as any).hidden) s.add(m.model);
+    }
+    return s;
+  }, [monitoring]);
+
   // Build catalog keys set for detecting custom models
   const catalogKeySet = useMemo(() => {
     const s = new Set<string>();
@@ -77,10 +86,9 @@ const MonitoringPage = () => {
 
   // Merge catalog rows + custom rows from DB
   const allRows = useMemo(() => {
-    const rows: CatalogRow[] = [...catalogRows];
+    const rows: CatalogRow[] = catalogRows.filter(r => !hiddenKeys.has(`${r.model} ${r.memory}`));
     for (const m of monitoring) {
-      if (!catalogKeySet.has(m.model)) {
-        // Parse "Model Memory" format
+      if (!catalogKeySet.has(m.model) && !(m as any).hidden) {
         const parts = m.model.split(" ");
         const memory = parts.pop() || "";
         const model = parts.join(" ") || m.model;
@@ -88,7 +96,7 @@ const MonitoringPage = () => {
       }
     }
     return rows;
-  }, [monitoring, catalogKeySet]);
+  }, [monitoring, catalogKeySet, hiddenKeys]);
 
   const filteredRows = useMemo(() => {
     if (!search.trim()) return allRows;
@@ -190,9 +198,28 @@ const MonitoringPage = () => {
 
   // Delete model entry
   const deleteEntry = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("price_monitoring").delete().eq("id", id);
-      if (error) throw error;
+    mutationFn: async ({ id, key, isCustom }: { id?: string; key: string; isCustom?: boolean }) => {
+      if (isCustom && id) {
+        // Custom model — delete entirely
+        const { error } = await supabase.from("price_monitoring").delete().eq("id", id);
+        if (error) throw error;
+      } else if (id) {
+        // Catalog model with existing entry — mark hidden
+        const { error } = await supabase.from("price_monitoring").update({ hidden: true } as any).eq("id", id);
+        if (error) throw error;
+      } else {
+        // Catalog model without entry — create hidden entry
+        if (!companyId) throw new Error("No company");
+        const { error } = await supabase.from("price_monitoring").insert({
+          company_id: companyId,
+          model: key,
+          prices: [],
+          avg_price: null,
+          our_price: null,
+          hidden: true,
+        } as any);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["price-monitoring"] });
@@ -418,17 +445,15 @@ const MonitoringPage = () => {
                             ) : (
                               <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />
                             )}
-                            {entry && (
-                              <button
-                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDeleteTarget({ key, id: entry.id });
-                                }}
-                              >
-                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                              </button>
-                            )}
+                            <button
+                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteTarget({ key, id: entry?.id, isCustom: row.isCustom });
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -562,7 +587,7 @@ const MonitoringPage = () => {
             <AlertDialogCancel>Отмена</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => deleteTarget?.id && deleteEntry.mutate(deleteTarget.id)}
+              onClick={() => deleteTarget && deleteEntry.mutate({ id: deleteTarget.id, key: deleteTarget.key, isCustom: deleteTarget.isCustom })}
             >
               Удалить
             </AlertDialogAction>

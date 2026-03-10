@@ -1,0 +1,1 @@
+ALTER TABLE public.price_monitoring ADD COLUMN hidden boolean NOT NULL DEFAULT false;

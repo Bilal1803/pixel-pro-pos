@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Search, Settings2, Plus, Trash2, Pencil, X } from "lucide-react";
+import { Search, Settings2, Plus, Trash2, Pencil } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,7 +19,7 @@ import { ALL_CATALOG_MODELS, ALL_CATALOG_MEMORIES, ALL_CATALOG_COLORS, PRESET_BR
 
 type CatalogRow = { model: string; memory: string };
 
-const allRows: CatalogRow[] = IPHONE_CATALOG.flatMap((m) =>
+const catalogRows: CatalogRow[] = IPHONE_CATALOG.flatMap((m) =>
   m.memories.map((mem) => ({ model: m.name, memory: mem }))
 );
 
@@ -87,7 +87,7 @@ const BuybackPage = () => {
       if (!companyId) return [];
       const { data, error } = await supabase
         .from("price_monitoring")
-        .select("model, avg_price, our_price, margin_used, margin_new, id")
+        .select("model, avg_price, our_price, margin_used, margin_new, id, hidden")
         .eq("company_id", companyId);
       if (error) throw error;
       return data;
@@ -100,6 +100,18 @@ const BuybackPage = () => {
     for (const m of monitoring) map[m.model] = m;
     return map;
   }, [monitoring]);
+
+  const hiddenKeys = useMemo(() => {
+    const s = new Set<string>();
+    for (const m of monitoring) {
+      if ((m as any).hidden) s.add(m.model);
+    }
+    return s;
+  }, [monitoring]);
+
+  const allRows = useMemo(() => {
+    return catalogRows.filter(r => !hiddenKeys.has(`${r.model} ${r.memory}`));
+  }, [hiddenKeys]);
 
   // Load buyback history
   const { data: buybacks = [], isLoading: historyLoading } = useQuery({
