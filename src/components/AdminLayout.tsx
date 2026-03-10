@@ -1,13 +1,21 @@
 import { Navigate, Outlet, NavLink, useLocation } from "react-router-dom";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { useAuth } from "@/contexts/AuthContext";
-import { Shield, Image, Building2, Users, CreditCard, ArrowLeft } from "lucide-react";
+import {
+  Shield, Image, Building2, Users, CreditCard, ArrowLeft,
+  LayoutDashboard, DollarSign, HeadphonesIcon, BarChart3, Settings2,
+} from "lucide-react";
 
 const navItems = [
-  { to: "/admin/stories", label: "Stories", icon: Image },
+  { to: "/admin", label: "Дашборд", icon: LayoutDashboard, exact: true },
   { to: "/admin/companies", label: "Компании", icon: Building2 },
   { to: "/admin/users", label: "Пользователи", icon: Users },
   { to: "/admin/subscriptions", label: "Подписки", icon: CreditCard },
+  { to: "/admin/finances", label: "Финансы", icon: DollarSign },
+  { to: "/admin/stories", label: "Stories", icon: Image },
+  { to: "/admin/support", label: "Поддержка", icon: HeadphonesIcon },
+  { to: "/admin/analytics", label: "Аналитика", icon: BarChart3 },
+  { to: "/admin/system", label: "Система", icon: Settings2 },
 ];
 
 const AdminLayout = () => {
@@ -29,7 +37,7 @@ const AdminLayout = () => {
 
   return (
     <div className="flex min-h-screen">
-      <aside className="flex h-screen w-64 flex-col border-r bg-card">
+      <aside className="flex h-screen w-64 flex-col border-r bg-card sticky top-0">
         <div className="flex h-16 items-center gap-2 border-b px-6">
           <Shield className="h-6 w-6 text-destructive" />
           <span className="text-lg font-bold">Админ-панель</span>
@@ -37,11 +45,14 @@ const AdminLayout = () => {
         <nav className="flex-1 overflow-y-auto p-3">
           <ul className="space-y-1">
             {navItems.map((item) => {
-              const isActive = location.pathname.startsWith(item.to);
+              const isActive = item.exact
+                ? location.pathname === item.to
+                : location.pathname.startsWith(item.to) && item.to !== "/admin";
               return (
                 <li key={item.to}>
                   <NavLink
                     to={item.to}
+                    end={item.exact}
                     className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                       isActive
                         ? "bg-destructive/10 text-destructive"
