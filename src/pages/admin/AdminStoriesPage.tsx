@@ -74,8 +74,9 @@ const AdminStoriesPage = () => {
         image_url: imageUrl,
         action_url: form.action_url || null,
         action_label: form.action_url ? (form.action_label || "Перейти") : null,
+        text_color: form.text_color || "#ffffff",
         is_active: form.is_active,
-      };
+      } as any;
 
       if (editId) {
         const { error } = await supabase.from("stories").update(payload).eq("id", editId);
