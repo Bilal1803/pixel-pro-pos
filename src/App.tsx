@@ -44,7 +44,11 @@ import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
 import AdminSystemPage from "./pages/admin/AdminSystemPage";
 import TmaLayout from "./components/TmaLayout";
 import TmaHomePage from "./pages/tma/TmaHomePage";
-import { TmaSalesPage, TmaInventoryPage, TmaCashPage, TmaShiftPage } from "./pages/tma/TmaPages";
+import TmaSalesPage from "./pages/tma/TmaSalesPage";
+import TmaInventoryPage from "./pages/tma/TmaInventoryPage";
+import TmaCashPage from "./pages/tma/TmaCashPage";
+import TmaShiftPage from "./pages/tma/TmaShiftPage";
+import TmaMorePage from "./pages/tma/TmaMorePage";
 import InvitePage from "./pages/InvitePage";
 import NotFound from "./pages/NotFound";
 
@@ -93,6 +97,7 @@ const App = () => (
               <Route path="inventory" element={<TmaInventoryPage />} />
               <Route path="cash" element={<TmaCashPage />} />
               <Route path="shift" element={<TmaShiftPage />} />
+              <Route path="more" element={<TmaMorePage />} />
             </Route>
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboardPage />} />
