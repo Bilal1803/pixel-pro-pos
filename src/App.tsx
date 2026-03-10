@@ -27,10 +27,15 @@ import SettingsPage from "./pages/dashboard/SettingsPage";
 import SupportPage from "./pages/dashboard/SupportPage";
 import PricingPage from "./pages/dashboard/PricingPage";
 import AdminLayout from "./components/AdminLayout";
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminStoriesPage from "./pages/admin/AdminStoriesPage";
 import AdminCompaniesPage from "./pages/admin/AdminCompaniesPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminSubscriptionsPage from "./pages/admin/AdminSubscriptionsPage";
+import AdminFinancesPage from "./pages/admin/AdminFinancesPage";
+import AdminSupportPage from "./pages/admin/AdminSupportPage";
+import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
+import AdminSystemPage from "./pages/admin/AdminSystemPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,11 +71,15 @@ const App = () => (
               <Route path="support" element={<SupportPage />} />
             </Route>
             <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminStoriesPage />} />
-              <Route path="stories" element={<AdminStoriesPage />} />
+              <Route index element={<AdminDashboardPage />} />
               <Route path="companies" element={<AdminCompaniesPage />} />
               <Route path="users" element={<AdminUsersPage />} />
               <Route path="subscriptions" element={<AdminSubscriptionsPage />} />
+              <Route path="finances" element={<AdminFinancesPage />} />
+              <Route path="stories" element={<AdminStoriesPage />} />
+              <Route path="support" element={<AdminSupportPage />} />
+              <Route path="analytics" element={<AdminAnalyticsPage />} />
+              <Route path="system" element={<AdminSystemPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
