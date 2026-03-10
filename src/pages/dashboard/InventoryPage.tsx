@@ -86,9 +86,9 @@ const InventoryPage = () => {
   const [importOpen, setImportOpen] = useState(false);
   const [parsedRows, setParsedRows] = useState<ParsedDevice[]>([]);
   const [fileName, setFileName] = useState("");
-  const [form, setForm] = useState({ model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing" as string, notes: "" });
+  const [form, setForm] = useState({ model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing" as string, notes: "", sim_type: "" });
   const [editOpen, setEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState({ id: "", model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing" as string, notes: "" });
+  const [editForm, setEditForm] = useState({ id: "", model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing" as string, notes: "", sim_type: "" });
 
   const { data: devices = [], isLoading } = useQuery({
     queryKey: ["devices", companyId],
@@ -149,6 +149,7 @@ const InventoryPage = () => {
         sale_price: form.sale_price ? parseFloat(form.sale_price) : null,
         status: form.status as any,
         notes: form.notes || null,
+        sim_type: form.sim_type || null,
       });
       if (error) throw error;
     },
@@ -156,7 +157,7 @@ const InventoryPage = () => {
       queryClient.invalidateQueries({ queryKey: ["devices"] });
       toast({ title: "Устройство добавлено" });
       setOpen(false);
-      setForm({ model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing", notes: "" });
+      setForm({ model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing", notes: "", sim_type: "" });
     },
     onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
@@ -174,6 +175,7 @@ const InventoryPage = () => {
         sale_price: editForm.sale_price ? parseFloat(editForm.sale_price) : null,
         status: editForm.status as any,
         notes: editForm.notes || null,
+        sim_type: editForm.sim_type || null,
       }).eq("id", editForm.id);
       if (error) throw error;
     },
@@ -231,6 +233,7 @@ const InventoryPage = () => {
       sale_price: device.sale_price?.toString() || "",
       status: device.status || "testing",
       notes: device.notes || "",
+      sim_type: device.sim_type || "",
     });
     setEditOpen(true);
   };
@@ -529,6 +532,17 @@ const InventoryPage = () => {
                   <div><Label>Цвет</Label><ComboboxInput value={form.color} onChange={(v) => setForm({ ...form, color: v })} options={getColorOptions(form.model)} /></div>
                   <div><Label>IMEI *</Label><Input value={form.imei} onChange={(e) => setForm({ ...form, imei: e.target.value })} required /></div>
                   <div><Label>АКБ</Label><Input placeholder="94%" value={form.battery_health} onChange={(e) => setForm({ ...form, battery_health: e.target.value })} /></div>
+                  <div>
+                    <Label>SIM</Label>
+                    <Select value={form.sim_type} onValueChange={(v) => setForm({ ...form, sim_type: v })}>
+                      <SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sim+esim">SIM + eSIM</SelectItem>
+                        <SelectItem value="2sim">2 SIM</SelectItem>
+                        <SelectItem value="esim">eSIM</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div><Label>Цена закупки</Label><Input type="number" value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} /></div>
                   <div><Label>Цена продажи</Label><Input type="number" value={form.sale_price} onChange={(e) => setForm({ ...form, sale_price: e.target.value })} /></div>
                 </div>
@@ -589,6 +603,7 @@ const InventoryPage = () => {
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Память</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Цвет</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">IMEI</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">SIM</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">АКБ</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Закупка</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Продажа</th>
@@ -603,6 +618,7 @@ const InventoryPage = () => {
                     <td className="px-4 py-3">{d.memory || "—"}</td>
                     <td className="px-4 py-3">{d.color || "—"}</td>
                     <td className="px-4 py-3 font-mono text-xs">{d.imei}</td>
+                    <td className="px-4 py-3 text-xs">{d.sim_type || "—"}</td>
                     <td className="px-4 py-3">{d.battery_health || "—"}</td>
                     <td className="px-4 py-3">{d.purchase_price ? `${d.purchase_price} ₽` : "—"}</td>
                     <td className="px-4 py-3">{d.sale_price ? `${d.sale_price} ₽` : "—"}</td>
@@ -646,6 +662,17 @@ const InventoryPage = () => {
               <div><Label>Цвет</Label><ComboboxInput value={editForm.color} onChange={(v) => setEditForm({ ...editForm, color: v })} options={getColorOptions(editForm.model)} /></div>
               <div><Label>IMEI *</Label><Input value={editForm.imei} onChange={(e) => setEditForm({ ...editForm, imei: e.target.value })} required /></div>
               <div><Label>АКБ</Label><Input placeholder="94%" value={editForm.battery_health} onChange={(e) => setEditForm({ ...editForm, battery_health: e.target.value })} /></div>
+              <div>
+                <Label>SIM</Label>
+                <Select value={editForm.sim_type} onValueChange={(v) => setEditForm({ ...editForm, sim_type: v })}>
+                  <SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sim+esim">SIM + eSIM</SelectItem>
+                    <SelectItem value="2sim">2 SIM</SelectItem>
+                    <SelectItem value="esim">eSIM</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div><Label>Цена закупки</Label><Input type="number" value={editForm.purchase_price} onChange={(e) => setEditForm({ ...editForm, purchase_price: e.target.value })} /></div>
               <div><Label>Цена продажи</Label><Input type="number" value={editForm.sale_price} onChange={(e) => setEditForm({ ...editForm, sale_price: e.target.value })} /></div>
             </div>

@@ -1,0 +1,1 @@
+ALTER TABLE public.devices ADD COLUMN sim_type text;
