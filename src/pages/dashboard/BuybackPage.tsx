@@ -112,7 +112,6 @@ const BuybackPage = () => {
   const allRows = useMemo(() => {
     return catalogRows.filter(r => !hiddenKeys.has(`${r.model} ${r.memory}`));
   }, [hiddenKeys]);
-  }, [monitoring]);
 
   // Load buyback history
   const { data: buybacks = [], isLoading: historyLoading } = useQuery({
