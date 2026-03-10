@@ -40,6 +40,8 @@ const plans = [
       { text: "До 30 устройств на складе", included: true },
       { text: "POS-система и CRM", included: true },
       { text: "Базовая аналитика", included: true },
+      { text: "Мониторинг цен", included: false },
+      { text: "Объявления Авито", included: false },
       { text: "Модуль ремонта", included: false },
       { text: "AI ассистент", included: false },
       { text: "Telegram-уведомления", included: false },
