@@ -112,10 +112,21 @@ const TmaShiftPage = () => {
       if (error) throw error;
     },
     onSuccess: () => {
+      const finalDiff = (Number(cashEnd) || 0) - systemCash;
+      const diffText = finalDiff === 0 ? "✅ Без расхождений" : `⚠️ Разница: ${finalDiff > 0 ? "+" : ""}${finalDiff.toLocaleString("ru")} ₽`;
+
       setCashEnd("");
       setCloseOpen(false);
       queryClient.invalidateQueries({ queryKey: ["tma-active-shift"] });
       toast({ title: "Смена закрыта" });
+
+      if (companyId) {
+        sendTelegramNotification(
+          companyId,
+          "shift_close",
+          `⏹ <b>Смена закрыта</b>\n\n📊 Продаж: <b>${shiftSales.length}</b>\n💰 Выручка: <b>${shiftRevenue.toLocaleString("ru")} ₽</b>\n💵 Наличные: ${cashSales.toLocaleString("ru")} ₽\n💳 Карта: ${cardSales.toLocaleString("ru")} ₽\n🏦 Касса по системе: ${systemCash.toLocaleString("ru")} ₽\n💰 Факт: ${(Number(cashEnd) || 0).toLocaleString("ru")} ₽\n${diffText}`
+        );
+      }
     },
     onError: (e: any) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
