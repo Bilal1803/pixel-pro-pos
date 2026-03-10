@@ -85,7 +85,7 @@ const StoriesCarousel = () => {
               >
                 <div className="w-full h-full rounded-[14px] overflow-hidden bg-card">
                   <img
-                    src={story.image_url}
+                    src={story.thumbnail_url || story.image_url}
                     alt={story.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                   />
