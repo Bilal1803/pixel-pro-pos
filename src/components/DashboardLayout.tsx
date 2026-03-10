@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import OnboardingTour from "@/components/OnboardingTour";
 import NotificationBell from "@/components/NotificationBell";
-import AIAssistant from "@/components/AIAssistant";
+import TrialPaywall from "@/components/TrialPaywall";
 import TrialPaywall from "@/components/TrialPaywall";
 import { useSubscription } from "@/hooks/useSubscription";
 
