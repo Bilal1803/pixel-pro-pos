@@ -32,9 +32,9 @@ const DashboardLayout = () => {
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       <DashboardSidebar />
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 min-w-0 overflow-y-auto">
         <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b bg-background/95 backdrop-blur px-6">
           <h2 className="text-lg font-semibold text-foreground">Панель управления</h2>
           <NotificationBell />
