@@ -160,7 +160,7 @@ const TmaSalesPage = () => {
         }).eq("id", item.product_id!);
       }
 
-      return sale;
+      return { sale, cartItems: cart, totalAmount: total, paymentLabel: paymentMethods.find(p => p.value === payment)?.label || payment };
     },
     onSuccess: () => {
       setCart([]);
