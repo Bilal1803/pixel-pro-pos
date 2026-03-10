@@ -31,6 +31,7 @@ const DashboardSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const { isAdmin } = usePlatformAdmin();
 
   const handleLogout = async () => {
     await signOut();
