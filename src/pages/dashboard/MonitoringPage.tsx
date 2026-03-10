@@ -86,10 +86,9 @@ const MonitoringPage = () => {
 
   // Merge catalog rows + custom rows from DB
   const allRows = useMemo(() => {
-    const rows: CatalogRow[] = [...catalogRows];
+    const rows: CatalogRow[] = catalogRows.filter(r => !hiddenKeys.has(`${r.model} ${r.memory}`));
     for (const m of monitoring) {
-      if (!catalogKeySet.has(m.model)) {
-        // Parse "Model Memory" format
+      if (!catalogKeySet.has(m.model) && !(m as any).hidden) {
         const parts = m.model.split(" ");
         const memory = parts.pop() || "";
         const model = parts.join(" ") || m.model;
@@ -97,7 +96,7 @@ const MonitoringPage = () => {
       }
     }
     return rows;
-  }, [monitoring, catalogKeySet]);
+  }, [monitoring, catalogKeySet, hiddenKeys]);
 
   const filteredRows = useMemo(() => {
     if (!search.trim()) return allRows;
