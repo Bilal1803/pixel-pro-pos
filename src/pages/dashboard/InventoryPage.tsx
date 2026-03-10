@@ -101,7 +101,42 @@ const InventoryPage = () => {
     enabled: !!companyId,
   });
 
-  // Count by status
+  const { data: priceMonitoring = [] } = useQuery({
+    queryKey: ["price_monitoring", companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data, error } = await supabase.from("price_monitoring").select("model, avg_price, our_price").eq("company_id", companyId);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!companyId,
+  });
+
+  const getRecommendedPrice = (model: string) => {
+    const entry = priceMonitoring.find(p => p.model === model);
+    if (!entry) return null;
+    return entry.our_price || (entry.avg_price ? Math.round(entry.avg_price * 0.95) : null);
+  };
+
+  const handleModelChange = (model: string) => {
+    const recommended = getRecommendedPrice(model);
+    setForm(prev => ({
+      ...prev,
+      model,
+      sale_price: recommended ? String(recommended) : prev.sale_price,
+    }));
+  };
+
+  const handleEditModelChange = (model: string) => {
+    const recommended = getRecommendedPrice(model);
+    setEditForm(prev => ({
+      ...prev,
+      model,
+      sale_price: recommended ? String(recommended) : prev.sale_price,
+    }));
+  };
+
+
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = { all: devices.length };
     for (const d of devices) {
