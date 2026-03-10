@@ -204,6 +204,7 @@ export type Database = {
           address: string | null
           created_at: string
           id: string
+          is_blocked: boolean
           name: string
           phone: string | null
           updated_at: string
@@ -212,6 +213,7 @@ export type Database = {
           address?: string | null
           created_at?: string
           id?: string
+          is_blocked?: boolean
           name: string
           phone?: string | null
           updated_at?: string
@@ -220,6 +222,7 @@ export type Database = {
           address?: string | null
           created_at?: string
           id?: string
+          is_blocked?: boolean
           name?: string
           phone?: string | null
           updated_at?: string
@@ -1024,6 +1027,53 @@ export type Database = {
             foreignKeyName: "subscriptions_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          admin_reply: string | null
+          company_id: string
+          created_at: string
+          id: string
+          message: string
+          replied_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_reply?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          message: string
+          replied_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_reply?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          replied_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
