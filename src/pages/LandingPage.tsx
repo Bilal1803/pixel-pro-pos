@@ -51,6 +51,7 @@ const plans = [
     price: "2 990",
     priceSuffix: " ₽/мес",
     desc: "Для растущего бизнеса",
+    trial: "3 дня бесплатно",
     popular: true,
     features: [
       { text: "До 3 магазинов", included: true },
