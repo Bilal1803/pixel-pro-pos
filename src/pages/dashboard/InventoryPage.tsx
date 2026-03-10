@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Plus, Search, Upload, FileSpreadsheet, X, Pencil } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import ComboboxInput from "@/components/ComboboxInput";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -107,6 +108,11 @@ const InventoryPage = () => {
     }
     return counts;
   }, [devices]);
+
+  const uniqueModels = useMemo(() => [...new Set(devices.map(d => d.model).filter(Boolean))].sort(), [devices]);
+  const uniqueBrands = useMemo(() => [...new Set(devices.map(d => d.brand).filter(Boolean) as string[])].sort(), [devices]);
+  const uniqueMemory = useMemo(() => [...new Set(devices.map(d => d.memory).filter(Boolean) as string[])].sort(), [devices]);
+  const uniqueColors = useMemo(() => [...new Set(devices.map(d => d.color).filter(Boolean) as string[])].sort(), [devices]);
 
   const addDevice = useMutation({
     mutationFn: async () => {
@@ -472,10 +478,10 @@ const InventoryPage = () => {
               <DialogHeader><DialogTitle>Новое устройство</DialogTitle></DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); addDevice.mutate(); }} className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Модель *</Label><Input value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} required /></div>
-                  <div><Label>Бренд</Label><Input value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} /></div>
-                  <div><Label>Память</Label><Input placeholder="128GB" value={form.memory} onChange={(e) => setForm({ ...form, memory: e.target.value })} /></div>
-                  <div><Label>Цвет</Label><Input value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} /></div>
+                  <div><Label>Модель *</Label><ComboboxInput value={form.model} onChange={(v) => setForm({ ...form, model: v })} options={uniqueModels} required /></div>
+                  <div><Label>Бренд</Label><ComboboxInput value={form.brand} onChange={(v) => setForm({ ...form, brand: v })} options={uniqueBrands} /></div>
+                  <div><Label>Память</Label><ComboboxInput value={form.memory} onChange={(v) => setForm({ ...form, memory: v })} options={uniqueMemory} placeholder="128GB" /></div>
+                  <div><Label>Цвет</Label><ComboboxInput value={form.color} onChange={(v) => setForm({ ...form, color: v })} options={uniqueColors} /></div>
                   <div><Label>IMEI *</Label><Input value={form.imei} onChange={(e) => setForm({ ...form, imei: e.target.value })} required /></div>
                   <div><Label>АКБ</Label><Input placeholder="94%" value={form.battery_health} onChange={(e) => setForm({ ...form, battery_health: e.target.value })} /></div>
                   <div><Label>Цена закупки</Label><Input type="number" value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} /></div>
@@ -589,10 +595,10 @@ const InventoryPage = () => {
           <DialogHeader><DialogTitle>Редактировать устройство</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); updateDevice.mutate(); }} className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Модель *</Label><Input value={editForm.model} onChange={(e) => setEditForm({ ...editForm, model: e.target.value })} required /></div>
-              <div><Label>Бренд</Label><Input value={editForm.brand} onChange={(e) => setEditForm({ ...editForm, brand: e.target.value })} /></div>
-              <div><Label>Память</Label><Input placeholder="128GB" value={editForm.memory} onChange={(e) => setEditForm({ ...editForm, memory: e.target.value })} /></div>
-              <div><Label>Цвет</Label><Input value={editForm.color} onChange={(e) => setEditForm({ ...editForm, color: e.target.value })} /></div>
+              <div><Label>Модель *</Label><ComboboxInput value={editForm.model} onChange={(v) => setEditForm({ ...editForm, model: v })} options={uniqueModels} required /></div>
+              <div><Label>Бренд</Label><ComboboxInput value={editForm.brand} onChange={(v) => setEditForm({ ...editForm, brand: v })} options={uniqueBrands} /></div>
+              <div><Label>Память</Label><ComboboxInput value={editForm.memory} onChange={(v) => setEditForm({ ...editForm, memory: v })} options={uniqueMemory} placeholder="128GB" /></div>
+              <div><Label>Цвет</Label><ComboboxInput value={editForm.color} onChange={(v) => setEditForm({ ...editForm, color: v })} options={uniqueColors} /></div>
               <div><Label>IMEI *</Label><Input value={editForm.imei} onChange={(e) => setEditForm({ ...editForm, imei: e.target.value })} required /></div>
               <div><Label>АКБ</Label><Input placeholder="94%" value={editForm.battery_health} onChange={(e) => setEditForm({ ...editForm, battery_health: e.target.value })} /></div>
               <div><Label>Цена закупки</Label><Input type="number" value={editForm.purchase_price} onChange={(e) => setEditForm({ ...editForm, purchase_price: e.target.value })} /></div>
