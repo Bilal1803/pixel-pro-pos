@@ -565,6 +565,60 @@ const MonitoringPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Import preview dialog */}
+      <Dialog open={importOpen} onOpenChange={(o) => { if (!o) { setImportOpen(false); setImportRows([]); } }}>
+        <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5" />
+              Импорт из {importFileName}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Найдено {importRows.length} моделей. Проверьте данные перед импортом.
+          </p>
+          <div className="overflow-auto flex-1 border rounded-md">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50 sticky top-0">
+                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">#</th>
+                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">Модель</th>
+                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">Память</th>
+                  <th className="px-3 py-2 text-right font-medium text-muted-foreground">Цена</th>
+                  <th className="px-3 py-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {importRows.map((r, i) => (
+                  <tr key={i} className="border-b">
+                    <td className="px-3 py-1.5 text-muted-foreground">{i + 1}</td>
+                    <td className="px-3 py-1.5">{r.model}</td>
+                    <td className="px-3 py-1.5">{r.memory || "—"}</td>
+                    <td className="px-3 py-1.5 text-right font-mono">{r.our_price ? `${r.our_price.toLocaleString("ru")} ₽` : "—"}</td>
+                    <td className="px-3 py-1.5">
+                      <button
+                        className="p-0.5 rounded hover:bg-destructive/10"
+                        onClick={() => setImportRows((prev) => prev.filter((_, j) => j !== i))}
+                      >
+                        <X className="h-3.5 w-3.5 text-muted-foreground" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => { setImportOpen(false); setImportRows([]); }}>
+              Отмена
+            </Button>
+            <Button className="flex-1" disabled={importModels.isPending || !importRows.length} onClick={() => importModels.mutate()}>
+              {importModels.isPending ? "Импорт..." : `Импортировать (${importRows.length})`}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
