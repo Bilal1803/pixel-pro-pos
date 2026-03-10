@@ -11,6 +11,7 @@ interface Story {
   title: string;
   description: string | null;
   image_url: string;
+  thumbnail_url: string | null;
   action_url: string | null;
   action_label: string | null;
   text_color: string | null;
@@ -84,7 +85,7 @@ const StoriesCarousel = () => {
               >
                 <div className="w-full h-full rounded-[14px] overflow-hidden bg-card">
                   <img
-                    src={story.image_url}
+                    src={story.thumbnail_url || story.image_url}
                     alt={story.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                   />
