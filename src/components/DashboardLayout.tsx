@@ -44,7 +44,6 @@ const DashboardLayout = () => {
         </main>
       </div>
       <OnboardingTour />
-      <AIAssistant />
     </div>
   );
 };

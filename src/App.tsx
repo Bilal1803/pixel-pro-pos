@@ -70,6 +70,7 @@ const App = () => (
               <Route path="settings" element={<SettingsPage />} />
               <Route path="pricing" element={<PricingPage />} />
               <Route path="support" element={<SupportPage />} />
+              <Route path="ai" element={<PlanGate feature="ai"><AIPage /></PlanGate>} />
             </Route>
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboardPage />} />

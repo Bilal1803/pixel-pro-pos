@@ -23,6 +23,7 @@ const navItems = [
   { to: "/dashboard/employees", label: "Сотрудники", icon: UserCog },
   { to: "/dashboard/shifts", label: "Смены", icon: Clock },
   { to: "/dashboard/reports", label: "Отчёты", icon: FileBarChart },
+  { to: "/dashboard/ai", label: "AI Ассистент", icon: Sparkles, requiredPlan: ["business", "premier"] },
   { to: "/dashboard/settings", label: "Настройки", icon: Settings },
   { to: "/dashboard/pricing", label: "Тарифы", icon: CreditCard },
   { to: "/dashboard/support", label: "Поддержка", icon: HelpCircle },
