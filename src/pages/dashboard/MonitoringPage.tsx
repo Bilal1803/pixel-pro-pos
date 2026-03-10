@@ -68,6 +68,15 @@ const MonitoringPage = () => {
     return map;
   }, [monitoring]);
 
+  // Set of hidden model keys
+  const hiddenKeys = useMemo(() => {
+    const s = new Set<string>();
+    for (const m of monitoring) {
+      if ((m as any).hidden) s.add(m.model);
+    }
+    return s;
+  }, [monitoring]);
+
   // Build catalog keys set for detecting custom models
   const catalogKeySet = useMemo(() => {
     const s = new Set<string>();
