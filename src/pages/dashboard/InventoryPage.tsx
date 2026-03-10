@@ -300,7 +300,7 @@ const InventoryPage = () => {
   };
 
   const filtered = useMemo(() => {
-    let result = devices;
+    let result = [...devices];
     if (statusTab !== "all") {
       result = result.filter(d => d.status === statusTab);
     }
@@ -310,6 +310,13 @@ const InventoryPage = () => {
         d.model.toLowerCase().includes(q) || d.imei.includes(q)
       );
     }
+    result.sort((a, b) => {
+      const modelCmp = a.model.localeCompare(b.model);
+      if (modelCmp !== 0) return modelCmp;
+      const memA = a.memory || "";
+      const memB = b.memory || "";
+      return memA.localeCompare(memB);
+    });
     return result;
   }, [devices, statusTab, search]);
 
