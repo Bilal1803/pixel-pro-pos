@@ -92,7 +92,7 @@ const InventoryPage = () => {
     queryKey: ["devices", companyId],
     queryFn: async () => {
       if (!companyId) return [];
-      const { data, error } = await supabase.from("devices").select("*").eq("company_id", companyId).order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("devices").select("*").eq("company_id", companyId).order("model", { ascending: true }).order("memory", { ascending: true }).order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
