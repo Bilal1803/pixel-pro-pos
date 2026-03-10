@@ -498,10 +498,10 @@ const InventoryPage = () => {
               <DialogHeader><DialogTitle>Новое устройство</DialogTitle></DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); addDevice.mutate(); }} className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Модель *</Label><ComboboxInput value={form.model} onChange={(v) => setForm({ ...form, model: v })} options={uniqueModels} required /></div>
-                  <div><Label>Бренд</Label><ComboboxInput value={form.brand} onChange={(v) => setForm({ ...form, brand: v })} options={uniqueBrands} /></div>
-                  <div><Label>Память</Label><ComboboxInput value={form.memory} onChange={(v) => setForm({ ...form, memory: v })} options={uniqueMemory} placeholder="128GB" /></div>
-                  <div><Label>Цвет</Label><ComboboxInput value={form.color} onChange={(v) => setForm({ ...form, color: v })} options={uniqueColors} /></div>
+                  <div><Label>Модель *</Label><ComboboxInput value={form.model} onChange={(v) => setForm({ ...form, model: v })} options={modelOptions} required /></div>
+                  <div><Label>Бренд</Label><ComboboxInput value={form.brand} onChange={(v) => setForm({ ...form, brand: v })} options={brandOptions} /></div>
+                  <div><Label>Память</Label><ComboboxInput value={form.memory} onChange={(v) => setForm({ ...form, memory: v })} options={getMemoryOptions(form.model)} placeholder="128GB" /></div>
+                  <div><Label>Цвет</Label><ComboboxInput value={form.color} onChange={(v) => setForm({ ...form, color: v })} options={getColorOptions(form.model)} /></div>
                   <div><Label>IMEI *</Label><Input value={form.imei} onChange={(e) => setForm({ ...form, imei: e.target.value })} required /></div>
                   <div><Label>АКБ</Label><Input placeholder="94%" value={form.battery_health} onChange={(e) => setForm({ ...form, battery_health: e.target.value })} /></div>
                   <div><Label>Цена закупки</Label><Input type="number" value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} /></div>
