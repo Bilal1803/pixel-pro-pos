@@ -381,6 +381,50 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string | null
+          metadata: Json | null
+          title: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string | null
+          metadata?: Json | null
+          title: string
+          type?: string
+          user_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string | null
+          metadata?: Json | null
+          title?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       price_monitoring: {
         Row: {
           avg_price: number | null
@@ -835,6 +879,165 @@ export type Database = {
             foreignKeyName: "stores_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stories: {
+        Row: {
+          action_label: string | null
+          action_url: string | null
+          created_at: string
+          description: string | null
+          expires_at: string | null
+          id: string
+          image_url: string
+          is_active: boolean
+          title: string
+        }
+        Insert: {
+          action_label?: string | null
+          action_url?: string | null
+          created_at?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          image_url: string
+          is_active?: boolean
+          title: string
+        }
+        Update: {
+          action_label?: string | null
+          action_url?: string | null
+          created_at?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          title?: string
+        }
+        Relationships: []
+      }
+      story_views: {
+        Row: {
+          id: string
+          story_id: string
+          user_id: string
+          viewed_at: string
+        }
+        Insert: {
+          id?: string
+          story_id: string
+          user_id: string
+          viewed_at?: string
+        }
+        Update: {
+          id?: string
+          story_id?: string
+          user_id?: string
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_views_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          ai_enabled: boolean
+          company_id: string
+          created_at: string
+          id: string
+          max_devices: number
+          max_employees: number
+          max_stores: number
+          plan: string
+          repairs_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          ai_enabled?: boolean
+          company_id: string
+          created_at?: string
+          id?: string
+          max_devices?: number
+          max_employees?: number
+          max_stores?: number
+          plan?: string
+          repairs_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          ai_enabled?: boolean
+          company_id?: string
+          created_at?: string
+          id?: string
+          max_devices?: number
+          max_employees?: number
+          max_stores?: number
+          plan?: string
+          repairs_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telegram_settings: {
+        Row: {
+          bot_token: string | null
+          chat_id: string | null
+          company_id: string
+          created_at: string
+          id: string
+          notify_ai: boolean
+          notify_cash: boolean
+          notify_sales: boolean
+          notify_shifts: boolean
+          updated_at: string
+        }
+        Insert: {
+          bot_token?: string | null
+          chat_id?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          notify_ai?: boolean
+          notify_cash?: boolean
+          notify_sales?: boolean
+          notify_shifts?: boolean
+          updated_at?: string
+        }
+        Update: {
+          bot_token?: string | null
+          chat_id?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          notify_ai?: boolean
+          notify_cash?: boolean
+          notify_sales?: boolean
+          notify_shifts?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
