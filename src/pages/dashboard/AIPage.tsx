@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import AISurvey from "@/components/AISurvey";
+import SectionHelp from "@/components/SectionHelp";
+import { SECTION_TIPS } from "@/data/sectionTips";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
