@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-
+import { sendTelegramNotification } from "@/lib/telegram";
 const TmaCashPage = () => {
   const { companyId, user } = useAuth();
   const { toast } = useToast();
@@ -84,10 +84,22 @@ const TmaCashPage = () => {
       if (error) throw error;
     },
     onSuccess: () => {
+      const label = opType === "deposit" ? "Внесение" : "Изъятие";
+      const emoji = opType === "deposit" ? "📥" : "📤";
+      const amountNum = Number(amount);
+
       setAmount("");
       setReason("");
       queryClient.invalidateQueries({ queryKey: ["tma-cash-ops"] });
       toast({ title: opType === "deposit" ? "Внесение записано" : "Изъятие записано" });
+
+      if (companyId) {
+        sendTelegramNotification(
+          companyId,
+          "cash",
+          `${emoji} <b>${label}</b>\n\n💵 Сумма: <b>${amountNum.toLocaleString("ru")} ₽</b>${reason.trim() ? `\n📝 Причина: ${reason.trim()}` : ""}`
+        );
+      }
     },
     onError: (e: any) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
