@@ -213,6 +213,8 @@ const NetworkPage = () => {
     setInviteLink(null);
     setInviteForm({ fullName: "", phone: "", role: "employee" });
   };
+
+  const storeStats = stores.map((store) => {
     const storeDevices = devices.filter((d) => d.store_id === store.id);
     const storeSales = sales.filter((s) => s.store_id === store.id);
     const revenue = storeSales.reduce((sum, s) => sum + (s.total || 0), 0);
