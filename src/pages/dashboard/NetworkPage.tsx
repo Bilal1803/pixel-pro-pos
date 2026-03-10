@@ -1,18 +1,51 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Store, MapPin, Phone, Smartphone, DollarSign, TrendingUp, ArrowRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Store, MapPin, Phone, Smartphone, DollarSign, TrendingUp, ArrowRight, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useStoreContext } from "@/contexts/StoreContext";
+import { useSubscription } from "@/hooks/useSubscription";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { toast } from "sonner";
 
 const NetworkPage = () => {
   const { companyId } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { stores, setActiveStoreId } = useStoreContext();
+  const { subscription } = useSubscription();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ name: "", address: "", phone: "" });
+
+  const canAddStore = stores.length < (subscription?.max_stores ?? 1);
+
+  const handleAddStore = async () => {
+    if (!companyId || !form.name.trim()) return;
+    setSaving(true);
+    const { error } = await supabase.from("stores").insert({
+      company_id: companyId,
+      name: form.name.trim(),
+      address: form.address.trim() || null,
+      phone: form.phone.trim() || null,
+    });
+    setSaving(false);
+    if (error) {
+      toast.error("Не удалось создать магазин");
+      return;
+    }
+    toast.success("Магазин добавлен");
+    setForm({ name: "", address: "", phone: "" });
+    setDialogOpen(false);
+    queryClient.invalidateQueries({ queryKey: ["stores"] });
+  };
 
   const { data: devices = [] } = useQuery({
     queryKey: ["network-devices", companyId],
@@ -66,12 +99,61 @@ const NetworkPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">Сеть магазинов</h1>
-        <Button variant="outline" onClick={() => navigate("/dashboard/comparison")}>
-          Сравнение магазинов
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" disabled={!canAddStore}>
+                <Plus className="h-4 w-4 mr-1" />
+                Добавить магазин
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Новый магазин</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label>Название *</Label>
+                  <Input
+                    placeholder="Например: ТЦ Мега"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Адрес</Label>
+                  <Input
+                    placeholder="ул. Примерная, 1"
+                    value={form.address}
+                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Телефон</Label>
+                  <Input
+                    placeholder="+7 999 123-45-67"
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  />
+                </div>
+                {!canAddStore && (
+                  <p className="text-sm text-destructive">
+                    Лимит магазинов ({subscription?.max_stores}) достигнут. Повысьте тариф.
+                  </p>
+                )}
+                <Button className="w-full" onClick={handleAddStore} disabled={saving || !form.name.trim() || !canAddStore}>
+                  {saving ? "Сохранение…" : "Создать магазин"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/comparison")}>
+            Сравнение
+            <ArrowRight className="ml-1 h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Network KPIs */}
