@@ -27,10 +27,15 @@ import SettingsPage from "./pages/dashboard/SettingsPage";
 import SupportPage from "./pages/dashboard/SupportPage";
 import PricingPage from "./pages/dashboard/PricingPage";
 import AdminLayout from "./components/AdminLayout";
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminStoriesPage from "./pages/admin/AdminStoriesPage";
 import AdminCompaniesPage from "./pages/admin/AdminCompaniesPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminSubscriptionsPage from "./pages/admin/AdminSubscriptionsPage";
+import AdminFinancesPage from "./pages/admin/AdminFinancesPage";
+import AdminSupportPage from "./pages/admin/AdminSupportPage";
+import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
+import AdminSystemPage from "./pages/admin/AdminSystemPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
