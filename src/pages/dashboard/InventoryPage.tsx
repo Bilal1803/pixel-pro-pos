@@ -101,7 +101,42 @@ const InventoryPage = () => {
     enabled: !!companyId,
   });
 
-  // Count by status
+  const { data: priceMonitoring = [] } = useQuery({
+    queryKey: ["price_monitoring", companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data, error } = await supabase.from("price_monitoring").select("model, avg_price, our_price").eq("company_id", companyId);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!companyId,
+  });
+
+  const getRecommendedPrice = (model: string) => {
+    const entry = priceMonitoring.find(p => p.model === model);
+    if (!entry) return null;
+    return entry.our_price || (entry.avg_price ? Math.round(entry.avg_price * 0.95) : null);
+  };
+
+  const handleModelChange = (model: string) => {
+    const recommended = getRecommendedPrice(model);
+    setForm(prev => ({
+      ...prev,
+      model,
+      sale_price: recommended ? String(recommended) : prev.sale_price,
+    }));
+  };
+
+  const handleEditModelChange = (model: string) => {
+    const recommended = getRecommendedPrice(model);
+    setEditForm(prev => ({
+      ...prev,
+      model,
+      sale_price: recommended ? String(recommended) : prev.sale_price,
+    }));
+  };
+
+
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = { all: devices.length };
     for (const d of devices) {
@@ -526,7 +561,7 @@ const InventoryPage = () => {
               <DialogHeader><DialogTitle>Новое устройство</DialogTitle></DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); addDevice.mutate(); }} className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Модель *</Label><ComboboxInput value={form.model} onChange={(v) => setForm({ ...form, model: v })} options={modelOptions} required /></div>
+                  <div><Label>Модель *</Label><ComboboxInput value={form.model} onChange={handleModelChange} options={modelOptions} required /></div>
                   <div><Label>Бренд</Label><ComboboxInput value={form.brand} onChange={(v) => setForm({ ...form, brand: v })} options={brandOptions} /></div>
                   <div><Label>Память</Label><ComboboxInput value={form.memory} onChange={(v) => setForm({ ...form, memory: v })} options={getMemoryOptions(form.model)} placeholder="128GB" /></div>
                   <div><Label>Цвет</Label><ComboboxInput value={form.color} onChange={(v) => setForm({ ...form, color: v })} options={getColorOptions(form.model)} /></div>
@@ -544,7 +579,22 @@ const InventoryPage = () => {
                     </Select>
                   </div>
                   <div><Label>Цена закупки</Label><Input type="number" value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} /></div>
-                  <div><Label>Цена продажи</Label><Input type="number" value={form.sale_price} onChange={(e) => setForm({ ...form, sale_price: e.target.value })} /></div>
+                  <div>
+                    <Label>Цена продажи</Label>
+                    <Input type="number" value={form.sale_price} onChange={(e) => setForm({ ...form, sale_price: e.target.value })} />
+                    {(() => {
+                      const rec = getRecommendedPrice(form.model);
+                      return rec ? (
+                        <button
+                          type="button"
+                          className="mt-1 text-xs text-primary hover:underline"
+                          onClick={() => setForm({ ...form, sale_price: String(rec) })}
+                        >
+                          Рекомендуемая: {rec.toLocaleString()} ₽
+                        </button>
+                      ) : null;
+                    })()}
+                  </div>
                 </div>
                 <div>
                   <Label>Статус</Label>
@@ -656,7 +706,7 @@ const InventoryPage = () => {
           <DialogHeader><DialogTitle>Редактировать устройство</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); updateDevice.mutate(); }} className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Модель *</Label><ComboboxInput value={editForm.model} onChange={(v) => setEditForm({ ...editForm, model: v })} options={modelOptions} required /></div>
+              <div><Label>Модель *</Label><ComboboxInput value={editForm.model} onChange={handleEditModelChange} options={modelOptions} required /></div>
               <div><Label>Бренд</Label><ComboboxInput value={editForm.brand} onChange={(v) => setEditForm({ ...editForm, brand: v })} options={brandOptions} /></div>
               <div><Label>Память</Label><ComboboxInput value={editForm.memory} onChange={(v) => setEditForm({ ...editForm, memory: v })} options={getMemoryOptions(editForm.model)} placeholder="128GB" /></div>
               <div><Label>Цвет</Label><ComboboxInput value={editForm.color} onChange={(v) => setEditForm({ ...editForm, color: v })} options={getColorOptions(editForm.model)} /></div>
@@ -674,7 +724,22 @@ const InventoryPage = () => {
                 </Select>
               </div>
               <div><Label>Цена закупки</Label><Input type="number" value={editForm.purchase_price} onChange={(e) => setEditForm({ ...editForm, purchase_price: e.target.value })} /></div>
-              <div><Label>Цена продажи</Label><Input type="number" value={editForm.sale_price} onChange={(e) => setEditForm({ ...editForm, sale_price: e.target.value })} /></div>
+              <div>
+                <Label>Цена продажи</Label>
+                <Input type="number" value={editForm.sale_price} onChange={(e) => setEditForm({ ...editForm, sale_price: e.target.value })} />
+                {(() => {
+                  const rec = getRecommendedPrice(editForm.model);
+                  return rec ? (
+                    <button
+                      type="button"
+                      className="mt-1 text-xs text-primary hover:underline"
+                      onClick={() => setEditForm({ ...editForm, sale_price: String(rec) })}
+                    >
+                      Рекомендуемая: {rec.toLocaleString()} ₽
+                    </button>
+                  ) : null;
+                })()}
+              </div>
             </div>
             <div>
               <Label>Статус</Label>
