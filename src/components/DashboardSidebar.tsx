@@ -41,7 +41,7 @@ const DashboardSidebar = () => {
   };
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r bg-card sticky top-0">
+    <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r bg-card">
       <div className="flex h-16 items-center gap-2 border-b px-6">
         <Smartphone className="h-6 w-6 text-primary" />
         <span className="text-lg font-bold">PhoneCRM</span>
