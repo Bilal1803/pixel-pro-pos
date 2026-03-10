@@ -1,14 +1,18 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import OnboardingTour from "@/components/OnboardingTour";
 import NotificationBell from "@/components/NotificationBell";
 import AIAssistant from "@/components/AIAssistant";
+import TrialPaywall from "@/components/TrialPaywall";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const DashboardLayout = () => {
   const { user, loading } = useAuth();
+  const { isTrialExpired, isLoading: subLoading } = useSubscription();
+  const location = useLocation();
 
-  if (loading) {
+  if (loading || subLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-muted-foreground">Загрузка...</div>
@@ -18,6 +22,13 @@ const DashboardLayout = () => {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Allow access to pricing page even when trial expired
+  const isPricingPage = location.pathname === "/dashboard/pricing";
+
+  if (isTrialExpired && !isPricingPage) {
+    return <TrialPaywall />;
   }
 
   return (
