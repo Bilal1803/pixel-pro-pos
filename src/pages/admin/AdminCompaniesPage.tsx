@@ -6,9 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Building2, Ban, CheckCircle, Trash2, Eye, Search } from "lucide-react";
+import { Building2, Ban, CheckCircle, Trash2, Eye, Search, LogIn } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { useToast as useToast2 } from "@/hooks/use-toast";
 
 const AdminCompaniesPage = () => {
   const { toast } = useToast();
