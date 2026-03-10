@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Image } from "lucide-react";
+import { Plus, Pencil, Trash2, Image, Upload, X } from "lucide-react";
 
 interface Story {
   id: string;
@@ -31,6 +31,10 @@ const AdminStoriesPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: stories = [], isLoading } = useQuery({
     queryKey: ["admin-stories"],
@@ -43,27 +47,40 @@ const AdminStoriesPage = () => {
     },
   });
 
+  const uploadImage = async (file: File): Promise<string> => {
+    const ext = file.name.split(".").pop() || "jpg";
+    const fileName = `${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("stories").upload(fileName, file, { contentType: file.type });
+    if (error) throw error;
+    const { data } = supabase.storage.from("stories").getPublicUrl(fileName);
+    return data.publicUrl;
+  };
+
   const saveMutation = useMutation({
     mutationFn: async () => {
+      setUploading(true);
+      let imageUrl = form.image_url;
+
+      if (imageFile) {
+        imageUrl = await uploadImage(imageFile);
+      }
+
+      if (!imageUrl) throw new Error("Изображение обязательно");
+
+      const payload = {
+        title: form.title,
+        description: form.description || null,
+        image_url: imageUrl,
+        action_url: form.action_url || null,
+        action_label: form.action_url ? (form.action_label || "Перейти") : null,
+        is_active: form.is_active,
+      };
+
       if (editId) {
-        const { error } = await supabase.from("stories").update({
-          title: form.title,
-          description: form.description || null,
-          image_url: form.image_url,
-          action_url: form.action_url || null,
-          action_label: form.action_label || "Перейти",
-          is_active: form.is_active,
-        }).eq("id", editId);
+        const { error } = await supabase.from("stories").update(payload).eq("id", editId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("stories").insert({
-          title: form.title,
-          description: form.description || null,
-          image_url: form.image_url,
-          action_url: form.action_url || null,
-          action_label: form.action_label || "Перейти",
-          is_active: form.is_active,
-        });
+        const { error } = await supabase.from("stories").insert(payload);
         if (error) throw error;
       }
     },
@@ -72,9 +89,15 @@ const AdminStoriesPage = () => {
       setDialogOpen(false);
       setEditId(null);
       setForm(emptyForm);
+      setImageFile(null);
+      setImagePreview(null);
+      setUploading(false);
       toast({ title: editId ? "Story обновлена" : "Story создана" });
     },
-    onError: (e: any) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
+    onError: (e: any) => {
+      setUploading(false);
+      toast({ title: "Ошибка", description: e.message, variant: "destructive" });
+    },
   });
 
   const deleteMutation = useMutation({
@@ -98,14 +121,35 @@ const AdminStoriesPage = () => {
       action_label: s.action_label || "Перейти",
       is_active: s.is_active,
     });
+    setImageFile(null);
+    setImagePreview(s.image_url);
     setDialogOpen(true);
   };
 
   const openNew = () => {
     setEditId(null);
     setForm(emptyForm);
+    setImageFile(null);
+    setImagePreview(null);
     setDialogOpen(true);
   };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    setForm({ ...form, image_url: "pending-upload" });
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setForm({ ...form, image_url: "" });
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const canSave = form.title && (imageFile || form.image_url);
 
   return (
     <div className="space-y-6">
@@ -163,17 +207,47 @@ const AdminStoriesPage = () => {
               <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} />
             </div>
             <div>
-              <Label>URL изображения (1080×1920) *</Label>
-              <Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." />
+              <Label>Изображение (1080×1920) *</Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              {imagePreview ? (
+                <div className="relative mt-2 rounded-lg overflow-hidden border border-border">
+                  <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover" />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute top-2 right-2 rounded-full bg-black/60 p-1 text-white hover:bg-black/80 transition"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="mt-2 w-full border-2 border-dashed border-border rounded-lg p-8 flex flex-col items-center gap-2 text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors"
+                >
+                  <Upload className="h-8 w-8" />
+                  <span className="text-sm font-medium">Нажмите для загрузки</span>
+                  <span className="text-xs">JPG, PNG, WebP</span>
+                </button>
+              )}
             </div>
             <div>
-              <Label>URL действия</Label>
+              <Label>URL действия <span className="text-muted-foreground font-normal">(необязательно)</span></Label>
               <Input value={form.action_url} onChange={(e) => setForm({ ...form, action_url: e.target.value })} placeholder="https://..." />
             </div>
-            <div>
-              <Label>Текст кнопки</Label>
-              <Input value={form.action_label} onChange={(e) => setForm({ ...form, action_label: e.target.value })} />
-            </div>
+            {form.action_url && (
+              <div>
+                <Label>Текст кнопки</Label>
+                <Input value={form.action_label} onChange={(e) => setForm({ ...form, action_label: e.target.value })} />
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
               <Label>Активна</Label>
@@ -181,8 +255,8 @@ const AdminStoriesPage = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Отмена</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={!form.title || !form.image_url}>
-              {editId ? "Сохранить" : "Создать"}
+            <Button onClick={() => saveMutation.mutate()} disabled={!canSave || uploading}>
+              {uploading ? "Загрузка..." : editId ? "Сохранить" : "Создать"}
             </Button>
           </DialogFooter>
         </DialogContent>
