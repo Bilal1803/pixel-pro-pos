@@ -433,8 +433,10 @@ const BuybackPage = () => {
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Модель</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Память</th>
                     <th className="px-4 py-3 text-right font-medium text-muted-foreground">Цена продажи</th>
+                    <th className="px-4 py-3 text-right font-medium text-muted-foreground">Маржа БУ</th>
                     <th className="px-4 py-3 text-right font-medium text-muted-foreground">Выкуп БУ</th>
                     <th className="px-4 py-3 text-right font-medium text-muted-foreground">Выкуп Новый</th>
+                    <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -443,8 +445,10 @@ const BuybackPage = () => {
                       const key = `${row.model} ${row.memory}`;
                       const entry = monitoringMap[key];
                       const salePrice = entry?.our_price || (entry?.avg_price ? Math.round(entry.avg_price * 0.95) : null);
-                      const buybackUsed = salePrice ? salePrice - currentMarginUsed : null;
-                      const buybackNew = salePrice ? salePrice - currentMarginNew : null;
+                      const margins = getModelMargins(key);
+                      const hasCustomMargin = entry?.margin_used != null || entry?.margin_new != null;
+                      const buybackUsed = salePrice ? salePrice - margins.used : null;
+                      const buybackNew = salePrice ? salePrice - margins.new : null;
 
                       return (
                         <tr
@@ -461,6 +465,11 @@ const BuybackPage = () => {
                               <span className="text-muted-foreground">—</span>
                             )}
                           </td>
+                          <td className="px-4 py-2.5 text-right font-mono text-xs">
+                            <span className={hasCustomMargin ? "text-warning font-semibold" : "text-muted-foreground"}>
+                              {margins.used.toLocaleString("ru")} ₽
+                            </span>
+                          </td>
                           <td className="px-4 py-2.5 text-right font-mono">
                             {buybackUsed && buybackUsed > 0 ? (
                               <span className="font-semibold text-primary">{buybackUsed.toLocaleString("ru")} ₽</span>
@@ -474,6 +483,11 @@ const BuybackPage = () => {
                             ) : (
                               <span className="text-muted-foreground">—</span>
                             )}
+                          </td>
+                          <td className="px-4 py-2.5 text-center">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => openMarginEdit(row, e)}>
+                              <Pencil className="h-3 w-3 text-muted-foreground" />
+                            </Button>
                           </td>
                         </tr>
                       );
