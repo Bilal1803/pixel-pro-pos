@@ -12,42 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-const IPHONE_CATALOG: { name: string; memories: string[] }[] = [
-  { name: "iPhone X", memories: ["64GB", "256GB"] },
-  { name: "iPhone XR", memories: ["64GB", "128GB", "256GB"] },
-  { name: "iPhone XS", memories: ["64GB", "256GB", "512GB"] },
-  { name: "iPhone XS Max", memories: ["64GB", "256GB", "512GB"] },
-  { name: "iPhone 11", memories: ["64GB", "128GB", "256GB"] },
-  { name: "iPhone 11 Pro", memories: ["64GB", "256GB", "512GB"] },
-  { name: "iPhone 11 Pro Max", memories: ["64GB", "256GB", "512GB"] },
-  { name: "iPhone SE (2020)", memories: ["64GB", "128GB", "256GB"] },
-  { name: "iPhone 12 mini", memories: ["64GB", "128GB", "256GB"] },
-  { name: "iPhone 12", memories: ["64GB", "128GB", "256GB"] },
-  { name: "iPhone 12 Pro", memories: ["128GB", "256GB", "512GB"] },
-  { name: "iPhone 12 Pro Max", memories: ["128GB", "256GB", "512GB"] },
-  { name: "iPhone 13 mini", memories: ["128GB", "256GB", "512GB"] },
-  { name: "iPhone 13", memories: ["128GB", "256GB", "512GB"] },
-  { name: "iPhone 13 Pro", memories: ["128GB", "256GB", "512GB", "1TB"] },
-  { name: "iPhone 13 Pro Max", memories: ["128GB", "256GB", "512GB", "1TB"] },
-  { name: "iPhone SE (2022)", memories: ["64GB", "128GB", "256GB"] },
-  { name: "iPhone 14", memories: ["128GB", "256GB", "512GB"] },
-  { name: "iPhone 14 Plus", memories: ["128GB", "256GB", "512GB"] },
-  { name: "iPhone 14 Pro", memories: ["128GB", "256GB", "512GB", "1TB"] },
-  { name: "iPhone 14 Pro Max", memories: ["128GB", "256GB", "512GB", "1TB"] },
-  { name: "iPhone 15", memories: ["128GB", "256GB", "512GB"] },
-  { name: "iPhone 15 Plus", memories: ["128GB", "256GB", "512GB"] },
-  { name: "iPhone 15 Pro", memories: ["128GB", "256GB", "512GB", "1TB"] },
-  { name: "iPhone 15 Pro Max", memories: ["256GB", "512GB", "1TB"] },
-  { name: "iPhone 16", memories: ["128GB", "256GB", "512GB"] },
-  { name: "iPhone 16 Plus", memories: ["128GB", "256GB", "512GB"] },
-  { name: "iPhone 16 Pro", memories: ["128GB", "256GB", "512GB", "1TB"] },
-  { name: "iPhone 16 Pro Max", memories: ["256GB", "512GB", "1TB"] },
-  { name: "iPhone 16e", memories: ["128GB", "256GB", "512GB"] },
-  { name: "iPhone 17", memories: ["128GB", "256GB", "512GB"] },
-  { name: "iPhone 17 Air", memories: ["256GB", "512GB"] },
-  { name: "iPhone 17 Pro", memories: ["256GB", "512GB", "1TB"] },
-  { name: "iPhone 17 Pro Max", memories: ["256GB", "512GB", "1TB"] },
-];
+import { IPHONE_CATALOG } from "@/data/deviceCatalog";
 
 const MonitoringPage = () => {
   const { companyId } = useAuth();
