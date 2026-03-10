@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Store, MapPin, Phone, Smartphone, DollarSign, TrendingUp, ArrowRight, Plus } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Store, MapPin, Phone, Smartphone, DollarSign, TrendingUp, ArrowRight, Plus, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,11 +20,15 @@ const NetworkPage = () => {
   const { companyId } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { stores, setActiveStoreId } = useStoreContext();
+  const { stores, activeStoreId, setActiveStoreId } = useStoreContext();
   const { subscription } = useSubscription();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: "", address: "", phone: "" });
+  const [editingStore, setEditingStore] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", address: "", phone: "" });
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteStoreId, setDeleteStoreId] = useState<string | null>(null);
 
   const canAddStore = stores.length < (subscription?.max_stores ?? 1);
 
@@ -46,6 +51,46 @@ const NetworkPage = () => {
     setDialogOpen(false);
     queryClient.invalidateQueries({ queryKey: ["stores"] });
   };
+
+  const openEditDialog = (store: { id: string; name: string; address: string | null; phone: string | null }) => {
+    setEditingStore(store.id);
+    setEditForm({ name: store.name, address: store.address || "", phone: store.phone || "" });
+    setEditDialogOpen(true);
+  };
+
+  const handleEditStore = async () => {
+    if (!editingStore || !editForm.name.trim()) return;
+    setSaving(true);
+    const { error } = await supabase.from("stores").update({
+      name: editForm.name.trim(),
+      address: editForm.address.trim() || null,
+      phone: editForm.phone.trim() || null,
+    }).eq("id", editingStore);
+    setSaving(false);
+    if (error) {
+      toast.error("Не удалось обновить магазин");
+      return;
+    }
+    toast.success("Магазин обновлён");
+    setEditDialogOpen(false);
+    setEditingStore(null);
+    queryClient.invalidateQueries({ queryKey: ["stores"] });
+  };
+
+  const handleDeleteStore = async () => {
+    if (!deleteStoreId) return;
+    const { error } = await supabase.from("stores").delete().eq("id", deleteStoreId);
+    if (error) {
+      toast.error("Не удалось удалить магазин. Возможно, к нему привязаны данные.");
+      return;
+    }
+    toast.success("Магазин удалён");
+    setDeleteStoreId(null);
+    if (deleteStoreId === activeStoreId) setActiveStoreId(null);
+    queryClient.invalidateQueries({ queryKey: ["stores"] });
+  };
+
+  
 
   const { data: devices = [] } = useQuery({
     queryKey: ["network-devices", companyId],
@@ -199,12 +244,40 @@ const NetworkPage = () => {
         {storeStats.map((store) => (
           <Card
             key={store.id}
-            className="p-5 card-shadow hover:card-shadow-hover transition-shadow cursor-pointer"
+            className="p-5 card-shadow hover:card-shadow-hover transition-shadow cursor-pointer relative group"
             onClick={() => {
               setActiveStoreId(store.id);
               navigate("/dashboard");
             }}
           >
+            {/* Edit / Delete buttons */}
+            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openEditDialog(store);
+                }}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+              {stores.length > 1 && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-destructive hover:text-destructive"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteStoreId(store.id);
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-2">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
@@ -246,6 +319,59 @@ const NetworkPage = () => {
           </Card>
         ))}
       </div>
+
+      {/* Edit dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Редактировать магазин</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label>Название *</Label>
+              <Input
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Адрес</Label>
+              <Input
+                value={editForm.address}
+                onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Телефон</Label>
+              <Input
+                value={editForm.phone}
+                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+              />
+            </div>
+            <Button className="w-full" onClick={handleEditStore} disabled={saving || !editForm.name.trim()}>
+              {saving ? "Сохранение…" : "Сохранить"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteStoreId} onOpenChange={(open) => !open && setDeleteStoreId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить магазин?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Все связанные данные (устройства, продажи, смены) останутся в системе, но будут отвязаны от этого магазина. Это действие нельзя отменить.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteStore} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
