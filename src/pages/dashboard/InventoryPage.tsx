@@ -271,6 +271,7 @@ const InventoryPage = () => {
       status: device.status || "testing",
       notes: device.notes || "",
       sim_type: device.sim_type || "",
+      condition: device.condition || "used",
     });
     setEditOpen(true);
   };
