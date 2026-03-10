@@ -16,7 +16,6 @@ import { useStoreContext } from "@/contexts/StoreContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { toast } from "sonner";
-import { format } from "date-fns";
 
 const NetworkPage = () => {
   const { companyId, user } = useAuth();
