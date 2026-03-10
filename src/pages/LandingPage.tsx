@@ -30,9 +30,10 @@ const plans = [
   {
     id: "start",
     name: "Старт",
-    price: "Бесплатно",
-    priceSuffix: "",
+    price: "1 990",
+    priceSuffix: " ₽/мес",
     desc: "Для начинающих предпринимателей",
+    trial: "3 дня бесплатно",
     features: [
       { text: "1 магазин", included: true },
       { text: "До 2 сотрудников", included: true },
