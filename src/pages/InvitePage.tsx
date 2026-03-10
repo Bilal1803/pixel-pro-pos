@@ -23,12 +23,16 @@ const InvitePage = () => {
         const tg = (window as any).Telegram?.WebApp;
         const telegramId = tg?.initDataUnsafe?.user?.id || null;
 
-        const { data, error } = await supabase.functions.invoke("accept-invite", {
+        const res = await supabase.functions.invoke("accept-invite", {
           body: { code, telegramId },
         });
 
-        if (error) throw error;
-        if (data.error) throw new Error(data.error);
+        // Handle edge function errors (non-2xx returns error + data)
+        const data = res.data;
+        const fnError = data?.error;
+        
+        if (fnError) throw new Error(fnError);
+        if (res.error && !data) throw res.error;
 
         if (data.session) {
           // Set the session in the client
