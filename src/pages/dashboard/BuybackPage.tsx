@@ -307,7 +307,8 @@ const BuybackPage = () => {
     const key = `${row.model} ${row.memory}`;
     const entry = monitoringMap[key];
     const salePrice = entry?.our_price || (entry?.avg_price ? Math.round(entry.avg_price * 0.95) : null);
-    const buybackPrice = salePrice ? salePrice - currentMarginUsed : 0;
+    const margins = getModelMargins(key);
+    const buybackPrice = salePrice ? salePrice - margins.used : 0;
 
     setBuybackForm({
       model: row.model,
