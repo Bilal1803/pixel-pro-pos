@@ -25,8 +25,11 @@ const RegisterPage = () => {
     if (error) {
       toast({ title: "Ошибка регистрации", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Добро пожаловать!", description: "Аккаунт создан. Добавьте первое устройство на склад." });
-      navigate("/dashboard");
+      toast({
+        title: "Проверьте почту!",
+        description: "Мы отправили письмо для подтверждения на " + email,
+      });
+      navigate("/login");
     }
   };
 
