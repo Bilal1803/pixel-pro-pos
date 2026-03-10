@@ -5,7 +5,7 @@ import { Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface PlanGateProps {
-  feature: "repairs" | "ai" | "monitoring" | "listings";
+  feature: "repairs" | "ai" | "monitoring" | "listings" | "network" | "comparison" | "transfers";
   children: React.ReactNode;
 }
 
@@ -14,6 +14,9 @@ const featureLabels: Record<string, { name: string; minPlan: string }> = {
   ai: { name: "AI ассистент", minPlan: "Бизнес" },
   monitoring: { name: "Мониторинг цен", minPlan: "Бизнес" },
   listings: { name: "Объявления Авито", minPlan: "Бизнес" },
+  network: { name: "Сеть магазинов", minPlan: "Премьер" },
+  comparison: { name: "Сравнение магазинов", minPlan: "Премьер" },
+  transfers: { name: "Перемещение товаров", minPlan: "Премьер" },
 };
 
 const allowedPlans: Record<string, string[]> = {
@@ -21,6 +24,9 @@ const allowedPlans: Record<string, string[]> = {
   ai: ["business", "premier"],
   monitoring: ["business", "premier"],
   listings: ["business", "premier"],
+  network: ["premier"],
+  comparison: ["premier"],
+  transfers: ["premier"],
 };
 
 const PlanGate = ({ feature, children }: PlanGateProps) => {

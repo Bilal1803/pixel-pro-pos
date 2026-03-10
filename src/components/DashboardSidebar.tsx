@@ -3,10 +3,12 @@ import {
   LayoutDashboard, Smartphone, ShoppingCart, ArrowDownUp, Users,
   Headphones, Wrench, Tag, TrendingUp, Megaphone, DollarSign,
   UserCog, Clock, FileBarChart, Settings, HelpCircle, LogOut, CreditCard, Shield, Lock, Sparkles,
+  Store, ArrowRightLeft, BarChart3,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { useSubscription } from "@/hooks/useSubscription";
+import { Separator } from "@/components/ui/separator";
 
 const navItems = [
   { to: "/dashboard", label: "Дашборд", icon: LayoutDashboard },
@@ -29,6 +31,12 @@ const navItems = [
   { to: "/dashboard/support", label: "Поддержка", icon: HelpCircle },
 ];
 
+const premierItems = [
+  { to: "/dashboard/network", label: "Сеть магазинов", icon: Store },
+  { to: "/dashboard/comparison", label: "Сравнение", icon: BarChart3 },
+  { to: "/dashboard/transfers", label: "Перемещения", icon: ArrowRightLeft },
+];
+
 const DashboardSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -36,10 +44,17 @@ const DashboardSidebar = () => {
   const { isAdmin } = usePlatformAdmin();
   const { subscription } = useSubscription();
 
+  const isPremier = subscription.plan === "premier";
+
   const handleLogout = async () => {
     await signOut();
     navigate("/");
   };
+
+  const isActive = (path: string) =>
+    path === "/dashboard"
+      ? location.pathname === "/dashboard"
+      : location.pathname.startsWith(path);
 
   return (
     <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r bg-card">
@@ -50,16 +65,14 @@ const DashboardSidebar = () => {
       <nav className="flex-1 overflow-y-auto p-3">
         <ul className="space-y-1">
           {navItems.map((item) => {
-            const isActive = item.to === "/dashboard"
-              ? location.pathname === "/dashboard"
-              : location.pathname.startsWith(item.to);
+            const active = isActive(item.to);
             const isLocked = item.requiredPlan && !item.requiredPlan.includes(subscription.plan);
             return (
               <li key={item.to}>
                 <RouterNavLink
                   to={item.to}
                   className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                    isActive
+                    active
                       ? "bg-primary/10 text-primary"
                       : isLocked
                         ? "text-muted-foreground/50 hover:bg-accent/50"
@@ -74,6 +87,36 @@ const DashboardSidebar = () => {
             );
           })}
         </ul>
+
+        {/* Premier section */}
+        {isPremier && (
+          <>
+            <Separator className="my-3" />
+            <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Сеть
+            </p>
+            <ul className="space-y-1">
+              {premierItems.map((item) => {
+                const active = isActive(item.to);
+                return (
+                  <li key={item.to}>
+                    <RouterNavLink
+                      to={item.to}
+                      className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                        active
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      }`}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span className="flex-1">{item.label}</span>
+                    </RouterNavLink>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        )}
       </nav>
       <div className="border-t p-3 space-y-1">
         {isAdmin && (
