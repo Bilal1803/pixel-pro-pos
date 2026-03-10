@@ -3,6 +3,7 @@ import { DollarSign, TrendingUp, ShoppingCart, Smartphone } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import StoriesCarousel from "@/components/StoriesCarousel";
 
 const DashboardHome = () => {
   const { companyId } = useAuth();
@@ -55,6 +56,7 @@ const DashboardHome = () => {
 
   return (
     <div className="space-y-6">
+      <StoriesCarousel />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
           <Card key={s.label} className="p-5 card-shadow">

@@ -2,7 +2,7 @@ import { NavLink as RouterNavLink, useLocation, useNavigate } from "react-router
 import {
   LayoutDashboard, Smartphone, ShoppingCart, ArrowDownUp, Users,
   Headphones, Wrench, Tag, TrendingUp, Megaphone, DollarSign,
-  UserCog, Clock, FileBarChart, Settings, HelpCircle, LogOut,
+  UserCog, Clock, FileBarChart, Settings, HelpCircle, LogOut, CreditCard,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -22,6 +22,7 @@ const navItems = [
   { to: "/dashboard/shifts", label: "Смены", icon: Clock },
   { to: "/dashboard/reports", label: "Отчёты", icon: FileBarChart },
   { to: "/dashboard/settings", label: "Настройки", icon: Settings },
+  { to: "/dashboard/pricing", label: "Тарифы", icon: CreditCard },
   { to: "/dashboard/support", label: "Поддержка", icon: HelpCircle },
 ];
 
