@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
 
     // Generate a session token for the employee
     // We'll use signInWithPassword since we know the password
-    const anonKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
     const userClient = createClient(supabaseUrl, anonKey);
     const { data: sessionData, error: sessionError } = await userClient.auth.signInWithPassword({
       email,
