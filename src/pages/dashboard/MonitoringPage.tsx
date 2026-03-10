@@ -198,9 +198,28 @@ const MonitoringPage = () => {
 
   // Delete model entry
   const deleteEntry = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("price_monitoring").delete().eq("id", id);
-      if (error) throw error;
+    mutationFn: async ({ id, key, isCustom }: { id?: string; key: string; isCustom?: boolean }) => {
+      if (isCustom && id) {
+        // Custom model — delete entirely
+        const { error } = await supabase.from("price_monitoring").delete().eq("id", id);
+        if (error) throw error;
+      } else if (id) {
+        // Catalog model with existing entry — mark hidden
+        const { error } = await supabase.from("price_monitoring").update({ hidden: true } as any).eq("id", id);
+        if (error) throw error;
+      } else {
+        // Catalog model without entry — create hidden entry
+        if (!companyId) throw new Error("No company");
+        const { error } = await supabase.from("price_monitoring").insert({
+          company_id: companyId,
+          model: key,
+          prices: [],
+          avg_price: null,
+          our_price: null,
+          hidden: true,
+        } as any);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["price-monitoring"] });
