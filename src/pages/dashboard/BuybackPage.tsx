@@ -521,7 +521,7 @@ const BuybackPage = () => {
         </DialogContent>
       </Dialog>
 
-
+      {tab === "history" && (
         <Card className="card-shadow overflow-hidden">
           {historyLoading ? (
             <div className="p-8 text-center text-muted-foreground">Загрузка...</div>
