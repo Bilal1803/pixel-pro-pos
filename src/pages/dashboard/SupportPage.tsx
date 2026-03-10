@@ -296,7 +296,7 @@ const SupportPage = () => {
                         </Button>
                       ))}
                     </div>
-                  </ScrollArea>
+                  </div>
                 )}
               </div>
 
