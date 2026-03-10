@@ -89,7 +89,8 @@ serve(async (req) => {
       .map((d: any) => ({ model: d.model, memory: d.memory, days: Math.floor((now - new Date(d.created_at).getTime()) / 86400000), sale_price: d.sale_price }));
 
     const context = `
-Ты — AI-ассистент CRM для магазина смартфонов. Отвечай на русском. Будь конкретен и полезен.
+Ты — AI-ассистент CRM для магазина смартфонов. Отвечай на русском. Будь конкретен и полезен. Не используй лишние заголовки и форматирование — пиши чётко, по делу, структурированно.
+${surveyContext}
 
 ДАННЫЕ МАГАЗИНА:
 - Всего продаж: ${sales.length}, выручка: ${totalRevenue} ₽, прибыль: ${totalProfit} ₽
