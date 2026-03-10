@@ -135,6 +135,22 @@ const DashboardHome = () => {
           )}
         </Card>
       </div>
+      {subscription.ai_enabled && (
+        <Card className="card-shadow p-5 flex items-center justify-between bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+              <Sparkles className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm">AI Ассистент</h3>
+              <p className="text-xs text-muted-foreground">Аналитика продаж, рекомендации по ценам, советы по бизнесу</p>
+            </div>
+          </div>
+          <Button onClick={() => navigate("/dashboard/ai")} size="sm">
+            Открыть чат
+          </Button>
+        </Card>
+      )}
     </div>
   );
 };
