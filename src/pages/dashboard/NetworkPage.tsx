@@ -90,7 +90,7 @@ const NetworkPage = () => {
     queryClient.invalidateQueries({ queryKey: ["stores"] });
   };
 
-  const activeStoreId = stores.find(() => false)?.id; // just to reference setActiveStoreId
+  
 
   const { data: devices = [] } = useQuery({
     queryKey: ["network-devices", companyId],
