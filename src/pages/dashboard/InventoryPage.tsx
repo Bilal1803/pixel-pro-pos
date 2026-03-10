@@ -77,7 +77,7 @@ const normalizeStatus = (s?: string): string => {
 };
 
 const InventoryPage = () => {
-  const { companyId } = useAuth();
+  const { companyId, user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
