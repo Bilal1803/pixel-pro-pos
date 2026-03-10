@@ -671,7 +671,7 @@ const InventoryPage = () => {
           <DialogHeader><DialogTitle>Редактировать устройство</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); updateDevice.mutate(); }} className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Модель *</Label><ComboboxInput value={editForm.model} onChange={(v) => setEditForm({ ...editForm, model: v })} options={modelOptions} required /></div>
+              <div><Label>Модель *</Label><ComboboxInput value={editForm.model} onChange={handleEditModelChange} options={modelOptions} required /></div>
               <div><Label>Бренд</Label><ComboboxInput value={editForm.brand} onChange={(v) => setEditForm({ ...editForm, brand: v })} options={brandOptions} /></div>
               <div><Label>Память</Label><ComboboxInput value={editForm.memory} onChange={(v) => setEditForm({ ...editForm, memory: v })} options={getMemoryOptions(editForm.model)} placeholder="128GB" /></div>
               <div><Label>Цвет</Label><ComboboxInput value={editForm.color} onChange={(v) => setEditForm({ ...editForm, color: v })} options={getColorOptions(editForm.model)} /></div>
