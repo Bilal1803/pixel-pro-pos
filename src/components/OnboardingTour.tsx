@@ -5,6 +5,8 @@ import {
   LayoutDashboard, Smartphone, ShoppingCart, ArrowDownUp, Users,
   Wrench, DollarSign, Clock, ChevronRight, ChevronLeft, X, Sparkles,
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const steps = [
   {
@@ -63,26 +65,37 @@ const steps = [
   },
 ];
 
-const STORAGE_KEY = "phonecrm_onboarding_done";
-
 const OnboardingTour = () => {
   const [active, setActive] = useState(false);
   const [step, setStep] = useState(0);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
-    const done = localStorage.getItem(STORAGE_KEY);
-    if (!done) {
-      const timer = setTimeout(() => setActive(true), 600);
-      return () => clearTimeout(timer);
-    }
-  }, []);
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("onboarding_done")
+      .eq("user_id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data && !data.onboarding_done) {
+          setTimeout(() => setActive(true), 600);
+        }
+      });
+  }, [user]);
 
   const finish = useCallback(() => {
-    localStorage.setItem(STORAGE_KEY, "true");
+    if (user) {
+      supabase
+        .from("profiles")
+        .update({ onboarding_done: true } as any)
+        .eq("user_id", user.id)
+        .then();
+    }
     setActive(false);
     navigate("/dashboard");
-  }, [navigate]);
+  }, [navigate, user]);
 
   const next = useCallback(() => {
     if (step < steps.length - 1) {
