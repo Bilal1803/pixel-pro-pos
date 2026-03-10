@@ -175,6 +175,7 @@ const InventoryPage = () => {
         sale_price: editForm.sale_price ? parseFloat(editForm.sale_price) : null,
         status: editForm.status as any,
         notes: editForm.notes || null,
+        sim_type: editForm.sim_type || null,
       }).eq("id", editForm.id);
       if (error) throw error;
     },
