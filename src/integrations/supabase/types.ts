@@ -279,6 +279,7 @@ export type Database = {
           brand: string | null
           color: string | null
           company_id: string
+          condition: string | null
           created_at: string
           id: string
           imei: string
@@ -297,6 +298,7 @@ export type Database = {
           brand?: string | null
           color?: string | null
           company_id: string
+          condition?: string | null
           created_at?: string
           id?: string
           imei: string
@@ -315,6 +317,7 @@ export type Database = {
           brand?: string | null
           color?: string | null
           company_id?: string
+          condition?: string | null
           created_at?: string
           id?: string
           imei?: string

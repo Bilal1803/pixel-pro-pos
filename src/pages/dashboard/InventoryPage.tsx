@@ -86,9 +86,9 @@ const InventoryPage = () => {
   const [importOpen, setImportOpen] = useState(false);
   const [parsedRows, setParsedRows] = useState<ParsedDevice[]>([]);
   const [fileName, setFileName] = useState("");
-  const [form, setForm] = useState({ model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing" as string, notes: "", sim_type: "" });
+  const [form, setForm] = useState({ model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing" as string, notes: "", sim_type: "", condition: "used" });
   const [editOpen, setEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState({ id: "", model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing" as string, notes: "", sim_type: "" });
+  const [editForm, setEditForm] = useState({ id: "", model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing" as string, notes: "", sim_type: "", condition: "used" });
 
   const { data: devices = [], isLoading } = useQuery({
     queryKey: ["devices", companyId],
@@ -185,6 +185,7 @@ const InventoryPage = () => {
         status: form.status as any,
         notes: form.notes || null,
         sim_type: form.sim_type || null,
+        condition: form.condition || "used",
       });
       if (error) throw error;
     },
@@ -192,7 +193,7 @@ const InventoryPage = () => {
       queryClient.invalidateQueries({ queryKey: ["devices"] });
       toast({ title: "Устройство добавлено" });
       setOpen(false);
-      setForm({ model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing", notes: "", sim_type: "" });
+      setForm({ model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing", notes: "", sim_type: "", condition: "used" });
     },
     onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
@@ -211,6 +212,7 @@ const InventoryPage = () => {
         status: editForm.status as any,
         notes: editForm.notes || null,
         sim_type: editForm.sim_type || null,
+        condition: editForm.condition || "used",
       }).eq("id", editForm.id);
       if (error) throw error;
     },
@@ -269,6 +271,7 @@ const InventoryPage = () => {
       status: device.status || "testing",
       notes: device.notes || "",
       sim_type: device.sim_type || "",
+      condition: device.condition || "used",
     });
     setEditOpen(true);
   };
@@ -563,6 +566,16 @@ const InventoryPage = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>Модель *</Label><ComboboxInput value={form.model} onChange={handleModelChange} options={modelOptions} required /></div>
                   <div><Label>Бренд</Label><ComboboxInput value={form.brand} onChange={(v) => setForm({ ...form, brand: v })} options={brandOptions} /></div>
+                  <div>
+                    <Label>Состояние</Label>
+                    <Select value={form.condition} onValueChange={(v) => setForm({ ...form, condition: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="used">БУ</SelectItem>
+                        <SelectItem value="new">Новый</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div><Label>Память</Label><ComboboxInput value={form.memory} onChange={(v) => setForm({ ...form, memory: v })} options={getMemoryOptions(form.model)} placeholder="128GB" /></div>
                   <div><Label>Цвет</Label><ComboboxInput value={form.color} onChange={(v) => setForm({ ...form, color: v })} options={getColorOptions(form.model)} /></div>
                   <div><Label>IMEI *</Label><Input value={form.imei} onChange={(e) => setForm({ ...form, imei: e.target.value })} required /></div>
@@ -708,6 +721,16 @@ const InventoryPage = () => {
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Модель *</Label><ComboboxInput value={editForm.model} onChange={handleEditModelChange} options={modelOptions} required /></div>
               <div><Label>Бренд</Label><ComboboxInput value={editForm.brand} onChange={(v) => setEditForm({ ...editForm, brand: v })} options={brandOptions} /></div>
+              <div>
+                <Label>Состояние</Label>
+                <Select value={editForm.condition} onValueChange={(v) => setEditForm({ ...editForm, condition: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="used">БУ</SelectItem>
+                    <SelectItem value="new">Новый</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div><Label>Память</Label><ComboboxInput value={editForm.memory} onChange={(v) => setEditForm({ ...editForm, memory: v })} options={getMemoryOptions(editForm.model)} placeholder="128GB" /></div>
               <div><Label>Цвет</Label><ComboboxInput value={editForm.color} onChange={(v) => setEditForm({ ...editForm, color: v })} options={getColorOptions(editForm.model)} /></div>
               <div><Label>IMEI *</Label><Input value={editForm.imei} onChange={(e) => setEditForm({ ...editForm, imei: e.target.value })} required /></div>
