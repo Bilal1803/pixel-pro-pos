@@ -45,6 +45,10 @@ export const useSubscription = () => {
       }
     : PLAN_DEFAULTS.start;
 
+  const isTrialExpired = subscription
+    ? !subscription.paid && subscription.trial_ends_at && new Date(subscription.trial_ends_at) < new Date()
+    : false;
+
   const checkLimit = async (type: "stores" | "employees" | "devices"): Promise<{ allowed: boolean; current: number; max: number }> => {
     if (!companyId) return { allowed: false, current: 0, max: 0 };
 
@@ -64,5 +68,5 @@ export const useSubscription = () => {
     return { allowed: current < maxMap[type], current, max: maxMap[type] };
   };
 
-  return { subscription: limits, isLoading, checkLimit, PLAN_DEFAULTS };
+  return { subscription: limits, isLoading, checkLimit, isTrialExpired, PLAN_DEFAULTS };
 };

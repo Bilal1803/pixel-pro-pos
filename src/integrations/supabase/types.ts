@@ -979,8 +979,10 @@ export type Database = {
           max_devices: number
           max_employees: number
           max_stores: number
+          paid: boolean
           plan: string
           repairs_enabled: boolean
+          trial_ends_at: string | null
           updated_at: string
         }
         Insert: {
@@ -991,8 +993,10 @@ export type Database = {
           max_devices?: number
           max_employees?: number
           max_stores?: number
+          paid?: boolean
           plan?: string
           repairs_enabled?: boolean
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -1003,8 +1007,10 @@ export type Database = {
           max_devices?: number
           max_employees?: number
           max_stores?: number
+          paid?: boolean
           plan?: string
           repairs_enabled?: boolean
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Relationships: [
