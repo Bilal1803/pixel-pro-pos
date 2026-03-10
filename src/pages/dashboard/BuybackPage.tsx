@@ -464,8 +464,22 @@ const BuybackPage = () => {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">{new Date(b.created_at).toLocaleDateString("ru")}</td>
-                      </tr>
-                    );
+                        {isOwner && (
+                          <td className="px-4 py-3">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                              onClick={() => {
+                                if (confirm("Удалить запись о скупке?")) {
+                                  deleteBuyback.mutate({ buybackId: b.id, deviceId: b.device_id });
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </td>
+                        )}
                   })}
                 </tbody>
               </table>
