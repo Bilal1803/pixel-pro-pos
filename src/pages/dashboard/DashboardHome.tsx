@@ -7,6 +7,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useSubscription } from "@/hooks/useSubscription";
 import StoriesCarousel from "@/components/StoriesCarousel";
+import SectionHelp from "@/components/SectionHelp";
+import { SECTION_TIPS } from "@/data/sectionTips";
 
 const DashboardHome = () => {
   const { companyId } = useAuth();
