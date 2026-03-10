@@ -86,6 +86,9 @@ const PricingPage = () => {
                 <h3 className="text-xl font-bold">{plan.name}</h3>
                 <p className="text-sm text-muted-foreground">{plan.description}</p>
                 <p className="text-3xl font-extrabold">{plan.price}</p>
+                {(plan as any).trial && (
+                  <p className="text-xs font-medium text-success">{(plan as any).trial}</p>
+                )}
               </div>
 
               <div className="space-y-3 flex-1">
