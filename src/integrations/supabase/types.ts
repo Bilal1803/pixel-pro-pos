@@ -867,6 +867,7 @@ export type Database = {
           onboarding_done: boolean
           phone: string | null
           store_id: string | null
+          telegram_id: string | null
           updated_at: string
           user_id: string
         }
@@ -879,6 +880,7 @@ export type Database = {
           onboarding_done?: boolean
           phone?: string | null
           store_id?: string | null
+          telegram_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -891,6 +893,7 @@ export type Database = {
           onboarding_done?: boolean
           phone?: string | null
           store_id?: string | null
+          telegram_id?: string | null
           updated_at?: string
           user_id?: string
         }
