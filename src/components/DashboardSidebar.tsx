@@ -2,7 +2,7 @@ import { NavLink as RouterNavLink, useLocation, useNavigate } from "react-router
 import {
   LayoutDashboard, Smartphone, ShoppingCart, ArrowDownUp, Users,
   Headphones, Wrench, Tag, TrendingUp, Megaphone, DollarSign,
-  UserCog, Clock, FileBarChart, Settings, HelpCircle, LogOut, CreditCard, Shield, Lock,
+  UserCog, Clock, FileBarChart, Settings, HelpCircle, LogOut, CreditCard, Shield, Lock, Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
@@ -23,6 +23,7 @@ const navItems = [
   { to: "/dashboard/employees", label: "Сотрудники", icon: UserCog },
   { to: "/dashboard/shifts", label: "Смены", icon: Clock },
   { to: "/dashboard/reports", label: "Отчёты", icon: FileBarChart },
+  { to: "/dashboard/ai", label: "AI Ассистент", icon: Sparkles, requiredPlan: ["business", "premier"] },
   { to: "/dashboard/settings", label: "Настройки", icon: Settings },
   { to: "/dashboard/pricing", label: "Тарифы", icon: CreditCard },
   { to: "/dashboard/support", label: "Поддержка", icon: HelpCircle },

@@ -26,6 +26,7 @@ import ReportsPage from "./pages/dashboard/ReportsPage";
 import SettingsPage from "./pages/dashboard/SettingsPage";
 import SupportPage from "./pages/dashboard/SupportPage";
 import PricingPage from "./pages/dashboard/PricingPage";
+import AIPage from "./pages/dashboard/AIPage";
 import AdminLayout from "./components/AdminLayout";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminStoriesPage from "./pages/admin/AdminStoriesPage";
@@ -69,6 +70,7 @@ const App = () => (
               <Route path="settings" element={<SettingsPage />} />
               <Route path="pricing" element={<PricingPage />} />
               <Route path="support" element={<SupportPage />} />
+              <Route path="ai" element={<PlanGate feature="ai"><AIPage /></PlanGate>} />
             </Route>
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboardPage />} />
