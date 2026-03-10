@@ -224,7 +224,58 @@ const BuybackPage = () => {
     onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
 
-  // Price list
+  // Save per-model margin
+  const saveModelMargin = useMutation({
+    mutationFn: async () => {
+      if (!companyId) throw new Error("No company");
+      const entry = monitoringMap[marginEditModel];
+      const mu = marginEditUsed ? Number(marginEditUsed) : null;
+      const mn = marginEditNew ? Number(marginEditNew) : null;
+      if (entry) {
+        const { error } = await supabase
+          .from("price_monitoring")
+          .update({ margin_used: mu, margin_new: mn })
+          .eq("id", entry.id);
+        if (error) throw error;
+      } else {
+        // Create entry with just margins
+        const { error } = await supabase.from("price_monitoring").insert({
+          company_id: companyId,
+          model: marginEditModel,
+          margin_used: mu,
+          margin_new: mn,
+          prices: [],
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["price-monitoring"] });
+      toast({ title: "Маржа для модели сохранена" });
+      setMarginEditOpen(false);
+    },
+    onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
+  });
+
+  const getModelMargins = (modelKey: string) => {
+    const entry = monitoringMap[modelKey];
+    return {
+      used: entry?.margin_used ?? currentMarginUsed,
+      new: entry?.margin_new ?? currentMarginNew,
+    };
+  };
+
+  const openMarginEdit = (row: CatalogRow, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const key = `${row.model} ${row.memory}`;
+    const entry = monitoringMap[key];
+    setMarginEditModel(key);
+    setMarginEditUsed(entry?.margin_used != null ? String(entry.margin_used) : "");
+    setMarginEditNew(entry?.margin_new != null ? String(entry.margin_new) : "");
+    setMarginEditOpen(true);
+  };
+
+
   const filteredRows = useMemo(() => {
     if (!search.trim()) return allRows;
     const q = search.toLowerCase();
