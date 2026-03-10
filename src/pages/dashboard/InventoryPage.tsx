@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, Upload, FileSpreadsheet, X, Pencil } from "lucide-react";
+import { Plus, Search, Upload, FileSpreadsheet, X, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import ComboboxInput from "@/components/ComboboxInput";
