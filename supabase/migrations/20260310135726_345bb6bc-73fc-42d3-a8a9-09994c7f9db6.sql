@@ -1,0 +1,1 @@
+ALTER TABLE public.price_monitoring ADD COLUMN margin_used numeric, ADD COLUMN margin_new numeric;
