@@ -28,7 +28,7 @@ const QuickActionButton = () => {
                   setOpen(false);
                 }}
                 className={cn(
-                  "flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium text-white shadow-lg transition-all",
+                  "flex items-center gap-2 rounded-full px-4 py-3 text-sm font-medium text-white shadow-lg transition-all duration-150 active:scale-95 min-h-[48px]",
                   action.color
                 )}
                 style={{
@@ -36,7 +36,7 @@ const QuickActionButton = () => {
                   animationFillMode: "both",
                 }}
               >
-                <action.icon className="h-4 w-4" />
+                <action.icon className="h-5 w-5" />
                 {action.label}
               </button>
             ))}

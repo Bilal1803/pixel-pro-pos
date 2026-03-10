@@ -71,7 +71,7 @@ const MobileBottomNav = () => {
                       setMoreOpen(false);
                     }}
                     className={cn(
-                      "flex flex-col items-center gap-1.5 rounded-xl p-3 min-h-[60px] transition-colors",
+                      "flex flex-col items-center gap-1.5 rounded-xl p-3 min-h-[64px] transition-all duration-150 active:scale-95",
                       active
                         ? "bg-primary/10 text-primary"
                         : "text-muted-foreground hover:bg-accent"
@@ -96,7 +96,6 @@ const MobileBottomNav = () => {
         >
           {mainItems.map((item, i) => {
             const active = isActive(item.to);
-            // Insert quick action button after 3rd item (before index 3)
             const showQuickAction = i === 3;
             return (
               <div key={item.to} className="contents">
@@ -108,21 +107,21 @@ const MobileBottomNav = () => {
                 <button
                   onClick={() => navigate(item.to)}
                   className={cn(
-                    "relative flex flex-col items-center justify-center gap-0.5 min-w-[64px] min-h-[56px] px-2 py-1.5 transition-colors flex-shrink-0",
+                    "relative flex flex-col items-center justify-center gap-0.5 min-w-[64px] min-h-[56px] px-2 py-1.5 transition-colors flex-shrink-0 active:scale-95 transition-transform duration-150",
                     active ? "text-primary" : "text-muted-foreground"
                   )}
                 >
-                  {/* Active indicator */}
-                  {active && (
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-primary animate-scale-in" />
-                  )}
-                  <item.icon className={cn("h-5 w-5 transition-transform", active && "scale-110")} />
+                  <item.icon className={cn("h-5 w-5 transition-transform duration-200", active && "scale-110")} />
                   <span className={cn(
                     "text-[10px] leading-tight font-medium",
                     active && "font-semibold"
                   )}>
                     {item.label}
                   </span>
+                  {/* Active indicator — bottom */}
+                  {active && (
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-primary animate-scale-in" />
+                  )}
                 </button>
               </div>
             );
@@ -132,15 +131,15 @@ const MobileBottomNav = () => {
           <button
             onClick={() => setMoreOpen(!moreOpen)}
             className={cn(
-              "relative flex flex-col items-center justify-center gap-0.5 min-w-[64px] min-h-[56px] px-2 py-1.5 transition-colors flex-shrink-0",
+              "relative flex flex-col items-center justify-center gap-0.5 min-w-[64px] min-h-[56px] px-2 py-1.5 transition-colors flex-shrink-0 active:scale-95 transition-transform duration-150",
               isInMoreSection || moreOpen ? "text-primary" : "text-muted-foreground"
             )}
           >
-            {(isInMoreSection && !moreOpen) && (
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-primary" />
-            )}
             <MoreHorizontal className="h-5 w-5" />
             <span className="text-[10px] leading-tight font-medium">Ещё</span>
+            {(isInMoreSection && !moreOpen) && (
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-primary" />
+            )}
           </button>
         </div>
       </nav>

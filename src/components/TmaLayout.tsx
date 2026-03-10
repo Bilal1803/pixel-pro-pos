@@ -32,17 +32,17 @@ const TmaLayout = () => {
                 key={item.to}
                 onClick={() => navigate(item.to)}
                 className={cn(
-                  "relative flex flex-col items-center justify-center gap-1 py-3 min-h-[56px] transition-colors",
+                  "relative flex flex-col items-center justify-center gap-1 py-3 min-h-[56px] transition-all duration-150 active:scale-95",
                   active ? "text-primary" : "text-muted-foreground"
                 )}
               >
-                {active && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-primary animate-scale-in" />
-                )}
-                <item.icon className={cn("h-6 w-6 transition-transform", active && "scale-110")} />
+                <item.icon className={cn("h-6 w-6 transition-transform duration-200", active && "scale-110")} />
                 <span className={cn("text-xs font-medium", active && "font-semibold")}>
                   {item.label}
                 </span>
+                {active && (
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-primary animate-scale-in" />
+                )}
               </button>
             );
           })}
