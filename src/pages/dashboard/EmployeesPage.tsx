@@ -124,7 +124,7 @@ const EmployeesPage = () => {
   };
 
   const getInviteUrl = (code: string) => {
-    return `${window.location.origin}/invite/${code}`;
+    return `https://t.me/filtercrm_bot/app?startapp=invite_${code}`;
   };
 
   // Create invitation
