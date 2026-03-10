@@ -89,6 +89,14 @@ const TmaShiftPage = () => {
       setCashStart("");
       queryClient.invalidateQueries({ queryKey: ["tma-active-shift"] });
       toast({ title: "Смена открыта" });
+
+      if (companyId) {
+        sendTelegramNotification(
+          companyId,
+          "shift_open",
+          `▶️ <b>Смена открыта</b>\n\n💵 Касса: <b>${Number(cashStart || 0).toLocaleString("ru")} ₽</b>\n🕐 ${format(new Date(), "HH:mm dd.MM.yyyy")}`
+        );
+      }
     },
     onError: (e: any) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
