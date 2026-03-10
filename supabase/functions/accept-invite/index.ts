@@ -79,11 +79,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Update profile with phone and store_id
+    // Update profile with phone, store_id, and telegram_id
     if (newUser.user) {
       const updates: Record<string, unknown> = {};
       if (invite.phone) updates.phone = invite.phone;
       if (invite.store_id) updates.store_id = invite.store_id;
+      if (telegramId) updates.telegram_id = telegramId.toString();
       
       if (Object.keys(updates).length > 0) {
         await adminClient

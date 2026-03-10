@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.impersonate-user]
 verify_jwt = false
+
+[functions.tma-auth]
+verify_jwt = false
+
+[functions.accept-invite]
+verify_jwt = false
