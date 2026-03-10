@@ -33,6 +33,12 @@ const NetworkPage = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteStoreId, setDeleteStoreId] = useState<string | null>(null);
 
+  // Employee management state
+  const [employeesStoreId, setEmployeesStoreId] = useState<string | null>(null);
+  const [inviteForm, setInviteForm] = useState({ fullName: "", phone: "", role: "employee" });
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+
   const canAddStore = stores.length < (subscription?.max_stores ?? 1);
 
   const handleAddStore = async () => {
