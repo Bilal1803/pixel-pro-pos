@@ -68,5 +68,5 @@ export const useSubscription = () => {
     return { allowed: current < maxMap[type], current, max: maxMap[type] };
   };
 
-  return { subscription: limits, isLoading, checkLimit, PLAN_DEFAULTS };
+  return { subscription: limits, isLoading, checkLimit, isTrialExpired, PLAN_DEFAULTS };
 };
