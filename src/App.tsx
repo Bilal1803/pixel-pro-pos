@@ -29,6 +29,9 @@ import SettingsPage from "./pages/dashboard/SettingsPage";
 import SupportPage from "./pages/dashboard/SupportPage";
 import PricingPage from "./pages/dashboard/PricingPage";
 import AIPage from "./pages/dashboard/AIPage";
+import NetworkPage from "./pages/dashboard/NetworkPage";
+import ComparisonPage from "./pages/dashboard/ComparisonPage";
+import TransfersPage from "./pages/dashboard/TransfersPage";
 import AdminLayout from "./components/AdminLayout";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminStoriesPage from "./pages/admin/AdminStoriesPage";
@@ -78,8 +81,10 @@ const App = () => (
               <Route path="pricing" element={<PricingPage />} />
               <Route path="support" element={<SupportPage />} />
               <Route path="ai" element={<PlanGate feature="ai"><AIPage /></PlanGate>} />
+              <Route path="network" element={<PlanGate feature="network"><NetworkPage /></PlanGate>} />
+              <Route path="comparison" element={<PlanGate feature="comparison"><ComparisonPage /></PlanGate>} />
+              <Route path="transfers" element={<PlanGate feature="transfers"><TransfersPage /></PlanGate>} />
             </Route>
-            {/* Telegram Mini App routes */}
             <Route path="/tma" element={<TmaLayout />}>
               <Route index element={<TmaHomePage />} />
               <Route path="sales" element={<TmaSalesPage />} />
