@@ -251,6 +251,23 @@ const AdminStoriesPage = () => {
                 <Input value={form.action_label} onChange={(e) => setForm({ ...form, action_label: e.target.value })} />
               </div>
             )}
+            <div>
+              <Label>Цвет текста</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <input
+                  type="color"
+                  value={form.text_color}
+                  onChange={(e) => setForm({ ...form, text_color: e.target.value })}
+                  className="w-10 h-10 rounded border border-border cursor-pointer"
+                />
+                <Input
+                  value={form.text_color}
+                  onChange={(e) => setForm({ ...form, text_color: e.target.value })}
+                  className="w-28"
+                  placeholder="#ffffff"
+                />
+              </div>
+            </div>
             <div className="flex items-center gap-2">
               <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
               <Label>Активна</Label>
