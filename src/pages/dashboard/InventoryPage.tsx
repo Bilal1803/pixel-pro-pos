@@ -721,6 +721,16 @@ const InventoryPage = () => {
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Модель *</Label><ComboboxInput value={editForm.model} onChange={handleEditModelChange} options={modelOptions} required /></div>
               <div><Label>Бренд</Label><ComboboxInput value={editForm.brand} onChange={(v) => setEditForm({ ...editForm, brand: v })} options={brandOptions} /></div>
+              <div>
+                <Label>Состояние</Label>
+                <Select value={editForm.condition} onValueChange={(v) => setEditForm({ ...editForm, condition: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="used">БУ</SelectItem>
+                    <SelectItem value="new">Новый</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div><Label>Память</Label><ComboboxInput value={editForm.memory} onChange={(v) => setEditForm({ ...editForm, memory: v })} options={getMemoryOptions(editForm.model)} placeholder="128GB" /></div>
               <div><Label>Цвет</Label><ComboboxInput value={editForm.color} onChange={(v) => setEditForm({ ...editForm, color: v })} options={getColorOptions(editForm.model)} /></div>
               <div><Label>IMEI *</Label><Input value={editForm.imei} onChange={(e) => setEditForm({ ...editForm, imei: e.target.value })} required /></div>
