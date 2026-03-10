@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Shield, CreditCard, Clock } from "lucide-react";
+import { CreditCard, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const TrialPaywall = () => {
