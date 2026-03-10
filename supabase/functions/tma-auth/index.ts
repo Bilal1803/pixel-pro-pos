@@ -1,31 +1,43 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { hmac } from "https://deno.land/x/hmac@v2.0.1/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const encoder = new TextEncoder();
+
+async function hmacSha256(key: ArrayBuffer | Uint8Array, data: string): Promise<ArrayBuffer> {
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    key instanceof Uint8Array ? key : new Uint8Array(key),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  return crypto.subtle.sign("HMAC", cryptoKey, encoder.encode(data));
+}
+
+function bufToHex(buf: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
 /**
- * Validates Telegram WebApp initData using HMAC-SHA256.
- * Returns parsed user data if valid, null otherwise.
+ * Validates Telegram WebApp initData using HMAC-SHA256 (Web Crypto API).
  */
-function validateInitData(initData: string, botToken: string): Record<string, string> | null {
+async function validateInitData(initData: string, botToken: string): Promise<Record<string, string> | null> {
   try {
     const params = new URLSearchParams(initData);
     const hash = params.get("hash");
     if (!hash) return null;
 
-    // Remove hash from params and sort alphabetically
     params.delete("hash");
     const entries = Array.from(params.entries());
     entries.sort((a, b) => a[0].localeCompare(b[0]));
     const dataCheckString = entries.map(([k, v]) => `${k}=${v}`).join("\n");
 
-    // Create secret key: HMAC-SHA256("WebAppData", bot_token)
-    const secretKey = hmac("sha256", "WebAppData", botToken);
-    // Calculate hash: HMAC-SHA256(secret_key, data_check_string)  
-    const calculatedHash = hmac("sha256", secretKey, dataCheckString);
+    const secretKey = await hmacSha256(encoder.encode("WebAppData"), botToken);
+    const calculatedHash = bufToHex(await hmacSha256(secretKey, dataCheckString));
 
     if (calculatedHash !== hash) return null;
 
