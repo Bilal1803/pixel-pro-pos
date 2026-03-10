@@ -84,7 +84,7 @@ const AdminStoriesPage = () => {
       if (!thumbnailUrl || thumbnailUrl === "pending-upload") throw new Error("Превью обязательно");
 
       const payload = {
-        title: form.title,
+        title: form.title || "Story",
         description: form.description || null,
         image_url: storyImageUrl,
         thumbnail_url: thumbnailUrl,
@@ -184,7 +184,7 @@ const AdminStoriesPage = () => {
     if (inputRef.current) inputRef.current.value = "";
   };
 
-  const canSave = form.title && (thumbFile || form.thumbnail_url) && (storyFile || form.image_url);
+  const canSave = (thumbFile || form.thumbnail_url) && (storyFile || form.image_url);
 
   const renderUploader = (
     label: string,
@@ -271,11 +271,11 @@ const AdminStoriesPage = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Заголовок *</Label>
+              <Label>Заголовок <span className="text-muted-foreground font-normal">(необязательно)</span></Label>
               <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
             </div>
             <div>
-              <Label>Описание</Label>
+              <Label>Описание <span className="text-muted-foreground font-normal">(необязательно)</span></Label>
               <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} />
             </div>
 
