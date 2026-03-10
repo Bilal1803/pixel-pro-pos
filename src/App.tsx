@@ -8,6 +8,8 @@ import PlanGate from "@/components/PlanGate";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardLayout from "./components/DashboardLayout";
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import InventoryPage from "./pages/dashboard/InventoryPage";

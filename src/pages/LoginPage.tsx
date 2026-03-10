@@ -51,7 +51,12 @@ const LoginPage = () => {
             {loading ? "Вход..." : "Войти"}
           </Button>
         </form>
-        <p className="mt-6 text-center text-sm text-muted-foreground">
+        <div className="mt-4 text-center">
+          <Link to="/forgot-password" className="text-sm text-muted-foreground hover:text-primary hover:underline">
+            Забыли пароль?
+          </Link>
+        </div>
+        <p className="mt-4 text-center text-sm text-muted-foreground">
           Нет аккаунта?{" "}
           <Link to="/register" className="font-medium text-primary hover:underline">Зарегистрироваться</Link>
         </p>
