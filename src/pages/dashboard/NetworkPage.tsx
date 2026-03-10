@@ -171,7 +171,7 @@ const NetworkPage = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["invitations"] });
-      setInviteLink(`${window.location.origin}/invite/${data.code}`);
+      setInviteLink(`https://t.me/filtercrm_bot/app?startapp=invite_${data.code}`);
       toast.success("Приглашение создано");
     },
     onError: (e: any) => {
