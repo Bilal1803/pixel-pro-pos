@@ -603,6 +603,7 @@ const InventoryPage = () => {
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Память</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Цвет</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">IMEI</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">SIM</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">АКБ</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Закупка</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Продажа</th>
