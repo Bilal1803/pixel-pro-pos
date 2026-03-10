@@ -2,6 +2,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import OnboardingTour from "@/components/OnboardingTour";
+import NotificationBell from "@/components/NotificationBell";
 
 const DashboardLayout = () => {
   const { user, loading } = useAuth();
