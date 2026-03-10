@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-
+import { sendTelegramNotification } from "@/lib/telegram";
 const TmaCashPage = () => {
   const { companyId, user } = useAuth();
   const { toast } = useToast();
