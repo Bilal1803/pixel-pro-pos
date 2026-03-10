@@ -131,6 +131,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (err) {
+    console.error("accept-invite error:", (err as Error).message);
     return new Response(JSON.stringify({ error: (err as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
