@@ -29,12 +29,28 @@ const BuybackPage = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [marginUsed, setMarginUsed] = useState("");
   const [marginNew, setMarginNew] = useState("");
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customModel, setCustomModel] = useState("");
+  const [customMemory, setCustomMemory] = useState("");
+  const [customPrice, setCustomPrice] = useState("");
 
   // Buyback form
   const [buybackOpen, setBuybackOpen] = useState(false);
   const [buybackForm, setBuybackForm] = useState({
     model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "",
   });
+
+  // User role
+  const { data: userRole } = useQuery({
+    queryKey: ["user-role", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id).single();
+      return data?.role || null;
+    },
+    enabled: !!user?.id,
+  });
+  const isOwner = userRole === "owner";
 
   // Load margin settings
   const { data: settings } = useQuery({
