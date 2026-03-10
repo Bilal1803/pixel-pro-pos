@@ -40,6 +40,7 @@ Deno.serve(async (req) => {
 
     // Check status
     if (invite.status !== "pending") {
+      console.log("Invite already used:", invite.status);
       return new Response(JSON.stringify({ error: "Приглашение уже использовано" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
