@@ -43,6 +43,9 @@ const BuybackPage = () => {
   const [marginEditUsed, setMarginEditUsed] = useState("");
   const [marginEditNew, setMarginEditNew] = useState("");
 
+  // Delete model from price list
+  const [deleteModelTarget, setDeleteModelTarget] = useState<{ key: string; id: string } | null>(null);
+
   // Buyback form
   const [buybackOpen, setBuybackOpen] = useState(false);
   const [buybackForm, setBuybackForm] = useState({
