@@ -1,12 +1,17 @@
 import { Card } from "@/components/ui/card";
-import { DollarSign, TrendingUp, ShoppingCart, Smartphone } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DollarSign, TrendingUp, ShoppingCart, Smartphone, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { useSubscription } from "@/hooks/useSubscription";
 import StoriesCarousel from "@/components/StoriesCarousel";
 
 const DashboardHome = () => {
   const { companyId } = useAuth();
+  const navigate = useNavigate();
+  const { subscription } = useSubscription();
 
   const { data: devices = [] } = useQuery({
     queryKey: ["devices-dash", companyId],
@@ -130,6 +135,22 @@ const DashboardHome = () => {
           )}
         </Card>
       </div>
+      {subscription.ai_enabled && (
+        <Card className="card-shadow p-5 flex items-center justify-between bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+              <Sparkles className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm">AI Ассистент</h3>
+              <p className="text-xs text-muted-foreground">Аналитика продаж, рекомендации по ценам, советы по бизнесу</p>
+            </div>
+          </div>
+          <Button onClick={() => navigate("/dashboard/ai")} size="sm">
+            Открыть чат
+          </Button>
+        </Card>
+      )}
     </div>
   );
 };
