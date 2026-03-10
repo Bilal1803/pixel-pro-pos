@@ -37,7 +37,7 @@ const MonitoringPage = () => {
   const [newMemory, setNewMemory] = useState("");
 
   // Delete confirmation
-  const [deleteTarget, setDeleteTarget] = useState<{ key: string; id?: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ key: string; id?: string; isCustom?: boolean } | null>(null);
 
   // Import state
   type ImportRow = { model: string; memory: string; our_price?: number };
