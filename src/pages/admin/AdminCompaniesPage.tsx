@@ -17,6 +17,26 @@ const AdminCompaniesPage = () => {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<any>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [impersonating, setImpersonating] = useState<string | null>(null);
+
+  const handleImpersonate = async (userId: string) => {
+    setImpersonating(userId);
+    try {
+      const { data, error } = await supabase.functions.invoke("impersonate-user", {
+        body: { targetUserId: userId },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        const redirectUrl = `${data.url}&redirect_to=${window.location.origin}/dashboard`;
+        window.open(redirectUrl, "_blank");
+        toast({ title: "Сессия пользователя открыта в новой вкладке" });
+      }
+    } catch (err: any) {
+      toast({ title: "Ошибка", description: err.message, variant: "destructive" });
+    } finally {
+      setImpersonating(null);
+    }
+  };
 
   const { data: companies = [], isLoading } = useQuery({
     queryKey: ["admin-companies"],
