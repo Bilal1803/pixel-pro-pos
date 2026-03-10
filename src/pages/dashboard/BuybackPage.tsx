@@ -175,6 +175,49 @@ const BuybackPage = () => {
     onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
 
+  // Add custom model to price monitoring
+  const addCustomModel = useMutation({
+    mutationFn: async () => {
+      if (!companyId) throw new Error("No company");
+      const modelName = `${customModel} ${customMemory}`.trim();
+      const price = customPrice ? Number(customPrice) : null;
+      const { error } = await supabase.from("price_monitoring").insert({
+        company_id: companyId,
+        model: modelName,
+        our_price: price,
+        avg_price: price,
+        prices: price ? [price] : [],
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["price-monitoring"] });
+      toast({ title: "Модель добавлена" });
+      setCustomOpen(false);
+      setCustomModel("");
+      setCustomMemory("");
+      setCustomPrice("");
+    },
+    onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
+  });
+
+  // Delete buyback (owner only)
+  const deleteBuyback = useMutation({
+    mutationFn: async ({ buybackId, deviceId }: { buybackId: string; deviceId: string | null }) => {
+      const { error } = await supabase.from("buybacks").delete().eq("id", buybackId);
+      if (error) throw error;
+      if (deviceId) {
+        await supabase.from("devices").delete().eq("id", deviceId);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["buybacks"] });
+      queryClient.invalidateQueries({ queryKey: ["devices"] });
+      toast({ title: "Скупка удалена" });
+    },
+    onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
+  });
+
   // Price list
   const filteredRows = useMemo(() => {
     if (!search.trim()) return allRows;
