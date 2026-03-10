@@ -271,11 +271,11 @@ const AdminStoriesPage = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Заголовок *</Label>
+              <Label>Заголовок <span className="text-muted-foreground font-normal">(необязательно)</span></Label>
               <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
             </div>
             <div>
-              <Label>Описание</Label>
+              <Label>Описание <span className="text-muted-foreground font-normal">(необязательно)</span></Label>
               <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} />
             </div>
 
