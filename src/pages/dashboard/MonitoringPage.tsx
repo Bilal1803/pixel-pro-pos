@@ -37,6 +37,13 @@ const MonitoringPage = () => {
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<{ key: string; id?: string } | null>(null);
 
+  // Import state
+  type ImportRow = { model: string; memory: string; our_price?: number };
+  const [importOpen, setImportOpen] = useState(false);
+  const [importRows, setImportRows] = useState<ImportRow[]>([]);
+  const [importFileName, setImportFileName] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const { data: monitoring = [], isLoading } = useQuery({
     queryKey: ["price-monitoring", companyId],
     queryFn: async () => {
