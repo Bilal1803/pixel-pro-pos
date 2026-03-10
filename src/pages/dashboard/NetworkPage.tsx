@@ -1,18 +1,51 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Store, MapPin, Phone, Smartphone, DollarSign, TrendingUp, ArrowRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Store, MapPin, Phone, Smartphone, DollarSign, TrendingUp, ArrowRight, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useStoreContext } from "@/contexts/StoreContext";
+import { useSubscription } from "@/hooks/useSubscription";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { toast } from "sonner";
 
 const NetworkPage = () => {
   const { companyId } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { stores, setActiveStoreId } = useStoreContext();
+  const { subscription } = useSubscription();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ name: "", address: "", phone: "" });
+
+  const canAddStore = stores.length < (subscription?.max_stores ?? 1);
+
+  const handleAddStore = async () => {
+    if (!companyId || !form.name.trim()) return;
+    setSaving(true);
+    const { error } = await supabase.from("stores").insert({
+      company_id: companyId,
+      name: form.name.trim(),
+      address: form.address.trim() || null,
+      phone: form.phone.trim() || null,
+    });
+    setSaving(false);
+    if (error) {
+      toast.error("Не удалось создать магазин");
+      return;
+    }
+    toast.success("Магазин добавлен");
+    setForm({ name: "", address: "", phone: "" });
+    setDialogOpen(false);
+    queryClient.invalidateQueries({ queryKey: ["stores"] });
+  };
 
   const { data: devices = [] } = useQuery({
     queryKey: ["network-devices", companyId],
