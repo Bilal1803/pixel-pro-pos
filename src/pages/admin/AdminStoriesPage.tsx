@@ -84,7 +84,7 @@ const AdminStoriesPage = () => {
       if (!thumbnailUrl || thumbnailUrl === "pending-upload") throw new Error("Превью обязательно");
 
       const payload = {
-        title: form.title,
+        title: form.title || "Story",
         description: form.description || null,
         image_url: storyImageUrl,
         thumbnail_url: thumbnailUrl,
