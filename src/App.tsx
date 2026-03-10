@@ -26,6 +26,7 @@ import ReportsPage from "./pages/dashboard/ReportsPage";
 import SettingsPage from "./pages/dashboard/SettingsPage";
 import SupportPage from "./pages/dashboard/SupportPage";
 import PricingPage from "./pages/dashboard/PricingPage";
+import AIPage from "./pages/dashboard/AIPage";
 import AdminLayout from "./components/AdminLayout";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminStoriesPage from "./pages/admin/AdminStoriesPage";
