@@ -212,6 +212,7 @@ const InventoryPage = () => {
         status: editForm.status as any,
         notes: editForm.notes || null,
         sim_type: editForm.sim_type || null,
+        condition: editForm.condition || "used",
       }).eq("id", editForm.id);
       if (error) throw error;
     },
