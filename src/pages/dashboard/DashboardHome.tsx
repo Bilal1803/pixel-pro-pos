@@ -10,6 +10,8 @@ import StoriesCarousel from "@/components/StoriesCarousel";
 
 const DashboardHome = () => {
   const { companyId } = useAuth();
+  const navigate = useNavigate();
+  const { subscription } = useSubscription();
 
   const { data: devices = [] } = useQuery({
     queryKey: ["devices-dash", companyId],
