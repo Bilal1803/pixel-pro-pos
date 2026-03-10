@@ -22,6 +22,7 @@ const navItems = [
   { to: "/dashboard/shifts", label: "Смены", icon: Clock },
   { to: "/dashboard/reports", label: "Отчёты", icon: FileBarChart },
   { to: "/dashboard/settings", label: "Настройки", icon: Settings },
+  { to: "/dashboard/pricing", label: "Тарифы", icon: CreditCard },
   { to: "/dashboard/support", label: "Поддержка", icon: HelpCircle },
 ];
 
