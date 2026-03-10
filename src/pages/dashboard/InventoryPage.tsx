@@ -110,10 +110,29 @@ const InventoryPage = () => {
     return counts;
   }, [devices]);
 
-  const uniqueModels = useMemo(() => [...new Set(devices.map(d => d.model).filter(Boolean))].sort(), [devices]);
-  const uniqueBrands = useMemo(() => [...new Set(devices.map(d => d.brand).filter(Boolean) as string[])].sort(), [devices]);
-  const uniqueMemory = useMemo(() => [...new Set(devices.map(d => d.memory).filter(Boolean) as string[])].sort(), [devices]);
-  const uniqueColors = useMemo(() => [...new Set(devices.map(d => d.color).filter(Boolean) as string[])].sort(), [devices]);
+  const modelOptions = useMemo(() => {
+    const fromDb = devices.map(d => d.model).filter(Boolean);
+    return [...new Set([...ALL_CATALOG_MODELS, ...fromDb])];
+  }, [devices]);
+
+  const brandOptions = useMemo(() => {
+    const fromDb = devices.map(d => d.brand).filter(Boolean) as string[];
+    return [...new Set([...PRESET_BRANDS, ...fromDb])];
+  }, [devices]);
+
+  const getMemoryOptions = (model: string) => {
+    const catalogData = getModelData(model);
+    const fromDb = [...new Set(devices.filter(d => d.memory).map(d => d.memory!) )];
+    if (catalogData) return [...new Set([...catalogData.memories, ...fromDb])];
+    return [...new Set([...ALL_CATALOG_MEMORIES, ...fromDb])];
+  };
+
+  const getColorOptions = (model: string) => {
+    const catalogData = getModelData(model);
+    const fromDb = [...new Set(devices.filter(d => d.color).map(d => d.color!))];
+    if (catalogData) return [...new Set([...catalogData.colors, ...fromDb])];
+    return [...new Set([...ALL_CATALOG_COLORS, ...fromDb])];
+  };
 
   const addDevice = useMutation({
     mutationFn: async () => {
