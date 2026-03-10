@@ -316,9 +316,15 @@ const MonitoringPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Мониторинг цен</h1>
-        <Button size="sm" onClick={() => setAddOpen(true)}>
-          <Plus className="h-4 w-4 mr-1" /> Добавить модель
-        </Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}>
+            <Upload className="h-4 w-4 mr-1" /> Импорт
+          </Button>
+          <input ref={fileInputRef} type="file" className="hidden" accept=".xlsx,.xls,.csv" onChange={handleImportFile} />
+          <Button size="sm" onClick={() => setAddOpen(true)}>
+            <Plus className="h-4 w-4 mr-1" /> Добавить модель
+          </Button>
+        </div>
       </div>
 
       <p className="text-sm text-muted-foreground">
