@@ -162,7 +162,7 @@ const TmaSalesPage = () => {
 
       return { sale, cartItems: cart, totalAmount: total, paymentLabel: paymentMethods.find(p => p.value === payment)?.label || payment };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       setCart([]);
       setStep("search");
       setSearch("");
@@ -170,6 +170,16 @@ const TmaSalesPage = () => {
       queryClient.invalidateQueries({ queryKey: ["tma-products"] });
       queryClient.invalidateQueries({ queryKey: ["tma-today-sales"] });
       toast({ title: "Продажа оформлена ✓" });
+
+      // Fire-and-forget Telegram notification
+      if (companyId) {
+        const items = result.cartItems.map((c: CartItem) => `  • ${c.name} — ${(c.price * c.quantity).toLocaleString("ru")} ₽`).join("\n");
+        sendTelegramNotification(
+          companyId,
+          "sale",
+          `🛒 <b>Новая продажа</b>\n\n${items}\n\n💰 Итого: <b>${result.totalAmount.toLocaleString("ru")} ₽</b>\n💳 ${result.paymentLabel}`
+        );
+      }
     },
     onError: (e: any) => {
       toast({ title: "Ошибка", description: e.message, variant: "destructive" });
