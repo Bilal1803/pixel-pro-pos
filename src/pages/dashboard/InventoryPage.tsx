@@ -664,9 +664,27 @@ const InventoryPage = () => {
               </Select>
             </div>
             <div><Label>Заметки</Label><Textarea value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} /></div>
-            <Button type="submit" className="w-full" disabled={updateDevice.isPending}>
-              {updateDevice.isPending ? "Сохранение..." : "Сохранить изменения"}
-            </Button>
+            <div className="flex gap-2">
+              {isOwner && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="flex-1"
+                  disabled={deleteDevice.isPending}
+                  onClick={() => {
+                    if (confirm("Удалить устройство? Это действие нельзя отменить.")) {
+                      deleteDevice.mutate(editForm.id);
+                    }
+                  }}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {deleteDevice.isPending ? "Удаление..." : "Удалить"}
+                </Button>
+              )}
+              <Button type="submit" className="flex-1" disabled={updateDevice.isPending}>
+                {updateDevice.isPending ? "Сохранение..." : "Сохранить изменения"}
+              </Button>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
