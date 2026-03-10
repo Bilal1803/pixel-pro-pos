@@ -342,10 +342,30 @@ const BuybackPage = () => {
 
       {tab === "prices" && (
         <>
-          <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Поиск модели..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <div className="flex items-center gap-3">
+            <div className="relative max-w-sm flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input placeholder="Поиск модели..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+            </div>
+            <Button variant="outline" onClick={() => setCustomOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> Своя модель
+            </Button>
           </div>
+
+          {/* Custom model dialog */}
+          <Dialog open={customOpen} onOpenChange={setCustomOpen}>
+            <DialogContent className="max-w-sm">
+              <DialogHeader><DialogTitle>Добавить модель</DialogTitle></DialogHeader>
+              <form onSubmit={(e) => { e.preventDefault(); addCustomModel.mutate(); }} className="space-y-3">
+                <div><Label>Модель *</Label><Input value={customModel} onChange={(e) => setCustomModel(e.target.value)} placeholder="Samsung Galaxy S24" required /></div>
+                <div><Label>Память</Label><Input value={customMemory} onChange={(e) => setCustomMemory(e.target.value)} placeholder="256GB" /></div>
+                <div><Label>Цена выкупа</Label><Input type="number" value={customPrice} onChange={(e) => setCustomPrice(e.target.value)} placeholder="30000" /></div>
+                <Button type="submit" className="w-full" disabled={addCustomModel.isPending}>
+                  {addCustomModel.isPending ? "Добавление..." : "Добавить"}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
 
           <Card className="card-shadow overflow-hidden">
             <div className="overflow-x-auto">
