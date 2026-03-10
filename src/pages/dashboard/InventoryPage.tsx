@@ -109,6 +109,11 @@ const InventoryPage = () => {
     return counts;
   }, [devices]);
 
+  const uniqueModels = useMemo(() => [...new Set(devices.map(d => d.model).filter(Boolean))].sort(), [devices]);
+  const uniqueBrands = useMemo(() => [...new Set(devices.map(d => d.brand).filter(Boolean) as string[])].sort(), [devices]);
+  const uniqueMemory = useMemo(() => [...new Set(devices.map(d => d.memory).filter(Boolean) as string[])].sort(), [devices]);
+  const uniqueColors = useMemo(() => [...new Set(devices.map(d => d.color).filter(Boolean) as string[])].sort(), [devices]);
+
   const addDevice = useMutation({
     mutationFn: async () => {
       if (!companyId) throw new Error("No company");
