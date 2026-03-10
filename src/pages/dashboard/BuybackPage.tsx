@@ -620,6 +620,27 @@ const BuybackPage = () => {
           )}
         </Card>
       )}
+
+      {/* Delete model confirmation */}
+      <AlertDialog open={!!deleteModelTarget} onOpenChange={(open) => !open && setDeleteModelTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить модель?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Модель «{deleteModelTarget?.key}» будет удалена из прайс-листа. Данные мониторинга и маржи для неё будут потеряны.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteModelTarget && deleteModelEntry.mutate(deleteModelTarget.id)}
+            >
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
