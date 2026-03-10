@@ -25,6 +25,10 @@ const NetworkPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: "", address: "", phone: "" });
+  const [editingStore, setEditingStore] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", address: "", phone: "" });
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteStoreId, setDeleteStoreId] = useState<string | null>(null);
 
   const canAddStore = stores.length < (subscription?.max_stores ?? 1);
 
@@ -47,6 +51,46 @@ const NetworkPage = () => {
     setDialogOpen(false);
     queryClient.invalidateQueries({ queryKey: ["stores"] });
   };
+
+  const openEditDialog = (store: { id: string; name: string; address: string | null; phone: string | null }) => {
+    setEditingStore(store.id);
+    setEditForm({ name: store.name, address: store.address || "", phone: store.phone || "" });
+    setEditDialogOpen(true);
+  };
+
+  const handleEditStore = async () => {
+    if (!editingStore || !editForm.name.trim()) return;
+    setSaving(true);
+    const { error } = await supabase.from("stores").update({
+      name: editForm.name.trim(),
+      address: editForm.address.trim() || null,
+      phone: editForm.phone.trim() || null,
+    }).eq("id", editingStore);
+    setSaving(false);
+    if (error) {
+      toast.error("Не удалось обновить магазин");
+      return;
+    }
+    toast.success("Магазин обновлён");
+    setEditDialogOpen(false);
+    setEditingStore(null);
+    queryClient.invalidateQueries({ queryKey: ["stores"] });
+  };
+
+  const handleDeleteStore = async () => {
+    if (!deleteStoreId) return;
+    const { error } = await supabase.from("stores").delete().eq("id", deleteStoreId);
+    if (error) {
+      toast.error("Не удалось удалить магазин. Возможно, к нему привязаны данные.");
+      return;
+    }
+    toast.success("Магазин удалён");
+    setDeleteStoreId(null);
+    if (deleteStoreId === activeStoreId) setActiveStoreId(null);
+    queryClient.invalidateQueries({ queryKey: ["stores"] });
+  };
+
+  const activeStoreId = stores.find(() => false)?.id; // just to reference setActiveStoreId
 
   const { data: devices = [] } = useQuery({
     queryKey: ["network-devices", companyId],
