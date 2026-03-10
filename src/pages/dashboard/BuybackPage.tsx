@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Search, Settings2, Plus } from "lucide-react";
+import { Search, Settings2, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -29,12 +29,28 @@ const BuybackPage = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [marginUsed, setMarginUsed] = useState("");
   const [marginNew, setMarginNew] = useState("");
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customModel, setCustomModel] = useState("");
+  const [customMemory, setCustomMemory] = useState("");
+  const [customPrice, setCustomPrice] = useState("");
 
   // Buyback form
   const [buybackOpen, setBuybackOpen] = useState(false);
   const [buybackForm, setBuybackForm] = useState({
     model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "",
   });
+
+  // User role
+  const { data: userRole } = useQuery({
+    queryKey: ["user-role", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id).single();
+      return data?.role || null;
+    },
+    enabled: !!user?.id,
+  });
+  const isOwner = userRole === "owner";
 
   // Load margin settings
   const { data: settings } = useQuery({
@@ -155,6 +171,49 @@ const BuybackPage = () => {
       toast({ title: "Скупка оформлена, устройство на проверке" });
       setBuybackOpen(false);
       setBuybackForm({ model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "" });
+    },
+    onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
+  });
+
+  // Add custom model to price monitoring
+  const addCustomModel = useMutation({
+    mutationFn: async () => {
+      if (!companyId) throw new Error("No company");
+      const modelName = `${customModel} ${customMemory}`.trim();
+      const price = customPrice ? Number(customPrice) : null;
+      const { error } = await supabase.from("price_monitoring").insert({
+        company_id: companyId,
+        model: modelName,
+        our_price: price,
+        avg_price: price,
+        prices: price ? [price] : [],
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["price-monitoring"] });
+      toast({ title: "Модель добавлена" });
+      setCustomOpen(false);
+      setCustomModel("");
+      setCustomMemory("");
+      setCustomPrice("");
+    },
+    onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
+  });
+
+  // Delete buyback (owner only)
+  const deleteBuyback = useMutation({
+    mutationFn: async ({ buybackId, deviceId }: { buybackId: string; deviceId: string | null }) => {
+      const { error } = await supabase.from("buybacks").delete().eq("id", buybackId);
+      if (error) throw error;
+      if (deviceId) {
+        await supabase.from("devices").delete().eq("id", deviceId);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["buybacks"] });
+      queryClient.invalidateQueries({ queryKey: ["devices"] });
+      toast({ title: "Скупка удалена" });
     },
     onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
@@ -283,10 +342,30 @@ const BuybackPage = () => {
 
       {tab === "prices" && (
         <>
-          <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Поиск модели..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <div className="flex items-center gap-3">
+            <div className="relative max-w-sm flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input placeholder="Поиск модели..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+            </div>
+            <Button variant="outline" onClick={() => setCustomOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> Своя модель
+            </Button>
           </div>
+
+          {/* Custom model dialog */}
+          <Dialog open={customOpen} onOpenChange={setCustomOpen}>
+            <DialogContent className="max-w-sm">
+              <DialogHeader><DialogTitle>Добавить модель</DialogTitle></DialogHeader>
+              <form onSubmit={(e) => { e.preventDefault(); addCustomModel.mutate(); }} className="space-y-3">
+                <div><Label>Модель *</Label><Input value={customModel} onChange={(e) => setCustomModel(e.target.value)} placeholder="Samsung Galaxy S24" required /></div>
+                <div><Label>Память</Label><Input value={customMemory} onChange={(e) => setCustomMemory(e.target.value)} placeholder="256GB" /></div>
+                <div><Label>Цена выкупа</Label><Input type="number" value={customPrice} onChange={(e) => setCustomPrice(e.target.value)} placeholder="30000" /></div>
+                <Button type="submit" className="w-full" disabled={addCustomModel.isPending}>
+                  {addCustomModel.isPending ? "Добавление..." : "Добавить"}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
 
           <Card className="card-shadow overflow-hidden">
             <div className="overflow-x-auto">
@@ -367,6 +446,7 @@ const BuybackPage = () => {
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Цена скупки</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Статус</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Дата</th>
+                    {isOwner && <th className="px-4 py-3"></th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -385,6 +465,22 @@ const BuybackPage = () => {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">{new Date(b.created_at).toLocaleDateString("ru")}</td>
+                        {isOwner && (
+                          <td className="px-4 py-3">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                              onClick={() => {
+                                if (confirm("Удалить запись о скупке?")) {
+                                  deleteBuyback.mutate({ buybackId: b.id, deviceId: b.device_id });
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
