@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
     }
 
     // Use the OTP token to verify and create session
-    const anonKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
     const userClient = createClient(supabaseUrl, anonKey);
 
     const { data: sessionData, error: sessionError } = await userClient.auth.verifyOtp({
