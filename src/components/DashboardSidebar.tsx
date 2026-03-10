@@ -2,7 +2,7 @@ import { NavLink as RouterNavLink, useLocation, useNavigate } from "react-router
 import {
   LayoutDashboard, Smartphone, ShoppingCart, ArrowDownUp, Users,
   Headphones, Wrench, Tag, TrendingUp, Megaphone, DollarSign,
-  UserCog, Clock, FileBarChart, Settings, HelpCircle, LogOut,
+  UserCog, Clock, FileBarChart, Settings, HelpCircle, LogOut, CreditCard,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
