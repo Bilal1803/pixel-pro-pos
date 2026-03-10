@@ -526,7 +526,7 @@ const InventoryPage = () => {
               <DialogHeader><DialogTitle>Новое устройство</DialogTitle></DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); addDevice.mutate(); }} className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Модель *</Label><ComboboxInput value={form.model} onChange={(v) => setForm({ ...form, model: v })} options={modelOptions} required /></div>
+                  <div><Label>Модель *</Label><ComboboxInput value={form.model} onChange={handleModelChange} options={modelOptions} required /></div>
                   <div><Label>Бренд</Label><ComboboxInput value={form.brand} onChange={(v) => setForm({ ...form, brand: v })} options={brandOptions} /></div>
                   <div><Label>Память</Label><ComboboxInput value={form.memory} onChange={(v) => setForm({ ...form, memory: v })} options={getMemoryOptions(form.model)} placeholder="128GB" /></div>
                   <div><Label>Цвет</Label><ComboboxInput value={form.color} onChange={(v) => setForm({ ...form, color: v })} options={getColorOptions(form.model)} /></div>
