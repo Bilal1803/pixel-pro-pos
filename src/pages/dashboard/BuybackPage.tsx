@@ -81,7 +81,7 @@ const BuybackPage = () => {
       if (!companyId) return [];
       const { data, error } = await supabase
         .from("price_monitoring")
-        .select("model, avg_price, our_price")
+        .select("model, avg_price, our_price, margin_used, margin_new, id")
         .eq("company_id", companyId);
       if (error) throw error;
       return data;
@@ -90,7 +90,7 @@ const BuybackPage = () => {
   });
 
   const monitoringMap = useMemo(() => {
-    const map: Record<string, { avg_price: number | null; our_price: number | null }> = {};
+    const map: Record<string, { avg_price: number | null; our_price: number | null; margin_used: number | null; margin_new: number | null; id: string }> = {};
     for (const m of monitoring) map[m.model] = m;
     return map;
   }, [monitoring]);
