@@ -587,7 +587,7 @@ const MonitoringPage = () => {
             <AlertDialogCancel>Отмена</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => deleteTarget?.id && deleteEntry.mutate(deleteTarget.id)}
+              onClick={() => deleteTarget && deleteEntry.mutate({ id: deleteTarget.id, key: deleteTarget.key, isCustom: deleteTarget.isCustom })}
             >
               Удалить
             </AlertDialogAction>
