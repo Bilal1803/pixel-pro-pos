@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 
 const NetworkPage = () => {
-  const { companyId } = useAuth();
+  const { companyId, user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { stores, activeStoreId, setActiveStoreId } = useStoreContext();
