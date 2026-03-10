@@ -184,7 +184,7 @@ const AdminStoriesPage = () => {
     if (inputRef.current) inputRef.current.value = "";
   };
 
-  const canSave = form.title && (thumbFile || form.thumbnail_url) && (storyFile || form.image_url);
+  const canSave = (thumbFile || form.thumbnail_url) && (storyFile || form.image_url);
 
   const renderUploader = (
     label: string,
