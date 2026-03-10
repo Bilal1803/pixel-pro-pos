@@ -184,6 +184,18 @@ const AdminCompaniesPage = () => {
                           >
                             {isBlocked ? <CheckCircle className="h-4 w-4 text-success" /> : <Ban className="h-4 w-4 text-destructive" />}
                           </Button>
+                          {owner && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              disabled={impersonating === owner.user_id}
+                              onClick={() => handleImpersonate(owner.user_id)}
+                              title="Войти как пользователь"
+                            >
+                              <LogIn className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
