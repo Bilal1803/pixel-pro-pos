@@ -102,7 +102,7 @@ const StoriesCarousel = () => {
       <Dialog open={!!activeStory} onOpenChange={(o) => !o && setActiveStory(null)}>
         <DialogContent className="sm:max-w-md p-0 overflow-hidden gap-0 border-0 bg-transparent shadow-none [&>button]:hidden">
           {activeStory && (
-            <div className="relative rounded-lg overflow-hidden max-h-[85vh] flex flex-col">
+            <div className="relative rounded-lg overflow-hidden overflow-y-auto max-h-[90vh] bg-black">
               <button
                 onClick={() => setActiveStory(null)}
                 className="absolute top-3 right-3 z-10 rounded-full bg-black/50 p-1.5 text-white hover:bg-black/70 transition"
@@ -112,8 +112,8 @@ const StoriesCarousel = () => {
               <div className="relative">
                 <img
                   src={activeStory.image_url}
-                  alt={activeStory.title}
-                  className="w-full max-h-[85vh] object-cover"
+                  alt={activeStory.title || "Story"}
+                  className="w-full object-contain"
                 />
                 {(activeStory.title && activeStory.title !== "Story" || activeStory.description || activeStory.action_url) && (
                   <div
