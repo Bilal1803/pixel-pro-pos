@@ -90,6 +90,8 @@ const SettingsPage = () => {
     <div className="space-y-6 max-w-2xl">
       <h1 className="text-2xl font-bold">Настройки</h1>
 
+      <SectionHelp tips={SECTION_TIPS.settings} />
+
       <Card className="p-6 card-shadow">
         <h2 className="text-lg font-semibold">Компания</h2>
         <p className="text-sm text-muted-foreground mt-1">Основная информация о компании</p>

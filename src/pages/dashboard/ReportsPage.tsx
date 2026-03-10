@@ -176,6 +176,8 @@ const ReportsPage = () => {
         )}
       </div>
 
+      <SectionHelp tips={SECTION_TIPS.reports} />
+
       {/* Period selector */}
       <Card>
         <CardContent className="pt-6 space-y-4">
