@@ -24,6 +24,7 @@ import ShiftsPage from "./pages/dashboard/ShiftsPage";
 import ReportsPage from "./pages/dashboard/ReportsPage";
 import SettingsPage from "./pages/dashboard/SettingsPage";
 import SupportPage from "./pages/dashboard/SupportPage";
+import PricingPage from "./pages/dashboard/PricingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
