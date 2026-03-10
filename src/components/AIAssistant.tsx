@@ -12,6 +12,7 @@ import AISurvey from "./AISurvey";
 type Msg = { role: "user" | "assistant"; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assistant`;
+const TOOLTIP_DISMISSED_KEY = "ai-tooltip-dismissed";
 
 const AIAssistant = () => {
   const { subscription } = useSubscription();
@@ -21,6 +22,7 @@ const AIAssistant = () => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [showTooltip, setShowTooltip] = useState(() => !sessionStorage.getItem(TOOLTIP_DISMISSED_KEY));
 
   const { data: surveyData, isLoading: surveyLoading, refetch: refetchSurvey } = useQuery({
     queryKey: ["ai-survey", companyId],
@@ -124,13 +126,37 @@ const AIAssistant = () => {
   };
 
   if (!open) {
+    const dismissTooltip = () => {
+      setShowTooltip(false);
+      sessionStorage.setItem(TOOLTIP_DISMISSED_KEY, "1");
+    };
+
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all hover:scale-105"
-      >
-        <Sparkles className="h-6 w-6" />
-      </button>
+      <div className="fixed bottom-6 right-6 z-50 flex items-end gap-3">
+        {showTooltip && (
+          <div
+            className="mb-1 animate-in fade-in slide-in-from-right-2 duration-300 cursor-pointer"
+            onClick={() => { dismissTooltip(); setOpen(true); }}
+          >
+            <div className="relative bg-card border shadow-lg rounded-2xl rounded-br-sm px-4 py-3 max-w-[200px]">
+              <button
+                onClick={(e) => { e.stopPropagation(); dismissTooltip(); }}
+                className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-muted border flex items-center justify-center text-muted-foreground hover:text-foreground text-xs"
+              >
+                ✕
+              </button>
+              <p className="text-sm font-medium text-foreground">👋 Я твой AI-помощник!</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Нажми на меня, чтобы начать</p>
+            </div>
+          </div>
+        )}
+        <button
+          onClick={() => { dismissTooltip(); setOpen(true); }}
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all hover:scale-105"
+        >
+          <Sparkles className="h-6 w-6" />
+        </button>
+      </div>
     );
   }
 
