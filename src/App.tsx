@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import PlanGate from "@/components/PlanGate";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -52,10 +53,10 @@ const App = () => (
               <Route path="buyback" element={<BuybackPage />} />
               <Route path="customers" element={<CustomersPage />} />
               <Route path="accessories" element={<AccessoriesPage />} />
-              <Route path="repairs" element={<RepairsPage />} />
+              <Route path="repairs" element={<PlanGate feature="repairs"><RepairsPage /></PlanGate>} />
               <Route path="price-tags" element={<PriceTagsPage />} />
-              <Route path="monitoring" element={<MonitoringPage />} />
-              <Route path="listings" element={<ListingsPage />} />
+              <Route path="monitoring" element={<PlanGate feature="monitoring"><MonitoringPage /></PlanGate>} />
+              <Route path="listings" element={<PlanGate feature="listings"><ListingsPage /></PlanGate>} />
               <Route path="finances" element={<FinancesPage />} />
               <Route path="employees" element={<EmployeesPage />} />
               <Route path="shifts" element={<ShiftsPage />} />
