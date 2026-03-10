@@ -45,6 +45,7 @@ import AdminSystemPage from "./pages/admin/AdminSystemPage";
 import TmaLayout from "./components/TmaLayout";
 import TmaHomePage from "./pages/tma/TmaHomePage";
 import { TmaSalesPage, TmaInventoryPage, TmaCashPage, TmaShiftPage } from "./pages/tma/TmaPages";
+import InvitePage from "./pages/InvitePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ const App = () => (
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/invite/:code" element={<InvitePage />} />
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<DashboardHome />} />
               <Route path="inventory" element={<InventoryPage />} />

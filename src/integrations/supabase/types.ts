@@ -552,6 +552,69 @@ export type Database = {
           },
         ]
       }
+      invitations: {
+        Row: {
+          code: string
+          company_id: string
+          created_at: string
+          created_by: string
+          expires_at: string
+          full_name: string
+          id: string
+          phone: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          status: string
+          store_id: string | null
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          code?: string
+          company_id: string
+          created_at?: string
+          created_by: string
+          expires_at?: string
+          full_name: string
+          id?: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: string
+          store_id?: string | null
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: string
+          store_id?: string | null
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invitations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listings: {
         Row: {
           avito_url: string | null
