@@ -500,7 +500,28 @@ const BuybackPage = () => {
         </>
       )}
 
-      {tab === "history" && (
+      {/* Per-model margin edit dialog */}
+      <Dialog open={marginEditOpen} onOpenChange={setMarginEditOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Маржа: {marginEditModel}</DialogTitle></DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); saveModelMargin.mutate(); }} className="space-y-4">
+            <div>
+              <Label>Маржа БУ (₽)</Label>
+              <Input type="number" value={marginEditUsed} onChange={(e) => setMarginEditUsed(e.target.value)} placeholder={`По умолчанию: ${currentMarginUsed}`} />
+              <p className="mt-1 text-xs text-muted-foreground">Оставьте пустым для общей маржи ({currentMarginUsed.toLocaleString("ru")} ₽)</p>
+            </div>
+            <div>
+              <Label>Маржа Новый (₽)</Label>
+              <Input type="number" value={marginEditNew} onChange={(e) => setMarginEditNew(e.target.value)} placeholder={`По умолчанию: ${currentMarginNew}`} />
+            </div>
+            <Button type="submit" className="w-full" disabled={saveModelMargin.isPending}>
+              {saveModelMargin.isPending ? "Сохранение..." : "Сохранить"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+
         <Card className="card-shadow overflow-hidden">
           {historyLoading ? (
             <div className="p-8 text-center text-muted-foreground">Загрузка...</div>
