@@ -39,6 +39,9 @@ import AdminFinancesPage from "./pages/admin/AdminFinancesPage";
 import AdminSupportPage from "./pages/admin/AdminSupportPage";
 import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
 import AdminSystemPage from "./pages/admin/AdminSystemPage";
+import TmaLayout from "./components/TmaLayout";
+import TmaHomePage from "./pages/tma/TmaHomePage";
+import { TmaSalesPage, TmaInventoryPage, TmaCashPage, TmaShiftPage } from "./pages/tma/TmaPages";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -75,6 +78,14 @@ const App = () => (
               <Route path="pricing" element={<PricingPage />} />
               <Route path="support" element={<SupportPage />} />
               <Route path="ai" element={<PlanGate feature="ai"><AIPage /></PlanGate>} />
+            </Route>
+            {/* Telegram Mini App routes */}
+            <Route path="/tma" element={<TmaLayout />}>
+              <Route index element={<TmaHomePage />} />
+              <Route path="sales" element={<TmaSalesPage />} />
+              <Route path="inventory" element={<TmaInventoryPage />} />
+              <Route path="cash" element={<TmaCashPage />} />
+              <Route path="shift" element={<TmaShiftPage />} />
             </Route>
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboardPage />} />
