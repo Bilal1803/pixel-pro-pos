@@ -618,6 +618,7 @@ const InventoryPage = () => {
                     <td className="px-4 py-3">{d.memory || "—"}</td>
                     <td className="px-4 py-3">{d.color || "—"}</td>
                     <td className="px-4 py-3 font-mono text-xs">{d.imei}</td>
+                    <td className="px-4 py-3 text-xs">{d.sim_type || "—"}</td>
                     <td className="px-4 py-3">{d.battery_health || "—"}</td>
                     <td className="px-4 py-3">{d.purchase_price ? `${d.purchase_price} ₽` : "—"}</td>
                     <td className="px-4 py-3">{d.sale_price ? `${d.sale_price} ₽` : "—"}</td>
