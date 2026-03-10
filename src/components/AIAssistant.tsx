@@ -22,6 +22,7 @@ const AIAssistant = () => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [showTooltip, setShowTooltip] = useState(() => !sessionStorage.getItem(TOOLTIP_DISMISSED_KEY));
 
   const { data: surveyData, isLoading: surveyLoading, refetch: refetchSurvey } = useQuery({
     queryKey: ["ai-survey", companyId],
