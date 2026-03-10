@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Sparkles, Send, X, Loader2 } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
+import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 
 type Msg = { role: "user" | "assistant"; content: string };
