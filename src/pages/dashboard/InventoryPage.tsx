@@ -16,6 +16,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import * as XLSX from "xlsx";
+import SectionHelp from "@/components/SectionHelp";
+import { SECTION_TIPS } from "@/data/sectionTips";
 
 const statusLabels: Record<string, { label: string; className: string }> = {
   available: { label: "В наличии", className: "bg-success/10 text-success" },
@@ -644,6 +646,8 @@ const InventoryPage = () => {
           ))}
         </TabsList>
       </Tabs>
+
+      <SectionHelp tips={SECTION_TIPS.inventory} />
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

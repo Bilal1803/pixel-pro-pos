@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import AISurvey from "@/components/AISurvey";
+import SectionHelp from "@/components/SectionHelp";
+import { SECTION_TIPS } from "@/data/sectionTips";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -141,7 +143,8 @@ const AIPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
+    <div className="flex flex-col h-[calc(100vh-8rem)] space-y-3">
+      <SectionHelp tips={SECTION_TIPS.ai} />
       <Card className="flex-1 flex flex-col overflow-hidden">
         <div className="flex items-center gap-2 border-b px-4 py-3 bg-primary/5">
           <Sparkles className="h-4 w-4 text-primary" />

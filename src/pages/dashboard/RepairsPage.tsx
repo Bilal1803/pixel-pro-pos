@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import SectionHelp from "@/components/SectionHelp";
+import { SECTION_TIPS } from "@/data/sectionTips";
 
 const statusLabels: Record<string, { label: string; className: string }> = {
   accepted: { label: "Принят", className: "bg-secondary text-secondary-foreground" },
@@ -117,6 +119,8 @@ const RepairsPage = () => {
           </DialogContent>
         </Dialog>
       </div>
+
+      <SectionHelp tips={SECTION_TIPS.repairs} />
 
       <Card className="card-shadow overflow-hidden">
         {isLoading ? (

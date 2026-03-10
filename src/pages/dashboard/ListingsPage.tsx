@@ -14,6 +14,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { IPHONE_CATALOG } from "@/data/deviceCatalog";
+import SectionHelp from "@/components/SectionHelp";
+import { SECTION_TIPS } from "@/data/sectionTips";
 
 const ListingsPage = () => {
   const { companyId } = useAuth();
@@ -268,6 +270,8 @@ const ListingsPage = () => {
       <p className="text-sm text-muted-foreground">
         Устройства группируются по модели, памяти и цвету. Привяжите ссылку на объявление Avito.
       </p>
+
+      <SectionHelp tips={SECTION_TIPS.listings} />
 
       <Card className="card-shadow overflow-hidden">
         {isLoading ? (

@@ -10,6 +10,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
+import SectionHelp from "@/components/SectionHelp";
+import { SECTION_TIPS } from "@/data/sectionTips";
 
 const planLabels: Record<string, string> = { start: "Старт", business: "Бизнес", premier: "Премьер" };
 const planPrices: Record<string, string> = { start: "1 990 ₽/мес", business: "2 990 ₽/мес", premier: "7 990 ₽/мес" };
@@ -87,6 +89,8 @@ const SettingsPage = () => {
   return (
     <div className="space-y-6 max-w-2xl">
       <h1 className="text-2xl font-bold">Настройки</h1>
+
+      <SectionHelp tips={SECTION_TIPS.settings} />
 
       <Card className="p-6 card-shadow">
         <h2 className="text-lg font-semibold">Компания</h2>

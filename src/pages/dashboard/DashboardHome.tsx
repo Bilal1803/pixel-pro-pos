@@ -7,6 +7,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useSubscription } from "@/hooks/useSubscription";
 import StoriesCarousel from "@/components/StoriesCarousel";
+import SectionHelp from "@/components/SectionHelp";
+import { SECTION_TIPS } from "@/data/sectionTips";
 
 const DashboardHome = () => {
   const { companyId } = useAuth();
@@ -62,6 +64,7 @@ const DashboardHome = () => {
   return (
     <div className="space-y-6">
       <StoriesCarousel />
+      <SectionHelp tips={SECTION_TIPS.dashboard} />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
           <Card key={s.label} className="p-5 card-shadow">

@@ -12,6 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { IPHONE_CATALOG } from "@/data/deviceCatalog";
+import SectionHelp from "@/components/SectionHelp";
+import { SECTION_TIPS } from "@/data/sectionTips";
 
 type CatalogRow = { model: string; memory: string; isCustom?: boolean };
 
@@ -326,6 +328,8 @@ const MonitoringPage = () => {
           </Button>
         </div>
       </div>
+
+      <SectionHelp tips={SECTION_TIPS.monitoring} />
 
       <p className="text-sm text-muted-foreground">
         Нажмите на модель, чтобы ввести 10 цен с Avito и рассчитать среднюю рыночную цену.

@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import SectionHelp from "@/components/SectionHelp";
+import { SECTION_TIPS } from "@/data/sectionTips";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -257,6 +259,8 @@ const EmployeesPage = () => {
           </DialogContent>
         </Dialog>
       </div>
+
+      <SectionHelp tips={SECTION_TIPS.employees} />
 
       {isLoading ? (
         <div className="p-8 text-center text-muted-foreground">Загрузка...</div>

@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import SectionHelp from "@/components/SectionHelp";
+import { SECTION_TIPS } from "@/data/sectionTips";
 
 const CustomersPage = () => {
   const { companyId } = useAuth();
@@ -76,6 +78,8 @@ const CustomersPage = () => {
           </DialogContent>
         </Dialog>
       </div>
+
+      <SectionHelp tips={SECTION_TIPS.customers} />
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
