@@ -3,7 +3,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Search, Settings2, Plus, Trash2, Pencil } from "lucide-react";
+import { Search, Settings2, Plus, Trash2, Pencil, X } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -41,6 +42,9 @@ const BuybackPage = () => {
   const [marginEditModel, setMarginEditModel] = useState("");
   const [marginEditUsed, setMarginEditUsed] = useState("");
   const [marginEditNew, setMarginEditNew] = useState("");
+
+  // Delete model from price list
+  const [deleteModelTarget, setDeleteModelTarget] = useState<{ key: string; id: string } | null>(null);
 
   // Buyback form
   const [buybackOpen, setBuybackOpen] = useState(false);
@@ -255,6 +259,20 @@ const BuybackPage = () => {
       queryClient.invalidateQueries({ queryKey: ["price-monitoring"] });
       toast({ title: "Маржа для модели сохранена" });
       setMarginEditOpen(false);
+    },
+    onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
+  });
+
+  // Delete model from price monitoring
+  const deleteModelEntry = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("price_monitoring").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["price-monitoring"] });
+      toast({ title: "Модель удалена из прайс-листа" });
+      setDeleteModelTarget(null);
     },
     onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
@@ -489,9 +507,24 @@ const BuybackPage = () => {
                             )}
                           </td>
                           <td className="px-4 py-2.5 text-center">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => openMarginEdit(row, e)}>
-                              <Pencil className="h-3 w-3 text-muted-foreground" />
-                            </Button>
+                            <div className="flex items-center justify-center gap-0.5">
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => openMarginEdit(row, e)}>
+                                <Pencil className="h-3 w-3 text-muted-foreground" />
+                              </Button>
+                              {entry && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeleteModelTarget({ key, id: entry.id });
+                                  }}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -587,6 +620,27 @@ const BuybackPage = () => {
           )}
         </Card>
       )}
+
+      {/* Delete model confirmation */}
+      <AlertDialog open={!!deleteModelTarget} onOpenChange={(open) => !open && setDeleteModelTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить модель?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Модель «{deleteModelTarget?.key}» будет удалена из прайс-листа. Данные мониторинга и маржи для неё будут потеряны.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteModelTarget && deleteModelEntry.mutate(deleteModelTarget.id)}
+            >
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
