@@ -20,7 +20,7 @@ const NetworkPage = () => {
   const { companyId } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { stores, setActiveStoreId } = useStoreContext();
+  const { stores, activeStoreId, setActiveStoreId } = useStoreContext();
   const { subscription } = useSubscription();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
