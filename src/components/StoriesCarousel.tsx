@@ -13,6 +13,7 @@ interface Story {
   image_url: string;
   action_url: string | null;
   action_label: string | null;
+  text_color: string | null;
   created_at: string;
 }
 
