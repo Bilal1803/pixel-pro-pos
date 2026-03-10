@@ -539,6 +539,8 @@ export type Database = {
           avg_price: number | null
           company_id: string
           id: string
+          margin_new: number | null
+          margin_used: number | null
           model: string
           our_price: number | null
           prices: number[] | null
@@ -548,6 +550,8 @@ export type Database = {
           avg_price?: number | null
           company_id: string
           id?: string
+          margin_new?: number | null
+          margin_used?: number | null
           model: string
           our_price?: number | null
           prices?: number[] | null
@@ -557,6 +561,8 @@ export type Database = {
           avg_price?: number | null
           company_id?: string
           id?: string
+          margin_new?: number | null
+          margin_used?: number | null
           model?: string
           our_price?: number | null
           prices?: number[] | null

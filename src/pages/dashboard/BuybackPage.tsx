@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Search, Settings2, Plus, Trash2 } from "lucide-react";
+import { Search, Settings2, Plus, Trash2, Pencil } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -33,6 +33,12 @@ const BuybackPage = () => {
   const [customModel, setCustomModel] = useState("");
   const [customMemory, setCustomMemory] = useState("");
   const [customPrice, setCustomPrice] = useState("");
+
+  // Per-model margin edit
+  const [marginEditOpen, setMarginEditOpen] = useState(false);
+  const [marginEditModel, setMarginEditModel] = useState("");
+  const [marginEditUsed, setMarginEditUsed] = useState("");
+  const [marginEditNew, setMarginEditNew] = useState("");
 
   // Buyback form
   const [buybackOpen, setBuybackOpen] = useState(false);
@@ -75,7 +81,7 @@ const BuybackPage = () => {
       if (!companyId) return [];
       const { data, error } = await supabase
         .from("price_monitoring")
-        .select("model, avg_price, our_price")
+        .select("model, avg_price, our_price, margin_used, margin_new, id")
         .eq("company_id", companyId);
       if (error) throw error;
       return data;
@@ -84,7 +90,7 @@ const BuybackPage = () => {
   });
 
   const monitoringMap = useMemo(() => {
-    const map: Record<string, { avg_price: number | null; our_price: number | null }> = {};
+    const map: Record<string, { avg_price: number | null; our_price: number | null; margin_used: number | null; margin_new: number | null; id: string }> = {};
     for (const m of monitoring) map[m.model] = m;
     return map;
   }, [monitoring]);
@@ -218,7 +224,58 @@ const BuybackPage = () => {
     onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
 
-  // Price list
+  // Save per-model margin
+  const saveModelMargin = useMutation({
+    mutationFn: async () => {
+      if (!companyId) throw new Error("No company");
+      const entry = monitoringMap[marginEditModel];
+      const mu = marginEditUsed ? Number(marginEditUsed) : null;
+      const mn = marginEditNew ? Number(marginEditNew) : null;
+      if (entry) {
+        const { error } = await supabase
+          .from("price_monitoring")
+          .update({ margin_used: mu, margin_new: mn })
+          .eq("id", entry.id);
+        if (error) throw error;
+      } else {
+        // Create entry with just margins
+        const { error } = await supabase.from("price_monitoring").insert({
+          company_id: companyId,
+          model: marginEditModel,
+          margin_used: mu,
+          margin_new: mn,
+          prices: [],
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["price-monitoring"] });
+      toast({ title: "Маржа для модели сохранена" });
+      setMarginEditOpen(false);
+    },
+    onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
+  });
+
+  const getModelMargins = (modelKey: string) => {
+    const entry = monitoringMap[modelKey];
+    return {
+      used: entry?.margin_used ?? currentMarginUsed,
+      new: entry?.margin_new ?? currentMarginNew,
+    };
+  };
+
+  const openMarginEdit = (row: CatalogRow, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const key = `${row.model} ${row.memory}`;
+    const entry = monitoringMap[key];
+    setMarginEditModel(key);
+    setMarginEditUsed(entry?.margin_used != null ? String(entry.margin_used) : "");
+    setMarginEditNew(entry?.margin_new != null ? String(entry.margin_new) : "");
+    setMarginEditOpen(true);
+  };
+
+
   const filteredRows = useMemo(() => {
     if (!search.trim()) return allRows;
     const q = search.toLowerCase();
@@ -250,7 +307,8 @@ const BuybackPage = () => {
     const key = `${row.model} ${row.memory}`;
     const entry = monitoringMap[key];
     const salePrice = entry?.our_price || (entry?.avg_price ? Math.round(entry.avg_price * 0.95) : null);
-    const buybackPrice = salePrice ? salePrice - currentMarginUsed : 0;
+    const margins = getModelMargins(key);
+    const buybackPrice = salePrice ? salePrice - margins.used : 0;
 
     setBuybackForm({
       model: row.model,
@@ -375,8 +433,10 @@ const BuybackPage = () => {
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Модель</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Память</th>
                     <th className="px-4 py-3 text-right font-medium text-muted-foreground">Цена продажи</th>
+                    <th className="px-4 py-3 text-right font-medium text-muted-foreground">Маржа БУ</th>
                     <th className="px-4 py-3 text-right font-medium text-muted-foreground">Выкуп БУ</th>
                     <th className="px-4 py-3 text-right font-medium text-muted-foreground">Выкуп Новый</th>
+                    <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -385,8 +445,10 @@ const BuybackPage = () => {
                       const key = `${row.model} ${row.memory}`;
                       const entry = monitoringMap[key];
                       const salePrice = entry?.our_price || (entry?.avg_price ? Math.round(entry.avg_price * 0.95) : null);
-                      const buybackUsed = salePrice ? salePrice - currentMarginUsed : null;
-                      const buybackNew = salePrice ? salePrice - currentMarginNew : null;
+                      const margins = getModelMargins(key);
+                      const hasCustomMargin = entry?.margin_used != null || entry?.margin_new != null;
+                      const buybackUsed = salePrice ? salePrice - margins.used : null;
+                      const buybackNew = salePrice ? salePrice - margins.new : null;
 
                       return (
                         <tr
@@ -403,6 +465,11 @@ const BuybackPage = () => {
                               <span className="text-muted-foreground">—</span>
                             )}
                           </td>
+                          <td className="px-4 py-2.5 text-right font-mono text-xs">
+                            <span className={hasCustomMargin ? "text-warning font-semibold" : "text-muted-foreground"}>
+                              {margins.used.toLocaleString("ru")} ₽
+                            </span>
+                          </td>
                           <td className="px-4 py-2.5 text-right font-mono">
                             {buybackUsed && buybackUsed > 0 ? (
                               <span className="font-semibold text-primary">{buybackUsed.toLocaleString("ru")} ₽</span>
@@ -417,6 +484,11 @@ const BuybackPage = () => {
                               <span className="text-muted-foreground">—</span>
                             )}
                           </td>
+                          <td className="px-4 py-2.5 text-center">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => openMarginEdit(row, e)}>
+                              <Pencil className="h-3 w-3 text-muted-foreground" />
+                            </Button>
+                          </td>
                         </tr>
                       );
                     })
@@ -427,6 +499,27 @@ const BuybackPage = () => {
           </Card>
         </>
       )}
+
+      {/* Per-model margin edit dialog */}
+      <Dialog open={marginEditOpen} onOpenChange={setMarginEditOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Маржа: {marginEditModel}</DialogTitle></DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); saveModelMargin.mutate(); }} className="space-y-4">
+            <div>
+              <Label>Маржа БУ (₽)</Label>
+              <Input type="number" value={marginEditUsed} onChange={(e) => setMarginEditUsed(e.target.value)} placeholder={`По умолчанию: ${currentMarginUsed}`} />
+              <p className="mt-1 text-xs text-muted-foreground">Оставьте пустым для общей маржи ({currentMarginUsed.toLocaleString("ru")} ₽)</p>
+            </div>
+            <div>
+              <Label>Маржа Новый (₽)</Label>
+              <Input type="number" value={marginEditNew} onChange={(e) => setMarginEditNew(e.target.value)} placeholder={`По умолчанию: ${currentMarginNew}`} />
+            </div>
+            <Button type="submit" className="w-full" disabled={saveModelMargin.isPending}>
+              {saveModelMargin.isPending ? "Сохранение..." : "Сохранить"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {tab === "history" && (
         <Card className="card-shadow overflow-hidden">
