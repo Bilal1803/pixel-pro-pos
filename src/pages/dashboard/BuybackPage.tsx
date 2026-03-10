@@ -34,6 +34,12 @@ const BuybackPage = () => {
   const [customMemory, setCustomMemory] = useState("");
   const [customPrice, setCustomPrice] = useState("");
 
+  // Per-model margin edit
+  const [marginEditOpen, setMarginEditOpen] = useState(false);
+  const [marginEditModel, setMarginEditModel] = useState("");
+  const [marginEditUsed, setMarginEditUsed] = useState("");
+  const [marginEditNew, setMarginEditNew] = useState("");
+
   // Buyback form
   const [buybackOpen, setBuybackOpen] = useState(false);
   const [buybackForm, setBuybackForm] = useState({
