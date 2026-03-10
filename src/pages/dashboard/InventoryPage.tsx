@@ -532,6 +532,17 @@ const InventoryPage = () => {
                   <div><Label>Цвет</Label><ComboboxInput value={form.color} onChange={(v) => setForm({ ...form, color: v })} options={getColorOptions(form.model)} /></div>
                   <div><Label>IMEI *</Label><Input value={form.imei} onChange={(e) => setForm({ ...form, imei: e.target.value })} required /></div>
                   <div><Label>АКБ</Label><Input placeholder="94%" value={form.battery_health} onChange={(e) => setForm({ ...form, battery_health: e.target.value })} /></div>
+                  <div>
+                    <Label>SIM</Label>
+                    <Select value={form.sim_type} onValueChange={(v) => setForm({ ...form, sim_type: v })}>
+                      <SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sim+esim">SIM + eSIM</SelectItem>
+                        <SelectItem value="2sim">2 SIM</SelectItem>
+                        <SelectItem value="esim">eSIM</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div><Label>Цена закупки</Label><Input type="number" value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} /></div>
                   <div><Label>Цена продажи</Label><Input type="number" value={form.sale_price} onChange={(e) => setForm({ ...form, sale_price: e.target.value })} /></div>
                 </div>
