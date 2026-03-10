@@ -3,6 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, X } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const plans = [
   {
@@ -57,7 +61,37 @@ const plans = [
 ];
 
 const PricingPage = () => {
-  const { subscription } = useSubscription();
+  const { subscription, PLAN_DEFAULTS } = useSubscription();
+  const { companyId } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const changePlan = useMutation({
+    mutationFn: async (planId: string) => {
+      if (!companyId) throw new Error("No company");
+      const limits = PLAN_DEFAULTS[planId];
+      if (!limits) throw new Error("Unknown plan");
+      const { error } = await supabase
+        .from("subscriptions")
+        .update({
+          plan: limits.plan,
+          max_stores: limits.max_stores,
+          max_employees: limits.max_employees,
+          max_devices: limits.max_devices,
+          repairs_enabled: limits.repairs_enabled,
+          ai_enabled: limits.ai_enabled,
+        })
+        .eq("company_id", companyId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subscription"] });
+      toast({ title: "Тариф обновлён" });
+    },
+    onError: () => {
+      toast({ title: "Ошибка при смене тарифа", variant: "destructive" });
+    },
+  });
 
   return (
     <div className="space-y-6">
@@ -111,9 +145,10 @@ const PricingPage = () => {
               <Button
                 className="mt-6 w-full"
                 variant={isPopular ? "default" : "outline"}
-                disabled={isCurrent}
+                disabled={isCurrent || changePlan.isPending}
+                onClick={() => changePlan.mutate(plan.id)}
               >
-                {isCurrent ? "Текущий план" : "Выбрать"}
+                {isCurrent ? "Текущий план" : changePlan.isPending ? "Обновление..." : "Выбрать"}
               </Button>
             </Card>
           );
