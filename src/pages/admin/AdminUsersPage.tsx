@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, UserX, KeyRound } from "lucide-react";
+import { Search, LogIn } from "lucide-react";
 import { useState } from "react";
 
 const AdminUsersPage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [impersonating, setImpersonating] = useState<string | null>(null);
 
   const { data: profiles = [], isLoading } = useQuery({
     queryKey: ["admin-all-profiles"],
@@ -49,10 +50,28 @@ const AdminUsersPage = () => {
     },
   });
 
+  const handleImpersonate = async (userId: string) => {
+    setImpersonating(userId);
+    try {
+      const { data, error } = await supabase.functions.invoke("impersonate-user", {
+        body: { targetUserId: userId },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        // Open the user's dashboard in a new tab via magic link
+        const redirectUrl = `${data.url}&redirect_to=${window.location.origin}/dashboard`;
+        window.open(redirectUrl, "_blank");
+        toast({ title: "Сессия пользователя открыта в новой вкладке" });
+      }
+    } catch (err: any) {
+      toast({ title: "Ошибка", description: err.message, variant: "destructive" });
+    } finally {
+      setImpersonating(null);
+    }
+  };
+
   const companyMap = Object.fromEntries(companies.map((c: any) => [c.id, c.name]));
   const roleMap = Object.fromEntries(roles.map((r: any) => [r.user_id, r.role]));
-
-  const roleLabels: Record<string, string> = { owner: "Владелец", manager: "Менеджер", employee: "Сотрудник" };
 
   const filtered = profiles.filter((p: any) =>
     p.full_name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -85,6 +104,7 @@ const AdminUsersPage = () => {
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Роль</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Телефон</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Дата</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Действия</th>
                 </tr>
               </thead>
               <tbody>
@@ -109,6 +129,18 @@ const AdminUsersPage = () => {
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{p.phone || "—"}</td>
                       <td className="px-4 py-3 text-muted-foreground">{new Date(p.created_at).toLocaleDateString("ru")}</td>
+                      <td className="px-4 py-3">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs gap-1.5"
+                          disabled={impersonating === p.user_id}
+                          onClick={() => handleImpersonate(p.user_id)}
+                        >
+                          <LogIn className="h-3.5 w-3.5" />
+                          {impersonating === p.user_id ? "Вход..." : "Войти"}
+                        </Button>
+                      </td>
                     </tr>
                   );
                 })}

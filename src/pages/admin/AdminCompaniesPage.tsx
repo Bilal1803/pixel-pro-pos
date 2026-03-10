@@ -6,9 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Building2, Ban, CheckCircle, Trash2, Eye, Search } from "lucide-react";
+import { Building2, Ban, CheckCircle, Trash2, Eye, Search, LogIn } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { useToast as useToast2 } from "@/hooks/use-toast";
 
 const AdminCompaniesPage = () => {
   const { toast } = useToast();
@@ -16,6 +17,26 @@ const AdminCompaniesPage = () => {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<any>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [impersonating, setImpersonating] = useState<string | null>(null);
+
+  const handleImpersonate = async (userId: string) => {
+    setImpersonating(userId);
+    try {
+      const { data, error } = await supabase.functions.invoke("impersonate-user", {
+        body: { targetUserId: userId },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        const redirectUrl = `${data.url}&redirect_to=${window.location.origin}/dashboard`;
+        window.open(redirectUrl, "_blank");
+        toast({ title: "Сессия пользователя открыта в новой вкладке" });
+      }
+    } catch (err: any) {
+      toast({ title: "Ошибка", description: err.message, variant: "destructive" });
+    } finally {
+      setImpersonating(null);
+    }
+  };
 
   const { data: companies = [], isLoading } = useQuery({
     queryKey: ["admin-companies"],
@@ -163,6 +184,18 @@ const AdminCompaniesPage = () => {
                           >
                             {isBlocked ? <CheckCircle className="h-4 w-4 text-success" /> : <Ban className="h-4 w-4 text-destructive" />}
                           </Button>
+                          {owner && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              disabled={impersonating === owner.user_id}
+                              onClick={() => handleImpersonate(owner.user_id)}
+                              title="Войти как пользователь"
+                            >
+                              <LogIn className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
