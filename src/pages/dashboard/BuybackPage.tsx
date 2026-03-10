@@ -101,6 +101,19 @@ const BuybackPage = () => {
     return map;
   }, [monitoring]);
 
+  const hiddenKeys = useMemo(() => {
+    const s = new Set<string>();
+    for (const m of monitoring) {
+      if ((m as any).hidden) s.add(m.model);
+    }
+    return s;
+  }, [monitoring]);
+
+  const allRows = useMemo(() => {
+    return catalogRows.filter(r => !hiddenKeys.has(`${r.model} ${r.memory}`));
+  }, [hiddenKeys]);
+  }, [monitoring]);
+
   // Load buyback history
   const { data: buybacks = [], isLoading: historyLoading } = useQuery({
     queryKey: ["buybacks", companyId],
