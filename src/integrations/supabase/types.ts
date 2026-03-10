@@ -58,6 +58,41 @@ export type Database = {
           },
         ]
       }
+      buyback_settings: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          margin_new: number
+          margin_used: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          margin_new?: number
+          margin_used?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          margin_new?: number
+          margin_used?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyback_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buybacks: {
         Row: {
           battery_health: string | null

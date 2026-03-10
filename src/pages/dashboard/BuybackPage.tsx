@@ -1,52 +1,138 @@
+import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Search, Settings2, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { IPHONE_CATALOG } from "@/data/deviceCatalog";
+import ComboboxInput from "@/components/ComboboxInput";
+import { ALL_CATALOG_MODELS, ALL_CATALOG_MEMORIES, ALL_CATALOG_COLORS, PRESET_BRANDS, getModelData } from "@/data/deviceCatalog";
 
-const statusLabels: Record<string, { label: string; className: string }> = {
-  testing: { label: "Проверка", className: "bg-warning/10 text-warning" },
-  available: { label: "В наличии", className: "bg-success/10 text-success" },
-};
+type CatalogRow = { model: string; memory: string };
+
+const allRows: CatalogRow[] = IPHONE_CATALOG.flatMap((m) =>
+  m.memories.map((mem) => ({ model: m.name, memory: mem }))
+);
 
 const BuybackPage = () => {
   const { companyId, user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ model: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "" });
+  const [search, setSearch] = useState("");
+  const [tab, setTab] = useState<"prices" | "history">("prices");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [marginUsed, setMarginUsed] = useState("");
+  const [marginNew, setMarginNew] = useState("");
 
-  const { data: buybacks = [], isLoading } = useQuery({
-    queryKey: ["buybacks", companyId],
+  // Buyback form
+  const [buybackOpen, setBuybackOpen] = useState(false);
+  const [buybackForm, setBuybackForm] = useState({
+    model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "",
+  });
+
+  // Load margin settings
+  const { data: settings } = useQuery({
+    queryKey: ["buyback-settings", companyId],
     queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase.from("buybacks").select("*, devices(status)").eq("company_id", companyId).order("created_at", { ascending: false });
+      if (!companyId) return null;
+      const { data, error } = await supabase
+        .from("buyback_settings")
+        .select("*")
+        .eq("company_id", companyId)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
     enabled: !!companyId,
   });
 
+  // Load monitoring prices
+  const { data: monitoring = [] } = useQuery({
+    queryKey: ["price-monitoring", companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data, error } = await supabase
+        .from("price_monitoring")
+        .select("model, avg_price, our_price")
+        .eq("company_id", companyId);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!companyId,
+  });
+
+  const monitoringMap = useMemo(() => {
+    const map: Record<string, { avg_price: number | null; our_price: number | null }> = {};
+    for (const m of monitoring) map[m.model] = m;
+    return map;
+  }, [monitoring]);
+
+  // Load buyback history
+  const { data: buybacks = [], isLoading: historyLoading } = useQuery({
+    queryKey: ["buybacks", companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data, error } = await supabase
+        .from("buybacks")
+        .select("*, devices(status)")
+        .eq("company_id", companyId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!companyId,
+  });
+
+  const currentMarginUsed = settings?.margin_used ?? 8000;
+  const currentMarginNew = settings?.margin_new ?? 5000;
+
+  const saveSettings = useMutation({
+    mutationFn: async () => {
+      if (!companyId) throw new Error("No company");
+      const mu = marginUsed ? Number(marginUsed) : currentMarginUsed;
+      const mn = marginNew ? Number(marginNew) : currentMarginNew;
+
+      if (settings) {
+        const { error } = await supabase
+          .from("buyback_settings")
+          .update({ margin_used: mu, margin_new: mn })
+          .eq("id", settings.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("buyback_settings")
+          .insert({ company_id: companyId, margin_used: mu, margin_new: mn });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["buyback-settings"] });
+      toast({ title: "Маржа сохранена" });
+      setSettingsOpen(false);
+    },
+    onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
+  });
+
   const createBuyback = useMutation({
     mutationFn: async () => {
       if (!companyId || !user) throw new Error("No company");
-
-      // Create device first
       const { data: device, error: devError } = await supabase.from("devices").insert({
         company_id: companyId,
-        model: form.model,
-        memory: form.memory || null,
-        color: form.color || null,
-        imei: form.imei,
-        battery_health: form.battery_health || null,
-        purchase_price: parseFloat(form.purchase_price),
+        model: buybackForm.model,
+        brand: buybackForm.brand || null,
+        memory: buybackForm.memory || null,
+        color: buybackForm.color || null,
+        imei: buybackForm.imei,
+        battery_health: buybackForm.battery_health || null,
+        purchase_price: parseFloat(buybackForm.purchase_price),
         status: "testing" as any,
+        condition: "used",
       }).select().single();
       if (devError) throw devError;
 
@@ -54,12 +140,12 @@ const BuybackPage = () => {
         company_id: companyId,
         employee_id: user.id,
         device_id: device.id,
-        model: form.model,
-        memory: form.memory || null,
-        color: form.color || null,
-        imei: form.imei || null,
-        battery_health: form.battery_health || null,
-        purchase_price: parseFloat(form.purchase_price),
+        model: buybackForm.model,
+        memory: buybackForm.memory || null,
+        color: buybackForm.color || null,
+        imei: buybackForm.imei || null,
+        battery_health: buybackForm.battery_health || null,
+        purchase_price: parseFloat(buybackForm.purchase_price),
       });
       if (error) throw error;
     },
@@ -67,82 +153,247 @@ const BuybackPage = () => {
       queryClient.invalidateQueries({ queryKey: ["buybacks"] });
       queryClient.invalidateQueries({ queryKey: ["devices"] });
       toast({ title: "Скупка оформлена, устройство на проверке" });
-      setOpen(false);
-      setForm({ model: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "" });
+      setBuybackOpen(false);
+      setBuybackForm({ model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "" });
     },
     onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
+
+  // Price list
+  const filteredRows = useMemo(() => {
+    if (!search.trim()) return allRows;
+    const q = search.toLowerCase();
+    return allRows.filter(
+      (r) => r.model.toLowerCase().includes(q) || r.memory.toLowerCase().includes(q)
+    );
+  }, [search]);
+
+  const groupedRows = useMemo(() => {
+    const groups: { name: string; rows: CatalogRow[] }[] = [];
+    let current: { name: string; rows: CatalogRow[] } | null = null;
+    for (const r of filteredRows) {
+      if (!current || current.name !== r.model) {
+        current = { name: r.model, rows: [] };
+        groups.push(current);
+      }
+      current.rows.push(r);
+    }
+    return groups;
+  }, [filteredRows]);
+
+  const openSettingsDialog = () => {
+    setMarginUsed(String(currentMarginUsed));
+    setMarginNew(String(currentMarginNew));
+    setSettingsOpen(true);
+  };
+
+  const handleRowClick = (row: CatalogRow) => {
+    const key = `${row.model} ${row.memory}`;
+    const entry = monitoringMap[key];
+    const salePrice = entry?.our_price || (entry?.avg_price ? Math.round(entry.avg_price * 0.95) : null);
+    const buybackPrice = salePrice ? salePrice - currentMarginUsed : 0;
+
+    setBuybackForm({
+      model: row.model,
+      brand: "Apple",
+      memory: row.memory,
+      color: "",
+      imei: "",
+      battery_health: "",
+      purchase_price: buybackPrice > 0 ? String(buybackPrice) : "",
+    });
+    setBuybackOpen(true);
+  };
+
+  const statusLabels: Record<string, { label: string; className: string }> = {
+    testing: { label: "Проверка", className: "bg-warning/10 text-warning" },
+    available: { label: "В наличии", className: "bg-success/10 text-success" },
+    sold: { label: "Продано", className: "bg-muted text-muted-foreground" },
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Скупка устройств</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="mr-2 h-4 w-4" /> Оформить скупку</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Скупка устройства</DialogTitle></DialogHeader>
-            <form onSubmit={(e) => { e.preventDefault(); createBuyback.mutate(); }} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Модель *</Label><Input value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} required /></div>
-                <div><Label>Память</Label><Input placeholder="128GB" value={form.memory} onChange={(e) => setForm({ ...form, memory: e.target.value })} /></div>
-                <div><Label>Цвет</Label><Input value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} /></div>
-                <div><Label>IMEI *</Label><Input value={form.imei} onChange={(e) => setForm({ ...form, imei: e.target.value })} required /></div>
-                <div><Label>АКБ</Label><Input placeholder="94%" value={form.battery_health} onChange={(e) => setForm({ ...form, battery_health: e.target.value })} /></div>
-                <div><Label>Цена скупки *</Label><Input type="number" value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} required /></div>
-              </div>
-              <Button type="submit" className="w-full" disabled={createBuyback.isPending}>
-                {createBuyback.isPending ? "Оформление..." : "Оформить скупку"}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={openSettingsDialog}>
+            <Settings2 className="mr-2 h-4 w-4" /> Маржа
+          </Button>
+          <Dialog open={buybackOpen} onOpenChange={setBuybackOpen}>
+            <DialogTrigger asChild>
+              <Button><Plus className="mr-2 h-4 w-4" /> Оформить скупку</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Скупка устройства</DialogTitle></DialogHeader>
+              <form onSubmit={(e) => { e.preventDefault(); createBuyback.mutate(); }} className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>Модель *</Label><ComboboxInput value={buybackForm.model} onChange={(v) => setBuybackForm({ ...buybackForm, model: v })} options={ALL_CATALOG_MODELS} required /></div>
+                  <div><Label>Бренд</Label><ComboboxInput value={buybackForm.brand} onChange={(v) => setBuybackForm({ ...buybackForm, brand: v })} options={PRESET_BRANDS} /></div>
+                  <div><Label>Память</Label><ComboboxInput value={buybackForm.memory} onChange={(v) => setBuybackForm({ ...buybackForm, memory: v })} options={getModelData(buybackForm.model)?.memories || ALL_CATALOG_MEMORIES} /></div>
+                  <div><Label>Цвет</Label><ComboboxInput value={buybackForm.color} onChange={(v) => setBuybackForm({ ...buybackForm, color: v })} options={getModelData(buybackForm.model)?.colors || ALL_CATALOG_COLORS} /></div>
+                  <div><Label>IMEI *</Label><Input value={buybackForm.imei} onChange={(e) => setBuybackForm({ ...buybackForm, imei: e.target.value })} required /></div>
+                  <div><Label>АКБ</Label><Input placeholder="94%" value={buybackForm.battery_health} onChange={(e) => setBuybackForm({ ...buybackForm, battery_health: e.target.value })} /></div>
+                </div>
+                <div>
+                  <Label>Цена скупки *</Label>
+                  <Input type="number" value={buybackForm.purchase_price} onChange={(e) => setBuybackForm({ ...buybackForm, purchase_price: e.target.value })} required />
+                </div>
+                <Button type="submit" className="w-full" disabled={createBuyback.isPending}>
+                  {createBuyback.isPending ? "Оформление..." : "Оформить скупку"}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      <Card className="card-shadow overflow-hidden">
-        {isLoading ? (
-          <div className="p-8 text-center text-muted-foreground">Загрузка...</div>
-        ) : buybacks.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">Нет скупок</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Модель</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Цвет</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">IMEI</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">АКБ</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Цена скупки</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Статус</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Дата</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {buybacks.map((b: any) => {
-                  const status = b.devices?.status || "testing";
-                  return (
-                    <tr key={b.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-4 py-3 font-medium">{b.model} {b.memory || ""}</td>
-                      <td className="px-4 py-3">{b.color || "—"}</td>
-                      <td className="px-4 py-3 font-mono text-xs">{b.imei || "—"}</td>
-                      <td className="px-4 py-3">{b.battery_health || "—"}</td>
-                      <td className="px-4 py-3 font-semibold">{b.purchase_price} ₽</td>
-                      <td className="px-4 py-3">
-                        <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusLabels[status]?.className || "bg-muted text-muted-foreground"}`}>
-                          {statusLabels[status]?.label || status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">{new Date(b.created_at).toLocaleDateString("ru")}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+      {/* Margin settings dialog */}
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Настройка маржи</DialogTitle></DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); saveSettings.mutate(); }} className="space-y-4">
+            <div>
+              <Label>Маржа на БУ устройства (₽)</Label>
+              <Input type="number" value={marginUsed} onChange={(e) => setMarginUsed(e.target.value)} placeholder="8000" />
+              <p className="mt-1 text-xs text-muted-foreground">Вычитается из цены продажи для расчёта цены выкупа</p>
+            </div>
+            <div>
+              <Label>Маржа на новые устройства (₽)</Label>
+              <Input type="number" value={marginNew} onChange={(e) => setMarginNew(e.target.value)} placeholder="5000" />
+            </div>
+            <Button type="submit" className="w-full" disabled={saveSettings.isPending}>
+              {saveSettings.isPending ? "Сохранение..." : "Сохранить"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+        <span>Маржа БУ: <strong className="text-foreground">{currentMarginUsed.toLocaleString("ru")} ₽</strong></span>
+        <span className="text-border">|</span>
+        <span>Маржа новые: <strong className="text-foreground">{currentMarginNew.toLocaleString("ru")} ₽</strong></span>
+      </div>
+
+      <Tabs value={tab} onValueChange={(v) => setTab(v as "prices" | "history")}>
+        <TabsList>
+          <TabsTrigger value="prices">Прайс-лист выкупа</TabsTrigger>
+          <TabsTrigger value="history">История скупок</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {tab === "prices" && (
+        <>
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="Поиск модели..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
-        )}
-      </Card>
+
+          <Card className="card-shadow overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Модель</th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Память</th>
+                    <th className="px-4 py-3 text-right font-medium text-muted-foreground">Цена продажи</th>
+                    <th className="px-4 py-3 text-right font-medium text-muted-foreground">Выкуп БУ</th>
+                    <th className="px-4 py-3 text-right font-medium text-muted-foreground">Выкуп Новый</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {groupedRows.map((group) =>
+                    group.rows.map((row, i) => {
+                      const key = `${row.model} ${row.memory}`;
+                      const entry = monitoringMap[key];
+                      const salePrice = entry?.our_price || (entry?.avg_price ? Math.round(entry.avg_price * 0.95) : null);
+                      const buybackUsed = salePrice ? salePrice - currentMarginUsed : null;
+                      const buybackNew = salePrice ? salePrice - currentMarginNew : null;
+
+                      return (
+                        <tr
+                          key={key}
+                          className="border-b hover:bg-muted/30 transition-colors cursor-pointer"
+                          onClick={() => handleRowClick(row)}
+                        >
+                          <td className="px-4 py-2.5 font-medium">{i === 0 ? row.model : ""}</td>
+                          <td className="px-4 py-2.5">{row.memory}</td>
+                          <td className="px-4 py-2.5 text-right font-mono">
+                            {salePrice ? (
+                              <span>{salePrice.toLocaleString("ru")} ₽</span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2.5 text-right font-mono">
+                            {buybackUsed && buybackUsed > 0 ? (
+                              <span className="font-semibold text-primary">{buybackUsed.toLocaleString("ru")} ₽</span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2.5 text-right font-mono">
+                            {buybackNew && buybackNew > 0 ? (
+                              <span className="font-semibold text-success">{buybackNew.toLocaleString("ru")} ₽</span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </>
+      )}
+
+      {tab === "history" && (
+        <Card className="card-shadow overflow-hidden">
+          {historyLoading ? (
+            <div className="p-8 text-center text-muted-foreground">Загрузка...</div>
+          ) : buybacks.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">Нет скупок</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Модель</th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Цвет</th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">IMEI</th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">АКБ</th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Цена скупки</th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Статус</th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Дата</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {buybacks.map((b: any) => {
+                    const status = b.devices?.status || "testing";
+                    return (
+                      <tr key={b.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-4 py-3 font-medium">{b.model} {b.memory || ""}</td>
+                        <td className="px-4 py-3">{b.color || "—"}</td>
+                        <td className="px-4 py-3 font-mono text-xs">{b.imei || "—"}</td>
+                        <td className="px-4 py-3">{b.battery_health || "—"}</td>
+                        <td className="px-4 py-3 font-semibold">{b.purchase_price} ₽</td>
+                        <td className="px-4 py-3">
+                          <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusLabels[status]?.className || "bg-muted text-muted-foreground"}`}>
+                            {statusLabels[status]?.label || status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">{new Date(b.created_at).toLocaleDateString("ru")}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      )}
     </div>
   );
 };
