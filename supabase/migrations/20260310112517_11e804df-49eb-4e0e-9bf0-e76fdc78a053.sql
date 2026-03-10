@@ -1,0 +1,1 @@
+ALTER TABLE public.stories ADD COLUMN text_color text DEFAULT '#ffffff';

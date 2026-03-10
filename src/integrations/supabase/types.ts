@@ -915,6 +915,7 @@ export type Database = {
           id: string
           image_url: string
           is_active: boolean
+          text_color: string | null
           title: string
         }
         Insert: {
@@ -926,6 +927,7 @@ export type Database = {
           id?: string
           image_url: string
           is_active?: boolean
+          text_color?: string | null
           title: string
         }
         Update: {
@@ -937,6 +939,7 @@ export type Database = {
           id?: string
           image_url?: string
           is_active?: boolean
+          text_color?: string | null
           title?: string
         }
         Relationships: []
