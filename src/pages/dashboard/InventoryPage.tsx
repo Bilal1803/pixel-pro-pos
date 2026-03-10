@@ -185,6 +185,7 @@ const InventoryPage = () => {
         status: form.status as any,
         notes: form.notes || null,
         sim_type: form.sim_type || null,
+        condition: form.condition || "used",
       });
       if (error) throw error;
     },
@@ -192,7 +193,7 @@ const InventoryPage = () => {
       queryClient.invalidateQueries({ queryKey: ["devices"] });
       toast({ title: "Устройство добавлено" });
       setOpen(false);
-      setForm({ model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing", notes: "", sim_type: "" });
+      setForm({ model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing", notes: "", sim_type: "", condition: "used" });
     },
     onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
