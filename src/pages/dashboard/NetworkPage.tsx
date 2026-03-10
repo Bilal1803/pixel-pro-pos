@@ -121,7 +121,98 @@ const NetworkPage = () => {
     enabled: !!companyId,
   });
 
-  const storeStats = stores.map((store) => {
+  // Profiles for employees per store
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["network-profiles", companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data } = await supabase.from("profiles").select("*").eq("company_id", companyId);
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+
+  const profileUserIds = profiles.map((p: any) => p.user_id);
+  const { data: roles = [] } = useQuery({
+    queryKey: ["network-roles", profileUserIds],
+    queryFn: async () => {
+      if (profileUserIds.length === 0) return [];
+      const { data } = await supabase.from("user_roles").select("*").in("user_id", profileUserIds);
+      return data || [];
+    },
+    enabled: profileUserIds.length > 0,
+  });
+
+  const getRoleForUser = (userId: string) => {
+    const r = roles.find((r: any) => r.user_id === userId);
+    return r?.role || "employee";
+  };
+
+  const roleLabels: Record<string, string> = { owner: "Владелец", manager: "Менеджер", employee: "Сотрудник" };
+
+  const getStoreEmployees = (storeId: string) => profiles.filter((p: any) => p.store_id === storeId);
+
+  // Create invitation for a specific store
+  const createInvitation = useMutation({
+    mutationFn: async (storeId: string) => {
+      if (!companyId || !user) throw new Error("Не авторизован");
+      const { data, error } = await supabase
+        .from("invitations")
+        .insert({
+          company_id: companyId,
+          full_name: inviteForm.fullName,
+          phone: inviteForm.phone || null,
+          role: inviteForm.role as any,
+          store_id: storeId,
+          created_by: user.id,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["invitations"] });
+      setInviteLink(`${window.location.origin}/invite/${data.code}`);
+      toast.success("Приглашение создано");
+    },
+    onError: (e: any) => {
+      toast.error(e.message);
+    },
+  });
+
+  // Deactivate employee
+  const deactivateEmployee = useMutation({
+    mutationFn: async (targetUserId: string) => {
+      const { data, error } = await supabase.functions.invoke("manage-employee", {
+        body: { action: "deactivate", targetUserId },
+      });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["network-profiles"] });
+      toast.success("Доступ отключён");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const copyLink = (url: string) => {
+    navigator.clipboard.writeText(url);
+    toast.success("Ссылка скопирована");
+  };
+
+  const handleInviteSubmit = () => {
+    if (!inviteForm.fullName || !employeesStoreId) return;
+    createInvitation.mutate(employeesStoreId);
+  };
+
+  const handleInviteClose = () => {
+    setInviteOpen(false);
+    setInviteLink(null);
+    setInviteForm({ fullName: "", phone: "", role: "employee" });
+  };
     const storeDevices = devices.filter((d) => d.store_id === store.id);
     const storeSales = sales.filter((s) => s.store_id === store.id);
     const revenue = storeSales.reduce((sum, s) => sum + (s.total || 0), 0);
