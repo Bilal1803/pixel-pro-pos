@@ -19,7 +19,7 @@ import { ALL_CATALOG_MODELS, ALL_CATALOG_MEMORIES, ALL_CATALOG_COLORS, PRESET_BR
 
 type CatalogRow = { model: string; memory: string };
 
-const allRows: CatalogRow[] = IPHONE_CATALOG.flatMap((m) =>
+const catalogRows: CatalogRow[] = IPHONE_CATALOG.flatMap((m) =>
   m.memories.map((mem) => ({ model: m.name, memory: mem }))
 );
 
