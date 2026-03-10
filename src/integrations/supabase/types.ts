@@ -308,6 +308,68 @@ export type Database = {
         }
         Relationships: []
       }
+      device_transfers: {
+        Row: {
+          company_id: string
+          created_at: string
+          device_id: string
+          from_store_id: string | null
+          id: string
+          notes: string | null
+          to_store_id: string
+          transferred_by: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          device_id: string
+          from_store_id?: string | null
+          id?: string
+          notes?: string | null
+          to_store_id: string
+          transferred_by: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          device_id?: string
+          from_store_id?: string | null
+          id?: string
+          notes?: string | null
+          to_store_id?: string
+          transferred_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_transfers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_transfers_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_transfers_from_store_id_fkey"
+            columns: ["from_store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_transfers_to_store_id_fkey"
+            columns: ["to_store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       devices: {
         Row: {
           battery_health: string | null
