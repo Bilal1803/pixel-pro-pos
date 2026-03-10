@@ -16,6 +16,8 @@ const plans = [
       { text: "До 2 сотрудников", included: true },
       { text: "До 30 телефонов на складе", included: true },
       { text: "Базовые продажи и склад", included: true },
+      { text: "Мониторинг цен", included: false },
+      { text: "Объявления Авито", included: false },
       { text: "Модуль ремонта", included: false },
       { text: "AI ассистент", included: false },
     ],
