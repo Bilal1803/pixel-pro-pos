@@ -689,7 +689,22 @@ const InventoryPage = () => {
                 </Select>
               </div>
               <div><Label>Цена закупки</Label><Input type="number" value={editForm.purchase_price} onChange={(e) => setEditForm({ ...editForm, purchase_price: e.target.value })} /></div>
-              <div><Label>Цена продажи</Label><Input type="number" value={editForm.sale_price} onChange={(e) => setEditForm({ ...editForm, sale_price: e.target.value })} /></div>
+              <div>
+                <Label>Цена продажи</Label>
+                <Input type="number" value={editForm.sale_price} onChange={(e) => setEditForm({ ...editForm, sale_price: e.target.value })} />
+                {(() => {
+                  const rec = getRecommendedPrice(editForm.model);
+                  return rec ? (
+                    <button
+                      type="button"
+                      className="mt-1 text-xs text-primary hover:underline"
+                      onClick={() => setEditForm({ ...editForm, sale_price: String(rec) })}
+                    >
+                      Рекомендуемая: {rec.toLocaleString()} ₽
+                    </button>
+                  ) : null;
+                })()}
+              </div>
             </div>
             <div>
               <Label>Статус</Label>
