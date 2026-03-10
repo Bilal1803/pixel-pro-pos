@@ -13,6 +13,7 @@ interface Story {
   image_url: string;
   action_url: string | null;
   action_label: string | null;
+  text_color: string | null;
   created_at: string;
 }
 
@@ -114,10 +115,10 @@ const StoriesCarousel = () => {
                   className="w-full max-h-[60vh] object-cover"
                 />
               </div>
-              <div className="p-5 space-y-3">
-                <h3 className="text-lg font-bold text-foreground">{activeStory.title}</h3>
+              <div className="p-5 space-y-3" style={{ color: activeStory.text_color || undefined }}>
+                <h3 className="text-lg font-bold">{activeStory.title}</h3>
                 {activeStory.description && (
-                  <p className="text-sm text-muted-foreground">{activeStory.description}</p>
+                  <p className="text-sm opacity-80">{activeStory.description}</p>
                 )}
                 {activeStory.action_url && (
                   <Button
