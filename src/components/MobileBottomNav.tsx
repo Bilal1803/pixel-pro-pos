@@ -3,9 +3,11 @@ import {
   LayoutDashboard, Smartphone, ShoppingCart, ArrowDownUp, Users,
   DollarSign, UserCog, MoreHorizontal, Wrench, Tag, TrendingUp,
   Megaphone, Clock, FileBarChart, Settings, HelpCircle, CreditCard, Sparkles, Headphones,
+  Store, BarChart3, ArrowRightLeft,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { useSubscription } from "@/hooks/useSubscription";
 import QuickActionButton from "./QuickActionButton";
 
 const mainItems = [
@@ -32,27 +34,35 @@ const moreItems = [
   { to: "/dashboard/support", label: "Поддержка", icon: HelpCircle },
 ];
 
+const premierMoreItems = [
+  { to: "/dashboard/network", label: "Сеть", icon: Store },
+  { to: "/dashboard/comparison", label: "Сравнение", icon: BarChart3 },
+  { to: "/dashboard/transfers", label: "Перемещения", icon: ArrowRightLeft },
+];
+
 const MobileBottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { subscription } = useSubscription();
+  const isPremier = subscription.plan === "premier";
+
+  const allMoreItems = isPremier ? [...premierMoreItems, ...moreItems] : moreItems;
 
   const isActive = (path: string) =>
     path === "/dashboard"
       ? location.pathname === "/dashboard"
       : location.pathname.startsWith(path);
 
-  const isInMoreSection = moreItems.some((item) => isActive(item.to));
+  const isInMoreSection = allMoreItems.some((item) => isActive(item.to));
 
-  // Close "more" on route change
   useEffect(() => {
     setMoreOpen(false);
   }, [location.pathname]);
 
   return (
     <>
-      {/* "More" overlay menu */}
       {moreOpen && (
         <div className="fixed inset-0 z-[90] flex flex-col justify-end">
           <div
@@ -61,7 +71,7 @@ const MobileBottomNav = () => {
           />
           <div className="relative z-10 mx-2 mb-[72px] rounded-2xl border bg-card p-3 shadow-2xl animate-scale-in">
             <div className="grid grid-cols-4 gap-1">
-              {moreItems.map((item) => {
+              {allMoreItems.map((item) => {
                 const active = isActive(item.to);
                 return (
                   <button
@@ -87,7 +97,6 @@ const MobileBottomNav = () => {
         </div>
       )}
 
-      {/* Bottom nav bar */}
       <nav className="fixed bottom-0 left-0 right-0 z-[80] border-t bg-card/95 backdrop-blur-md print:hidden safe-area-bottom">
         <div
           ref={scrollRef}
@@ -118,7 +127,6 @@ const MobileBottomNav = () => {
                   )}>
                     {item.label}
                   </span>
-                  {/* Active indicator — bottom */}
                   {active && (
                     <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-primary animate-scale-in" />
                   )}
@@ -127,7 +135,6 @@ const MobileBottomNav = () => {
             );
           })}
 
-          {/* "More" button */}
           <button
             onClick={() => setMoreOpen(!moreOpen)}
             className={cn(
