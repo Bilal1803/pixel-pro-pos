@@ -660,6 +660,17 @@ const InventoryPage = () => {
               <div><Label>Цвет</Label><ComboboxInput value={editForm.color} onChange={(v) => setEditForm({ ...editForm, color: v })} options={getColorOptions(editForm.model)} /></div>
               <div><Label>IMEI *</Label><Input value={editForm.imei} onChange={(e) => setEditForm({ ...editForm, imei: e.target.value })} required /></div>
               <div><Label>АКБ</Label><Input placeholder="94%" value={editForm.battery_health} onChange={(e) => setEditForm({ ...editForm, battery_health: e.target.value })} /></div>
+              <div>
+                <Label>SIM</Label>
+                <Select value={editForm.sim_type} onValueChange={(v) => setEditForm({ ...editForm, sim_type: v })}>
+                  <SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sim+esim">SIM + eSIM</SelectItem>
+                    <SelectItem value="2sim">2 SIM</SelectItem>
+                    <SelectItem value="esim">eSIM</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div><Label>Цена закупки</Label><Input type="number" value={editForm.purchase_price} onChange={(e) => setEditForm({ ...editForm, purchase_price: e.target.value })} /></div>
               <div><Label>Цена продажи</Label><Input type="number" value={editForm.sale_price} onChange={(e) => setEditForm({ ...editForm, sale_price: e.target.value })} /></div>
             </div>
