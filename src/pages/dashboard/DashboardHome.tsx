@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DollarSign, TrendingUp, ShoppingCart, Smartphone, Sparkles } from "lucide-react";
+import { DollarSign, TrendingUp, ShoppingCart, Smartphone, Sparkles, Store, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -9,11 +9,14 @@ import { useSubscription } from "@/hooks/useSubscription";
 import StoriesCarousel from "@/components/StoriesCarousel";
 import SectionHelp from "@/components/SectionHelp";
 import { SECTION_TIPS } from "@/data/sectionTips";
+import { useStoreContext } from "@/contexts/StoreContext";
 
 const DashboardHome = () => {
   const { companyId } = useAuth();
   const navigate = useNavigate();
   const { subscription } = useSubscription();
+  const { stores, activeStoreId } = useStoreContext();
+  const isPremier = subscription.plan === "premier";
 
   const { data: devices = [] } = useQuery({
     queryKey: ["devices-dash", companyId],
@@ -35,14 +38,18 @@ const DashboardHome = () => {
     enabled: !!companyId,
   });
 
+  // Filter by active store if selected
+  const filteredDevices = activeStoreId ? devices.filter(d => d.store_id === activeStoreId) : devices;
+  const filteredSales = activeStoreId ? sales.filter((s: any) => s.store_id === activeStoreId) : sales;
+
   const today = new Date().toISOString().split("T")[0];
-  const todaySales = sales.filter((s: any) => s.created_at?.startsWith(today));
+  const todaySales = filteredSales.filter((s: any) => s.created_at?.startsWith(today));
   const todayRevenue = todaySales.reduce((sum: number, s: any) => sum + (s.total || 0), 0);
   const todayProfit = todaySales.reduce((sum: number, s: any) => {
     const itemProfit = (s.sale_items || []).reduce((p: number, i: any) => p + ((i.price || 0) - (i.cost_price || 0)), 0);
     return sum + itemProfit;
   }, 0);
-  const inStock = devices.filter(d => d.status === "available").length;
+  const inStock = filteredDevices.filter(d => d.status === "available").length;
 
   const stats = [
     { label: "Выручка сегодня", value: `${todayRevenue.toLocaleString("ru")} ₽`, icon: DollarSign },
@@ -51,7 +58,7 @@ const DashboardHome = () => {
     { label: "На складе", value: `${inStock}`, icon: Smartphone },
   ];
 
-  const recentDevices = devices.slice(0, 5);
+  const recentDevices = filteredDevices.slice(0, 5);
 
   const statusLabels: Record<string, { label: string; className: string }> = {
     available: { label: "В наличии", className: "bg-success/10 text-success" },
@@ -77,14 +84,32 @@ const DashboardHome = () => {
         ))}
       </div>
 
+      {/* Premier: Network summary card */}
+      {isPremier && stores.length > 1 && !activeStoreId && (
+        <Card className="card-shadow p-5 flex items-center justify-between bg-gradient-to-r from-primary/5 to-accent/10 border-primary/20">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+              <Store className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm">Сеть магазинов</h3>
+              <p className="text-xs text-muted-foreground">{stores.length} магазинов · {devices.length} устройств на складах</p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/network")}>
+            Открыть <ArrowRight className="ml-1 h-4 w-4" />
+          </Button>
+        </Card>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="card-shadow">
           <div className="border-b p-4"><h3 className="font-semibold">Последние продажи</h3></div>
-          {sales.length === 0 ? (
+          {filteredSales.length === 0 ? (
             <div className="p-6 text-center text-muted-foreground">Нет продаж</div>
           ) : (
             <div className="divide-y">
-              {sales.slice(0, 5).map((s: any) => (
+              {filteredSales.slice(0, 5).map((s: any) => (
                 <div key={s.id} className="p-4">
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-xs text-muted-foreground">{s.clients?.name || "Без клиента"} · {new Date(s.created_at).toLocaleString("ru")}</p>
@@ -146,7 +171,9 @@ const DashboardHome = () => {
             </div>
             <div>
               <h3 className="font-semibold text-sm">AI Ассистент</h3>
-              <p className="text-xs text-muted-foreground">Аналитика продаж, рекомендации по ценам, советы по бизнесу</p>
+              <p className="text-xs text-muted-foreground">
+                {isPremier ? "Аналитика сети, сравнение магазинов, рекомендации по перемещению товаров" : "Аналитика продаж, рекомендации по ценам, советы по бизнесу"}
+              </p>
             </div>
           </div>
           <Button onClick={() => navigate("/dashboard/ai")} size="sm">

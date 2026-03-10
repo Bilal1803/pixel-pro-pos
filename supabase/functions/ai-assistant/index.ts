@@ -29,13 +29,15 @@ serve(async (req) => {
 
     const companyId = profile.company_id;
 
-    // Fetch business context + survey
-    const [salesRes, devicesRes, productsRes, clientsRes, surveyRes] = await Promise.all([
-      supabase.from("sales").select("*, sale_items(name, price, cost_price, item_type, quantity)").eq("company_id", companyId).order("created_at", { ascending: false }).limit(100),
-      supabase.from("devices").select("*").eq("company_id", companyId),
+    // Fetch business context + survey + subscription + stores
+    const [salesRes, devicesRes, productsRes, clientsRes, surveyRes, subRes, storesRes] = await Promise.all([
+      supabase.from("sales").select("*, sale_items(name, price, cost_price, item_type, quantity), stores(name)").eq("company_id", companyId).order("created_at", { ascending: false }).limit(200),
+      supabase.from("devices").select("*, stores(name)").eq("company_id", companyId),
       supabase.from("products").select("*").eq("company_id", companyId),
       supabase.from("clients").select("*").eq("company_id", companyId),
       supabase.from("ai_survey_answers").select("*").eq("company_id", companyId).maybeSingle(),
+      supabase.from("subscriptions").select("plan").eq("company_id", companyId).single(),
+      supabase.from("stores").select("id, name").eq("company_id", companyId),
     ]);
 
     const sales = salesRes.data || [];
@@ -43,6 +45,8 @@ serve(async (req) => {
     const products = productsRes.data || [];
     const clients = clientsRes.data || [];
     const survey = surveyRes.data as any;
+    const isPremier = subRes.data?.plan === "premier";
+    const stores = storesRes.data || [];
 
     const surveyLabels: Record<string, Record<string, string>> = {
       store_type: { phones_only: "Только смартфоны", phones_accessories: "Смартфоны + аксессуары", phones_repairs: "Смартфоны + ремонт", full_service: "Смартфоны, аксессуары и ремонт" },
@@ -86,7 +90,55 @@ serve(async (req) => {
     const now = Date.now();
     const slowDevices = availableDevices
       .filter((d: any) => now - new Date(d.created_at).getTime() > 14 * 86400000)
-      .map((d: any) => ({ model: d.model, memory: d.memory, days: Math.floor((now - new Date(d.created_at).getTime()) / 86400000), sale_price: d.sale_price }));
+      .map((d: any) => ({ model: d.model, memory: d.memory, days: Math.floor((now - new Date(d.created_at).getTime()) / 86400000), sale_price: d.sale_price, store: (d as any).stores?.name || "?" }));
+
+    // Network analytics for Premier
+    let networkContext = "";
+    if (isPremier && stores.length > 1) {
+      const storeAnalytics = stores.map((store: any) => {
+        const storeSales = sales.filter((s: any) => s.store_id === store.id);
+        const storeDevices = availableDevices.filter((d: any) => d.store_id === store.id);
+        const revenue = storeSales.reduce((sum: number, s: any) => sum + (s.total || 0), 0);
+        const profit = storeSales.reduce((sum: number, s: any) => {
+          return sum + (s.sale_items || []).reduce((p: number, i: any) => p + ((i.price || 0) - (i.cost_price || 0)), 0);
+        }, 0);
+
+        // Count models per store
+        const modelCounts: Record<string, number> = {};
+        storeDevices.forEach((d: any) => {
+          const key = `${d.model} ${d.memory || ""}`.trim();
+          modelCounts[key] = (modelCounts[key] || 0) + 1;
+        });
+
+        return {
+          name: store.name,
+          salesCount: storeSales.length,
+          revenue,
+          profit,
+          inStock: storeDevices.length,
+          avgCheck: storeSales.length > 0 ? Math.round(revenue / storeSales.length) : 0,
+          topModels: Object.entries(modelCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([m, c]) => `${m}: ${c} шт.`).join(", "),
+        };
+      });
+
+      networkContext = `
+
+СЕТЬ МАГАЗИНОВ (тариф Премьер):
+Количество магазинов: ${stores.length}
+
+${storeAnalytics.map((s: any) => `📍 ${s.name}:
+  - Продажи: ${s.salesCount}, Выручка: ${s.revenue} ₽, Прибыль: ${s.profit} ₽, Ср. чек: ${s.avgCheck} ₽
+  - На складе: ${s.inStock} устройств
+  - Топ модели: ${s.topModels || "нет данных"}`).join("\n\n")}
+
+Ты можешь:
+- Сравнивать магазины по выручке, прибыли и продажам
+- Находить магазины с низкими продажами
+- Рекомендовать перераспределение товаров между магазинами
+- Анализировать какой магазин лучше продаёт определённые модели
+- Находить дисбаланс в запасах (в одном магазине много, в другом мало)
+`;
+    }
 
     const context = `
 Ты — AI-ассистент CRM для магазина смартфонов. Отвечай на русском. Будь конкретен и полезен. Не используй лишние заголовки и форматирование — пиши чётко, по делу, структурированно.
@@ -103,7 +155,8 @@ ${surveyContext}
 ${Object.entries(modelProfit).sort((a, b) => b[1].profit - a[1].profit).slice(0, 10).map(([name, d]) => `${name}: ${d.count} продаж, прибыль ${d.profit} ₽`).join("\n")}
 
 ЗАЛЕЖАВШИЙСЯ ТОВАР (>14 дней):
-${slowDevices.length > 0 ? slowDevices.slice(0, 10).map((d: any) => `${d.model} ${d.memory || ""} — ${d.days} дн., цена ${d.sale_price || "?"} ₽`).join("\n") : "Нет"}
+${slowDevices.length > 0 ? slowDevices.slice(0, 10).map((d: any) => `${d.model} ${d.memory || ""} — ${d.days} дн., цена ${d.sale_price || "?"} ₽${isPremier ? `, магазин: ${d.store}` : ""}`).join("\n") : "Нет"}
+${networkContext}
 
 Ты можешь:
 - Анализировать продажи и прибыль
