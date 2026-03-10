@@ -87,7 +87,7 @@ const BuybackPage = () => {
       if (!companyId) return [];
       const { data, error } = await supabase
         .from("price_monitoring")
-        .select("model, avg_price, our_price, margin_used, margin_new, id")
+        .select("model, avg_price, our_price, margin_used, margin_new, id, hidden")
         .eq("company_id", companyId);
       if (error) throw error;
       return data;
