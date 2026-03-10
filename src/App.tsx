@@ -25,6 +25,11 @@ import ReportsPage from "./pages/dashboard/ReportsPage";
 import SettingsPage from "./pages/dashboard/SettingsPage";
 import SupportPage from "./pages/dashboard/SupportPage";
 import PricingPage from "./pages/dashboard/PricingPage";
+import AdminLayout from "./components/AdminLayout";
+import AdminStoriesPage from "./pages/admin/AdminStoriesPage";
+import AdminCompaniesPage from "./pages/admin/AdminCompaniesPage";
+import AdminUsersPage from "./pages/admin/AdminUsersPage";
+import AdminSubscriptionsPage from "./pages/admin/AdminSubscriptionsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -58,6 +63,13 @@ const App = () => (
               <Route path="settings" element={<SettingsPage />} />
               <Route path="pricing" element={<PricingPage />} />
               <Route path="support" element={<SupportPage />} />
+            </Route>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminStoriesPage />} />
+              <Route path="stories" element={<AdminStoriesPage />} />
+              <Route path="companies" element={<AdminCompaniesPage />} />
+              <Route path="users" element={<AdminUsersPage />} />
+              <Route path="subscriptions" element={<AdminSubscriptionsPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
