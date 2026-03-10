@@ -71,11 +71,15 @@ const App = () => (
               <Route path="support" element={<SupportPage />} />
             </Route>
             <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminStoriesPage />} />
-              <Route path="stories" element={<AdminStoriesPage />} />
+              <Route index element={<AdminDashboardPage />} />
               <Route path="companies" element={<AdminCompaniesPage />} />
               <Route path="users" element={<AdminUsersPage />} />
               <Route path="subscriptions" element={<AdminSubscriptionsPage />} />
+              <Route path="finances" element={<AdminFinancesPage />} />
+              <Route path="stories" element={<AdminStoriesPage />} />
+              <Route path="support" element={<AdminSupportPage />} />
+              <Route path="analytics" element={<AdminAnalyticsPage />} />
+              <Route path="system" element={<AdminSystemPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
