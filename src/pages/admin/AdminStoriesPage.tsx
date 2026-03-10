@@ -121,6 +121,7 @@ const AdminStoriesPage = () => {
       image_url: s.image_url,
       action_url: s.action_url || "",
       action_label: s.action_label || "Перейти",
+      text_color: (s as any).text_color || "#ffffff",
       is_active: s.is_active,
     });
     setImageFile(null);
