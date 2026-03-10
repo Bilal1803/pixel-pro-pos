@@ -10,6 +10,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { format } from "date-fns";
+import { sendTelegramNotification } from "@/lib/telegram";
 
 const TmaShiftPage = () => {
   const { companyId, user } = useAuth();
@@ -88,6 +89,14 @@ const TmaShiftPage = () => {
       setCashStart("");
       queryClient.invalidateQueries({ queryKey: ["tma-active-shift"] });
       toast({ title: "Смена открыта" });
+
+      if (companyId) {
+        sendTelegramNotification(
+          companyId,
+          "shift_open",
+          `▶️ <b>Смена открыта</b>\n\n💵 Касса: <b>${Number(cashStart || 0).toLocaleString("ru")} ₽</b>\n🕐 ${format(new Date(), "HH:mm dd.MM.yyyy")}`
+        );
+      }
     },
     onError: (e: any) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
@@ -103,10 +112,21 @@ const TmaShiftPage = () => {
       if (error) throw error;
     },
     onSuccess: () => {
+      const finalDiff = (Number(cashEnd) || 0) - systemCash;
+      const diffText = finalDiff === 0 ? "✅ Без расхождений" : `⚠️ Разница: ${finalDiff > 0 ? "+" : ""}${finalDiff.toLocaleString("ru")} ₽`;
+
       setCashEnd("");
       setCloseOpen(false);
       queryClient.invalidateQueries({ queryKey: ["tma-active-shift"] });
       toast({ title: "Смена закрыта" });
+
+      if (companyId) {
+        sendTelegramNotification(
+          companyId,
+          "shift_close",
+          `⏹ <b>Смена закрыта</b>\n\n📊 Продаж: <b>${shiftSales.length}</b>\n💰 Выручка: <b>${shiftRevenue.toLocaleString("ru")} ₽</b>\n💵 Наличные: ${cashSales.toLocaleString("ru")} ₽\n💳 Карта: ${cardSales.toLocaleString("ru")} ₽\n🏦 Касса по системе: ${systemCash.toLocaleString("ru")} ₽\n💰 Факт: ${(Number(cashEnd) || 0).toLocaleString("ru")} ₽\n${diffText}`
+        );
+      }
     },
     onError: (e: any) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
