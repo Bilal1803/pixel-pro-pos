@@ -1,8 +1,11 @@
 import { Card } from "@/components/ui/card";
-import { DollarSign, TrendingUp, ShoppingCart, Smartphone } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DollarSign, TrendingUp, ShoppingCart, Smartphone, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { useSubscription } from "@/hooks/useSubscription";
 import StoriesCarousel from "@/components/StoriesCarousel";
 
 const DashboardHome = () => {
