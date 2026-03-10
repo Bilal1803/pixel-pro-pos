@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, Upload, FileSpreadsheet, X, Pencil } from "lucide-react";
+import { Plus, Search, Upload, FileSpreadsheet, X, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import ComboboxInput from "@/components/ComboboxInput";
@@ -77,7 +77,7 @@ const normalizeStatus = (s?: string): string => {
 };
 
 const InventoryPage = () => {
-  const { companyId } = useAuth();
+  const { companyId, user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -191,6 +191,31 @@ const InventoryPage = () => {
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["devices"] }),
+  });
+
+  const { data: userRole } = useQuery({
+    queryKey: ["user-role", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id).single();
+      return data?.role || null;
+    },
+    enabled: !!user?.id,
+  });
+
+  const isOwner = userRole === "owner";
+
+  const deleteDevice = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("devices").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["devices"] });
+      toast({ title: "Устройство удалено" });
+      setEditOpen(false);
+    },
+    onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
 
   const openEdit = (device: any) => {
@@ -639,9 +664,27 @@ const InventoryPage = () => {
               </Select>
             </div>
             <div><Label>Заметки</Label><Textarea value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} /></div>
-            <Button type="submit" className="w-full" disabled={updateDevice.isPending}>
-              {updateDevice.isPending ? "Сохранение..." : "Сохранить изменения"}
-            </Button>
+            <div className="flex gap-2">
+              {isOwner && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="flex-1"
+                  disabled={deleteDevice.isPending}
+                  onClick={() => {
+                    if (confirm("Удалить устройство? Это действие нельзя отменить.")) {
+                      deleteDevice.mutate(editForm.id);
+                    }
+                  }}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {deleteDevice.isPending ? "Удаление..." : "Удалить"}
+                </Button>
+              )}
+              <Button type="submit" className="flex-1" disabled={updateDevice.isPending}>
+                {updateDevice.isPending ? "Сохранение..." : "Сохранить изменения"}
+              </Button>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
