@@ -115,26 +115,30 @@ const StoriesCarousel = () => {
                   alt={activeStory.title}
                   className="w-full max-h-[85vh] object-cover"
                 />
-                <div
-                  className="absolute inset-x-0 bottom-0 p-5 space-y-3"
-                  style={{
-                    color: activeStory.text_color || "#ffffff",
-                    background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 60%, transparent 100%)",
-                  }}
-                >
-                  <h3 className="text-lg font-bold">{activeStory.title}</h3>
-                  {activeStory.description && (
-                    <p className="text-sm opacity-90">{activeStory.description}</p>
-                  )}
-                  {activeStory.action_url && (
-                    <Button
-                      className="w-full"
-                      onClick={() => window.open(activeStory!.action_url!, "_blank")}
-                    >
-                      {activeStory.action_label || "Перейти"}
-                    </Button>
-                  )}
-                </div>
+                {(activeStory.title && activeStory.title !== "Story" || activeStory.description || activeStory.action_url) && (
+                  <div
+                    className="absolute inset-x-0 bottom-0 p-5 space-y-3"
+                    style={{
+                      color: activeStory.text_color || "#ffffff",
+                      background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 60%, transparent 100%)",
+                    }}
+                  >
+                    {activeStory.title && activeStory.title !== "Story" && (
+                      <h3 className="text-lg font-bold">{activeStory.title}</h3>
+                    )}
+                    {activeStory.description && (
+                      <p className="text-sm opacity-90">{activeStory.description}</p>
+                    )}
+                    {activeStory.action_url && (
+                      <Button
+                        className="w-full"
+                        onClick={() => window.open(activeStory!.action_url!, "_blank")}
+                      >
+                        {activeStory.action_label || "Перейти"}
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
