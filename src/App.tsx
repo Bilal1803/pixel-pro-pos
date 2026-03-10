@@ -25,6 +25,11 @@ import ReportsPage from "./pages/dashboard/ReportsPage";
 import SettingsPage from "./pages/dashboard/SettingsPage";
 import SupportPage from "./pages/dashboard/SupportPage";
 import PricingPage from "./pages/dashboard/PricingPage";
+import AdminLayout from "./components/AdminLayout";
+import AdminStoriesPage from "./pages/admin/AdminStoriesPage";
+import AdminCompaniesPage from "./pages/admin/AdminCompaniesPage";
+import AdminUsersPage from "./pages/admin/AdminUsersPage";
+import AdminSubscriptionsPage from "./pages/admin/AdminSubscriptionsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
