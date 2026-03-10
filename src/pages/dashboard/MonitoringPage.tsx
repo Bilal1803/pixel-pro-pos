@@ -295,7 +295,7 @@ const MonitoringPage = () => {
             <Button
               type="submit"
               className="w-full"
-              disabled={upsertEntry.isPending || priceSlots.every((v) => !v)}
+              disabled={upsertEntry.isPending || (priceSlots.every((v) => !v) && !ourPrice)}
             >
               {upsertEntry.isPending ? "Сохранение..." : "Сохранить цену"}
             </Button>
