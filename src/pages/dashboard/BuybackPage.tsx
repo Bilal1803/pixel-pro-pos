@@ -507,9 +507,24 @@ const BuybackPage = () => {
                             )}
                           </td>
                           <td className="px-4 py-2.5 text-center">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => openMarginEdit(row, e)}>
-                              <Pencil className="h-3 w-3 text-muted-foreground" />
-                            </Button>
+                            <div className="flex items-center justify-center gap-0.5">
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => openMarginEdit(row, e)}>
+                                <Pencil className="h-3 w-3 text-muted-foreground" />
+                              </Button>
+                              {entry && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeleteModelTarget({ key, id: entry.id });
+                                  }}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
