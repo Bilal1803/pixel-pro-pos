@@ -61,7 +61,37 @@ const plans = [
 ];
 
 const PricingPage = () => {
-  const { subscription } = useSubscription();
+  const { subscription, PLAN_DEFAULTS } = useSubscription();
+  const { companyId } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const changePlan = useMutation({
+    mutationFn: async (planId: string) => {
+      if (!companyId) throw new Error("No company");
+      const limits = PLAN_DEFAULTS[planId];
+      if (!limits) throw new Error("Unknown plan");
+      const { error } = await supabase
+        .from("subscriptions")
+        .update({
+          plan: limits.plan,
+          max_stores: limits.max_stores,
+          max_employees: limits.max_employees,
+          max_devices: limits.max_devices,
+          repairs_enabled: limits.repairs_enabled,
+          ai_enabled: limits.ai_enabled,
+        })
+        .eq("company_id", companyId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subscription"] });
+      toast({ title: "Тариф обновлён" });
+    },
+    onError: () => {
+      toast({ title: "Ошибка при смене тарифа", variant: "destructive" });
+    },
+  });
 
   return (
     <div className="space-y-6">
