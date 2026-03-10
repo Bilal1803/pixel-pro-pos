@@ -615,10 +615,10 @@ const InventoryPage = () => {
           <DialogHeader><DialogTitle>Редактировать устройство</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); updateDevice.mutate(); }} className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Модель *</Label><ComboboxInput value={editForm.model} onChange={(v) => setEditForm({ ...editForm, model: v })} options={uniqueModels} required /></div>
-              <div><Label>Бренд</Label><ComboboxInput value={editForm.brand} onChange={(v) => setEditForm({ ...editForm, brand: v })} options={uniqueBrands} /></div>
-              <div><Label>Память</Label><ComboboxInput value={editForm.memory} onChange={(v) => setEditForm({ ...editForm, memory: v })} options={uniqueMemory} placeholder="128GB" /></div>
-              <div><Label>Цвет</Label><ComboboxInput value={editForm.color} onChange={(v) => setEditForm({ ...editForm, color: v })} options={uniqueColors} /></div>
+              <div><Label>Модель *</Label><ComboboxInput value={editForm.model} onChange={(v) => setEditForm({ ...editForm, model: v })} options={modelOptions} required /></div>
+              <div><Label>Бренд</Label><ComboboxInput value={editForm.brand} onChange={(v) => setEditForm({ ...editForm, brand: v })} options={brandOptions} /></div>
+              <div><Label>Память</Label><ComboboxInput value={editForm.memory} onChange={(v) => setEditForm({ ...editForm, memory: v })} options={getMemoryOptions(editForm.model)} placeholder="128GB" /></div>
+              <div><Label>Цвет</Label><ComboboxInput value={editForm.color} onChange={(v) => setEditForm({ ...editForm, color: v })} options={getColorOptions(editForm.model)} /></div>
               <div><Label>IMEI *</Label><Input value={editForm.imei} onChange={(e) => setEditForm({ ...editForm, imei: e.target.value })} required /></div>
               <div><Label>АКБ</Label><Input placeholder="94%" value={editForm.battery_health} onChange={(e) => setEditForm({ ...editForm, battery_health: e.target.value })} /></div>
               <div><Label>Цена закупки</Label><Input type="number" value={editForm.purchase_price} onChange={(e) => setEditForm({ ...editForm, purchase_price: e.target.value })} /></div>
