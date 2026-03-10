@@ -193,6 +193,31 @@ const InventoryPage = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["devices"] }),
   });
 
+  const { data: userRole } = useQuery({
+    queryKey: ["user-role", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id).single();
+      return data?.role || null;
+    },
+    enabled: !!user?.id,
+  });
+
+  const isOwner = userRole === "owner";
+
+  const deleteDevice = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("devices").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["devices"] });
+      toast({ title: "Устройство удалено" });
+      setEditOpen(false);
+    },
+    onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
+  });
+
   const openEdit = (device: any) => {
     setEditForm({
       id: device.id,
