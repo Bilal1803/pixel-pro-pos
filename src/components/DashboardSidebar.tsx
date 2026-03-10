@@ -2,9 +2,10 @@ import { NavLink as RouterNavLink, useLocation, useNavigate } from "react-router
 import {
   LayoutDashboard, Smartphone, ShoppingCart, ArrowDownUp, Users,
   Headphones, Wrench, Tag, TrendingUp, Megaphone, DollarSign,
-  UserCog, Clock, FileBarChart, Settings, HelpCircle, LogOut, CreditCard,
+  UserCog, Clock, FileBarChart, Settings, HelpCircle, LogOut, CreditCard, Shield,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 
 const navItems = [
   { to: "/dashboard", label: "Дашборд", icon: LayoutDashboard },
