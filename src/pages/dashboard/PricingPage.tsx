@@ -145,9 +145,10 @@ const PricingPage = () => {
               <Button
                 className="mt-6 w-full"
                 variant={isPopular ? "default" : "outline"}
-                disabled={isCurrent}
+                disabled={isCurrent || changePlan.isPending}
+                onClick={() => changePlan.mutate(plan.id)}
               >
-                {isCurrent ? "Текущий план" : "Выбрать"}
+                {isCurrent ? "Текущий план" : changePlan.isPending ? "Обновление..." : "Выбрать"}
               </Button>
             </Card>
           );
