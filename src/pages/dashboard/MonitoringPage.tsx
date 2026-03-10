@@ -201,6 +201,103 @@ const MonitoringPage = () => {
       toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
 
+  // Import file handler
+  const IMPORT_COL_MAP: Record<string, "model" | "memory" | "our_price"> = {
+    "модель": "model", "model": "model", "название": "model", "name": "model", "устройство": "model", "device": "model",
+    "память": "memory", "memory": "memory", "storage": "memory", "gb": "memory", "объём": "memory",
+    "цена": "our_price", "price": "our_price", "наша цена": "our_price", "our_price": "our_price", "стоимость": "our_price", "цена продажи": "our_price",
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = new Uint8Array(evt.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json: Record<string, any>[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+        if (!json.length) { toast({ title: "Файл пуст", variant: "destructive" }); return; }
+
+        const headerMap = new Map<string, "model" | "memory" | "our_price">();
+        for (const h of Object.keys(json[0])) {
+          const key = h.toLowerCase().trim();
+          if (IMPORT_COL_MAP[key]) headerMap.set(h, IMPORT_COL_MAP[key]);
+        }
+        if (!headerMap.has([...headerMap.entries()].find(([, v]) => v === "model")?.[0] || "")) {
+          toast({ title: "Не найден столбец «Модель»", description: "Файл должен содержать столбец: Модель, Model или Название", variant: "destructive" });
+          return;
+        }
+
+        const parsed: ImportRow[] = [];
+        for (const row of json) {
+          const item: Partial<ImportRow> = {};
+          for (const [rawH, field] of headerMap) {
+            const val = String(row[rawH] ?? "").trim();
+            if (!val) continue;
+            if (field === "our_price") {
+              const num = parseFloat(val.replace(/[^\d.,]/g, "").replace(",", "."));
+              if (!isNaN(num) && num > 0) item.our_price = num;
+            } else {
+              (item as any)[field] = val;
+            }
+          }
+          if (item.model) {
+            parsed.push({ model: item.model, memory: item.memory || "", our_price: item.our_price });
+          }
+        }
+        if (!parsed.length) { toast({ title: "Нет валидных строк", variant: "destructive" }); return; }
+        setImportRows(parsed);
+        setImportOpen(true);
+      } catch {
+        toast({ title: "Ошибка чтения файла", variant: "destructive" });
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = "";
+  };
+
+  const importModels = useMutation({
+    mutationFn: async () => {
+      if (!companyId || !importRows.length) throw new Error("Нет данных");
+      const toUpsert = importRows.map((r) => {
+        const modelName = r.memory ? `${r.model} ${r.memory}` : r.model;
+        return {
+          company_id: companyId,
+          model: modelName,
+          our_price: r.our_price ?? null,
+          prices: [] as number[],
+          avg_price: null as number | null,
+        };
+      });
+      // Upsert: for each row, check if exists and update or insert
+      for (const item of toUpsert) {
+        const existing = monitoringMap[item.model];
+        if (existing) {
+          const upd: any = {};
+          if (item.our_price) upd.our_price = item.our_price;
+          if (Object.keys(upd).length) {
+            await supabase.from("price_monitoring").update(upd).eq("id", existing.id);
+          }
+        } else {
+          const { error } = await supabase.from("price_monitoring").insert(item);
+          if (error) throw error;
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["price-monitoring"] });
+      toast({ title: `Импортировано ${importRows.length} моделей` });
+      setImportOpen(false);
+      setImportRows([]);
+      setImportFileName("");
+    },
+    onError: (e: Error) =>
+      toast({ title: "Ошибка импорта", description: e.message, variant: "destructive" }),
+  });
+
   // Group rows by model name
   const groupedRows = useMemo(() => {
     const groups: { name: string; rows: CatalogRow[] }[] = [];
