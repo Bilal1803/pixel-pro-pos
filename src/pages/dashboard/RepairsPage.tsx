@@ -120,6 +120,8 @@ const RepairsPage = () => {
         </Dialog>
       </div>
 
+      <SectionHelp tips={SECTION_TIPS.repairs} />
+
       <Card className="card-shadow overflow-hidden">
         {isLoading ? (
           <div className="p-8 text-center text-muted-foreground">Загрузка...</div>

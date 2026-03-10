@@ -271,6 +271,8 @@ const ListingsPage = () => {
         Устройства группируются по модели, памяти и цвету. Привяжите ссылку на объявление Avito.
       </p>
 
+      <SectionHelp tips={SECTION_TIPS.listings} />
+
       <Card className="card-shadow overflow-hidden">
         {isLoading ? (
           <div className="p-8 text-center text-muted-foreground">Загрузка...</div>

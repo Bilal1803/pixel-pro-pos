@@ -329,6 +329,8 @@ const MonitoringPage = () => {
         </div>
       </div>
 
+      <SectionHelp tips={SECTION_TIPS.monitoring} />
+
       <p className="text-sm text-muted-foreground">
         Нажмите на модель, чтобы ввести 10 цен с Avito и рассчитать среднюю рыночную цену.
       </p>

@@ -498,6 +498,8 @@ const PriceTagsPage = () => {
         </div>
       </div>
 
+      <SectionHelp tips={SECTION_TIPS.priceTags} />
+
       {/* Selection UI */}
       <div className="print:hidden space-y-4">
         <div className="relative">

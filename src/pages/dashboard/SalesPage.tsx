@@ -455,6 +455,8 @@ const SalesPage = () => {
         </Dialog>
       </div>
 
+      <SectionHelp tips={SECTION_TIPS.sales} />
+
       <Card className="card-shadow overflow-hidden">
         {isLoading ? (
           <div className="p-8 text-center text-muted-foreground">Загрузка...</div>

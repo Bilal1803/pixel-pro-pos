@@ -393,6 +393,8 @@ const BuybackPage = () => {
         <span>Маржа новые: <strong className="text-foreground">{currentMarginNew.toLocaleString("ru")} ₽</strong></span>
       </div>
 
+      <SectionHelp tips={SECTION_TIPS.buyback} />
+
       <Tabs value={tab} onValueChange={(v) => setTab(v as "prices" | "history")}>
         <TabsList>
           <TabsTrigger value="prices">Прайс-лист выкупа</TabsTrigger>
