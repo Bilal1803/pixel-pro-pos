@@ -24,7 +24,7 @@ interface Story {
   expires_at: string | null;
 }
 
-const emptyForm = { title: "", description: "", image_url: "", action_url: "", action_label: "Перейти", is_active: true };
+const emptyForm = { title: "", description: "", image_url: "", action_url: "", action_label: "Перейти", text_color: "#ffffff", is_active: true };
 
 const AdminStoriesPage = () => {
   const { toast } = useToast();
