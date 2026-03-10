@@ -40,6 +40,7 @@ Deno.serve(async (req) => {
 
     // Check status
     if (invite.status !== "pending") {
+      console.log("Invite already used:", invite.status);
       return new Response(JSON.stringify({ error: "Приглашение уже использовано" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -102,7 +103,7 @@ Deno.serve(async (req) => {
 
     // Generate a session token for the employee
     // We'll use signInWithPassword since we know the password
-    const anonKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
     const userClient = createClient(supabaseUrl, anonKey);
     const { data: sessionData, error: sessionError } = await userClient.auth.signInWithPassword({
       email,
@@ -130,6 +131,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (err) {
+    console.error("accept-invite error:", (err as Error).message);
     return new Response(JSON.stringify({ error: (err as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
