@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import SectionHelp from "@/components/SectionHelp";
+import { SECTION_TIPS } from "@/data/sectionTips";
 
 const CustomersPage = () => {
   const { companyId } = useAuth();

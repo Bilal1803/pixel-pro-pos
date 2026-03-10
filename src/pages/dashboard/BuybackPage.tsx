@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IPHONE_CATALOG } from "@/data/deviceCatalog";
 import ComboboxInput from "@/components/ComboboxInput";
+import SectionHelp from "@/components/SectionHelp";
+import { SECTION_TIPS } from "@/data/sectionTips";
 import { ALL_CATALOG_MODELS, ALL_CATALOG_MEMORIES, ALL_CATALOG_COLORS, PRESET_BRANDS, getModelData } from "@/data/deviceCatalog";
 
 type CatalogRow = { model: string; memory: string };

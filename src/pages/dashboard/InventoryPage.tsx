@@ -16,6 +16,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import * as XLSX from "xlsx";
+import SectionHelp from "@/components/SectionHelp";
+import { SECTION_TIPS } from "@/data/sectionTips";
 
 const statusLabels: Record<string, { label: string; className: string }> = {
   available: { label: "В наличии", className: "bg-success/10 text-success" },
