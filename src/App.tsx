@@ -97,6 +97,7 @@ const App = () => (
               <Route path="inventory" element={<TmaInventoryPage />} />
               <Route path="cash" element={<TmaCashPage />} />
               <Route path="shift" element={<TmaShiftPage />} />
+              <Route path="more" element={<TmaMorePage />} />
             </Route>
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboardPage />} />
