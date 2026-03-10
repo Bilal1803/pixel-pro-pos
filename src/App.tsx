@@ -64,6 +64,13 @@ const App = () => (
               <Route path="pricing" element={<PricingPage />} />
               <Route path="support" element={<SupportPage />} />
             </Route>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminStoriesPage />} />
+              <Route path="stories" element={<AdminStoriesPage />} />
+              <Route path="companies" element={<AdminCompaniesPage />} />
+              <Route path="users" element={<AdminUsersPage />} />
+              <Route path="subscriptions" element={<AdminSubscriptionsPage />} />
+            </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
