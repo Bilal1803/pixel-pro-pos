@@ -233,6 +233,7 @@ const InventoryPage = () => {
       sale_price: device.sale_price?.toString() || "",
       status: device.status || "testing",
       notes: device.notes || "",
+      sim_type: device.sim_type || "",
     });
     setEditOpen(true);
   };
