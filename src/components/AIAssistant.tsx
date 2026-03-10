@@ -12,6 +12,7 @@ import AISurvey from "./AISurvey";
 type Msg = { role: "user" | "assistant"; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assistant`;
+const TOOLTIP_DISMISSED_KEY = "ai-tooltip-dismissed";
 
 const AIAssistant = () => {
   const { subscription } = useSubscription();
