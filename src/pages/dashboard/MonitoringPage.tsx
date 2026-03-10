@@ -3,33 +3,29 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, TrendingUp, TrendingDown, Minus, Trash2, Search, ChevronRight } from "lucide-react";
+import { Search, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-
 import { IPHONE_CATALOG } from "@/data/deviceCatalog";
+
+type CatalogRow = { model: string; memory: string };
+
+const allRows: CatalogRow[] = IPHONE_CATALOG.flatMap((m) =>
+  m.memories.map((mem) => ({ model: m.name, memory: mem }))
+);
 
 const MonitoringPage = () => {
   const { companyId } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [sheetOpen, setSheetOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [selectedModel, setSelectedModel] = useState<{ name: string; memory: string } | null>(null);
-  const [priceDialogOpen, setPriceDialogOpen] = useState(false);
-  const [ourPrice, setOurPrice] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selected, setSelected] = useState<CatalogRow | null>(null);
   const [priceSlots, setPriceSlots] = useState<string[]>(Array(10).fill(""));
-
-  const filteredCatalog = useMemo(() => {
-    if (!search.trim()) return IPHONE_CATALOG;
-    const q = search.toLowerCase();
-    return IPHONE_CATALOG.filter(m => m.name.toLowerCase().includes(q));
-  }, [search]);
+  const [ourPrice, setOurPrice] = useState("");
 
   const { data: monitoring = [], isLoading } = useQuery({
     queryKey: ["price-monitoring", companyId],
@@ -38,130 +34,226 @@ const MonitoringPage = () => {
       const { data, error } = await supabase
         .from("price_monitoring")
         .select("*")
-        .eq("company_id", companyId)
-        .order("updated_at", { ascending: false });
+        .eq("company_id", companyId);
       if (error) throw error;
       return data;
     },
     enabled: !!companyId,
   });
 
-  const createEntry = useMutation({
-    mutationFn: async () => {
-      if (!companyId || !selectedModel) throw new Error("No company or model");
-      const modelName = `${selectedModel.name} ${selectedModel.memory}`;
-      const pricesArr = priceSlots.map(Number).filter(n => !isNaN(n) && n > 0);
-      const avg = pricesArr.length > 0 ? Math.round(pricesArr.reduce((a, b) => a + b, 0) / pricesArr.length) : null;
-      const { error } = await supabase.from("price_monitoring").insert({
-        company_id: companyId,
-        model: modelName,
-        our_price: ourPrice ? Number(ourPrice) : null,
-        prices: pricesArr,
-        avg_price: avg,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["price-monitoring"] });
-      toast({ title: "Модель добавлена" });
-      setPriceDialogOpen(false);
-      setSheetOpen(false);
-      setSelectedModel(null);
-      setOurPrice("");
+  const monitoringMap = useMemo(() => {
+    const map: Record<string, (typeof monitoring)[0]> = {};
+    for (const m of monitoring) {
+      map[m.model] = m;
+    }
+    return map;
+  }, [monitoring]);
+
+  const filteredRows = useMemo(() => {
+    if (!search.trim()) return allRows;
+    const q = search.toLowerCase();
+    return allRows.filter(
+      (r) =>
+        r.model.toLowerCase().includes(q) ||
+        r.memory.toLowerCase().includes(q)
+    );
+  }, [search]);
+
+  const openDialog = (row: CatalogRow) => {
+    const key = `${row.model} ${row.memory}`;
+    const existing = monitoringMap[key];
+    setSelected(row);
+    if (existing) {
+      const existingPrices = existing.prices || [];
+      const slots = Array(10)
+        .fill("")
+        .map((_, i) => (existingPrices[i] ? String(existingPrices[i]) : ""));
+      setPriceSlots(slots);
+      setOurPrice(existing.our_price ? String(existing.our_price) : "");
+    } else {
       setPriceSlots(Array(10).fill(""));
-      setSearch("");
-    },
-    onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
-  });
+      setOurPrice("");
+    }
+    setDialogOpen(true);
+  };
 
-  const deleteEntry = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("price_monitoring").delete().eq("id", id);
-      if (error) throw error;
+  const upsertEntry = useMutation({
+    mutationFn: async () => {
+      if (!companyId || !selected) throw new Error("No data");
+      const modelName = `${selected.model} ${selected.memory}`;
+      const pricesArr = priceSlots
+        .map(Number)
+        .filter((n) => !isNaN(n) && n > 0);
+      const avg =
+        pricesArr.length > 0
+          ? Math.round(pricesArr.reduce((a, b) => a + b, 0) / pricesArr.length)
+          : null;
+
+      const existing = monitoringMap[modelName];
+      if (existing) {
+        const { error } = await supabase
+          .from("price_monitoring")
+          .update({
+            prices: pricesArr,
+            avg_price: avg,
+            our_price: ourPrice ? Number(ourPrice) : null,
+          })
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("price_monitoring").insert({
+          company_id: companyId,
+          model: modelName,
+          prices: pricesArr,
+          avg_price: avg,
+          our_price: ourPrice ? Number(ourPrice) : null,
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["price-monitoring"] });
-      toast({ title: "Удалено" });
+      toast({ title: "Цена обновлена" });
+      setDialogOpen(false);
+      setSelected(null);
     },
+    onError: (e: Error) =>
+      toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
 
-  const handleSelectMemory = (modelName: string, memory: string) => {
-    setSelectedModel({ name: modelName, memory });
-    setPriceDialogOpen(true);
-  };
+  // Group rows by model name for visual grouping
+  const groupedRows = useMemo(() => {
+    const groups: { name: string; rows: CatalogRow[] }[] = [];
+    let current: { name: string; rows: CatalogRow[] } | null = null;
+    for (const r of filteredRows) {
+      if (!current || current.name !== r.model) {
+        current = { name: r.model, rows: [] };
+        groups.push(current);
+      }
+      current.rows.push(r);
+    }
+    return groups;
+  }, [filteredRows]);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Мониторинг цен</h1>
-        <Sheet open={sheetOpen} onOpenChange={(v) => { setSheetOpen(v); if (!v) { setSearch(""); } }}>
-          <SheetTrigger asChild>
-            <Button><Plus className="mr-2 h-4 w-4" /> Добавить модель</Button>
-          </SheetTrigger>
-          <SheetContent className="w-full sm:max-w-md p-0 flex flex-col">
-            <SheetHeader className="p-6 pb-2">
-              <SheetTitle>Выберите модель iPhone</SheetTitle>
-            </SheetHeader>
-            <div className="px-6 pb-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Поиск модели..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-            </div>
-            <ScrollArea className="flex-1 px-6 pb-6">
-              <div className="space-y-1">
-                {filteredCatalog.map((model) => (
-                  <div key={model.name}>
-                    <p className="text-sm font-semibold text-foreground py-2 sticky top-0 bg-background">{model.name}</p>
-                    <div className="grid grid-cols-2 gap-1.5 pb-2">
-                      {model.memories.map((mem) => (
-                        <Button
-                          key={mem}
-                          variant="outline"
-                          size="sm"
-                          className="justify-between text-xs h-8"
-                          onClick={() => handleSelectMemory(model.name, mem)}
-                        >
-                          {mem}
-                          <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-                {filteredCatalog.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-8">Ничего не найдено</p>
-                )}
-              </div>
-            </ScrollArea>
-          </SheetContent>
-        </Sheet>
       </div>
 
-      {/* Price entry dialog */}
-      <Dialog open={priceDialogOpen} onOpenChange={setPriceDialogOpen}>
+      <p className="text-sm text-muted-foreground">
+        Нажмите на модель, чтобы ввести 10 цен с Avito и рассчитать среднюю рыночную цену.
+      </p>
+
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Поиск модели..."
+          className="pl-9"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
+      <Card className="card-shadow overflow-hidden">
+        {isLoading ? (
+          <div className="p-8 text-center text-muted-foreground">Загрузка...</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Модель</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Память</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">Средняя цена</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">Рекомендация (95%)</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">Наша цена</th>
+                  <th className="px-4 py-3 text-center font-medium text-muted-foreground"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {groupedRows.map((group) =>
+                  group.rows.map((row, i) => {
+                    const key = `${row.model} ${row.memory}`;
+                    const entry = monitoringMap[key];
+                    const avgPrice = entry?.avg_price || 0;
+                    const recPrice = avgPrice > 0 ? Math.round(avgPrice * 0.95) : 0;
+                    const ourP = entry?.our_price || 0;
+                    const hasData = !!entry && avgPrice > 0;
+
+                    return (
+                      <tr
+                        key={key}
+                        className="border-b hover:bg-muted/30 transition-colors cursor-pointer"
+                        onClick={() => openDialog(row)}
+                      >
+                        <td className="px-4 py-2.5 font-medium">
+                          {i === 0 ? row.model : ""}
+                        </td>
+                        <td className="px-4 py-2.5">{row.memory}</td>
+                        <td className="px-4 py-2.5 text-right font-mono">
+                          {hasData ? (
+                            <span className="font-semibold">{avgPrice.toLocaleString("ru")} ₽</span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-mono">
+                          {recPrice > 0 ? (
+                            <span className="text-primary font-semibold">{recPrice.toLocaleString("ru")} ₽</span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-mono">
+                          {ourP > 0 ? (
+                            <span>{ourP.toLocaleString("ru")} ₽</span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2.5 text-center">
+                          {!hasData ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-[10px] font-medium text-warning">
+                              Нет данных
+                            </span>
+                          ) : (
+                            <RefreshCw className="h-3.5 w-3.5 text-muted-foreground mx-auto" />
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+
+      {/* Price entry / update dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {selectedModel ? `${selectedModel.name} ${selectedModel.memory}` : "Модель"}
+              {selected ? `${selected.model} ${selected.memory}` : "Модель"}
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); createEntry.mutate(); }} className="space-y-4">
-            <div>
-              <Label>Наша цена</Label>
-              <Input type="number" placeholder="55000" value={ourPrice} onChange={(e) => setOurPrice(e.target.value)} />
-            </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              upsertEntry.mutate();
+            }}
+            className="space-y-4"
+          >
             <div>
               <Label className="mb-2 block">Цены с Avito (10 позиций)</Label>
               <div className="grid grid-cols-5 gap-2">
                 {priceSlots.map((val, i) => (
                   <div key={i} className="relative">
-                    <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] font-mono text-muted-foreground">{i + 1}</span>
+                    <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] font-mono text-muted-foreground">
+                      {i + 1}
+                    </span>
                     <Input
                       type="number"
                       className="pl-6 text-xs h-9 font-mono"
@@ -176,83 +268,40 @@ const MonitoringPage = () => {
                   </div>
                 ))}
               </div>
+              {priceSlots.some((v) => v && Number(v) > 0) && (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Средняя:{" "}
+                  <span className="font-semibold text-foreground">
+                    {Math.round(
+                      priceSlots
+                        .map(Number)
+                        .filter((n) => !isNaN(n) && n > 0)
+                        .reduce((a, b, _, arr) => a + b / arr.length, 0)
+                    ).toLocaleString("ru")}{" "}
+                    ₽
+                  </span>
+                </p>
+              )}
             </div>
-            <Button type="submit" className="w-full" disabled={createEntry.isPending || priceSlots.every(v => !v)}>
-              {createEntry.isPending ? "Добавление..." : "Добавить"}
+            <div>
+              <Label>Наша цена</Label>
+              <Input
+                type="number"
+                placeholder="55000"
+                value={ourPrice}
+                onChange={(e) => setOurPrice(e.target.value)}
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={upsertEntry.isPending || priceSlots.every((v) => !v)}
+            >
+              {upsertEntry.isPending ? "Сохранение..." : "Сохранить цену"}
             </Button>
           </form>
         </DialogContent>
       </Dialog>
-
-      <p className="text-sm text-muted-foreground">
-        Выберите модель iPhone из каталога, введите цены с Avito — система рассчитает среднюю рыночную цену и рекомендацию.
-      </p>
-
-      {isLoading ? (
-        <div className="p-8 text-center text-muted-foreground">Загрузка...</div>
-      ) : monitoring.length === 0 ? (
-        <div className="p-8 text-center text-muted-foreground">Нет моделей для мониторинга</div>
-      ) : (
-        <div className="grid gap-4">
-          {monitoring.map((m: any) => {
-            const prices: number[] = m.prices || [];
-            const avgPrice = m.avg_price || 0;
-            const ourPrice = m.our_price || 0;
-            const diff = ourPrice - avgPrice;
-            const diffPercent = avgPrice > 0 ? ((diff / avgPrice) * 100).toFixed(1) : "0";
-            const recommended = avgPrice > 0 ? Math.round(avgPrice * 0.95) : 0;
-
-            return (
-              <Card key={m.id} className="p-5 card-shadow">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-lg">{m.model}</h3>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteEntry.mutate(m.id)}>
-                        <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-                      </Button>
-                    </div>
-                    {prices.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {prices.map((p: number, i: number) => (
-                          <span key={i} className="rounded bg-muted px-2 py-0.5 text-xs font-mono">
-                            {p.toLocaleString("ru")}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex gap-6 text-sm sm:text-right">
-                    <div>
-                      <p className="text-muted-foreground">Средняя</p>
-                      <p className="text-lg font-bold">{avgPrice > 0 ? `${avgPrice.toLocaleString("ru")} ₽` : "—"}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Наша цена</p>
-                      <p className="text-lg font-bold">{ourPrice > 0 ? `${ourPrice.toLocaleString("ru")} ₽` : "—"}</p>
-                    </div>
-                    {avgPrice > 0 && ourPrice > 0 && (
-                      <div>
-                        <p className="text-muted-foreground">Разница</p>
-                        <p className={`text-lg font-bold flex items-center gap-1 ${diff > 0 ? "text-destructive" : diff < 0 ? "text-success" : ""}`}>
-                          {diff > 0 ? <TrendingUp className="h-4 w-4" /> : diff < 0 ? <TrendingDown className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
-                          {diffPercent}%
-                        </p>
-                      </div>
-                    )}
-                    {avgPrice > 0 && (
-                      <div>
-                        <p className="text-muted-foreground">Рекомендация</p>
-                        <p className="text-lg font-bold text-primary">{recommended.toLocaleString("ru")} ₽</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 };
