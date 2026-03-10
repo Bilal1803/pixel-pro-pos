@@ -142,6 +142,8 @@ const SettingsPage = () => {
         </Card>
       )}
 
+      <TelegramSettingsCard companyId={companyId} />
+
       <Card className="p-6 card-shadow">
         <h2 className="text-lg font-semibold">Подписка</h2>
         <p className="text-sm text-muted-foreground mt-1">Текущий тарифный план</p>
@@ -155,6 +157,155 @@ const SettingsPage = () => {
         </div>
       </Card>
     </div>
+  );
+};
+
+/* ── Telegram Settings Card ── */
+const TelegramSettingsCard = ({ companyId }: { companyId: string | null }) => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: tgSettings, isLoading } = useQuery({
+    queryKey: ["telegram-settings", companyId],
+    queryFn: async () => {
+      if (!companyId) return null;
+      const { data } = await supabase
+        .from("telegram_settings")
+        .select("*")
+        .eq("company_id", companyId)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!companyId,
+  });
+
+  const [chatId, setChatId] = useState("");
+  const [notifySales, setNotifySales] = useState(true);
+  const [notifyShifts, setNotifyShifts] = useState(true);
+  const [notifyCash, setNotifyCash] = useState(true);
+  const [notifyAi, setNotifyAi] = useState(true);
+
+  useEffect(() => {
+    if (tgSettings) {
+      setChatId(tgSettings.chat_id || "");
+      setNotifySales(tgSettings.notify_sales);
+      setNotifyShifts(tgSettings.notify_shifts);
+      setNotifyCash(tgSettings.notify_cash);
+      setNotifyAi(tgSettings.notify_ai);
+    }
+  }, [tgSettings]);
+
+  const saveTelegram = useMutation({
+    mutationFn: async () => {
+      if (!companyId) return;
+      const payload = {
+        company_id: companyId,
+        chat_id: chatId || null,
+        notify_sales: notifySales,
+        notify_shifts: notifyShifts,
+        notify_cash: notifyCash,
+        notify_ai: notifyAi,
+      };
+
+      if (tgSettings) {
+        const { error } = await supabase
+          .from("telegram_settings")
+          .update(payload)
+          .eq("id", tgSettings.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("telegram_settings")
+          .insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["telegram-settings"] });
+      toast({ title: "Настройки Telegram сохранены" });
+    },
+    onError: (e: any) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
+  });
+
+  const testMessage = useMutation({
+    mutationFn: async () => {
+      if (!companyId) return;
+      const { data, error } = await supabase.functions.invoke("send-telegram", {
+        body: {
+          company_id: companyId,
+          event_type: "sale",
+          message: "🔔 <b>Тестовое уведомление</b>\n\nНастройка Telegram успешно завершена!",
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.skipped) throw new Error(data.reason || "Уведомление пропущено");
+    },
+    onSuccess: () => toast({ title: "Тестовое сообщение отправлено ✓" }),
+    onError: (e: any) => toast({ title: "Ошибка отправки", description: e.message, variant: "destructive" }),
+  });
+
+  if (isLoading) return null;
+
+  return (
+    <Card className="p-6 card-shadow">
+      <div className="flex items-center gap-2">
+        <Send className="h-5 w-5 text-primary" />
+        <h2 className="text-lg font-semibold">Telegram уведомления</h2>
+      </div>
+      <p className="text-sm text-muted-foreground mt-1">
+        Получайте уведомления о продажах и сменах в Telegram
+      </p>
+      <Separator className="my-4" />
+      <div className="space-y-5">
+        <div>
+          <Label htmlFor="chatId">Chat ID</Label>
+          <Input
+            id="chatId"
+            placeholder="-1001234567890"
+            value={chatId}
+            onChange={(e) => setChatId(e.target.value)}
+            className="mt-1"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Отправьте боту команду или добавьте бота в группу, затем узнайте Chat ID через @userinfobot
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <p className="text-sm font-medium">Типы уведомлений</p>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="notifySales" className="cursor-pointer">🛒 Продажи</Label>
+            <Switch id="notifySales" checked={notifySales} onCheckedChange={setNotifySales} />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="notifyShifts" className="cursor-pointer">🕐 Смены</Label>
+            <Switch id="notifyShifts" checked={notifyShifts} onCheckedChange={setNotifyShifts} />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="notifyCash" className="cursor-pointer">💰 Кассовые операции</Label>
+            <Switch id="notifyCash" checked={notifyCash} onCheckedChange={setNotifyCash} />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="notifyAi" className="cursor-pointer">🤖 AI-оповещения</Label>
+            <Switch id="notifyAi" checked={notifyAi} onCheckedChange={setNotifyAi} />
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          <Button onClick={() => saveTelegram.mutate()} disabled={saveTelegram.isPending}>
+            {saveTelegram.isPending ? "Сохранение..." : "Сохранить"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => testMessage.mutate()}
+            disabled={testMessage.isPending || !chatId}
+          >
+            {testMessage.isPending ? "Отправка..." : "Тест"}
+          </Button>
+        </div>
+      </div>
+    </Card>
   );
 };
 
