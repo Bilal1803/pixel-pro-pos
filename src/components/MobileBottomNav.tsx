@@ -71,7 +71,7 @@ const MobileBottomNav = () => {
                       setMoreOpen(false);
                     }}
                     className={cn(
-                      "flex flex-col items-center gap-1.5 rounded-xl p-3 min-h-[60px] transition-colors",
+                      "flex flex-col items-center gap-1.5 rounded-xl p-3 min-h-[64px] transition-all duration-150 active:scale-95",
                       active
                         ? "bg-primary/10 text-primary"
                         : "text-muted-foreground hover:bg-accent"
