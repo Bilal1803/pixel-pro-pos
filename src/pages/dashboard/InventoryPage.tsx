@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Plus, Search, Upload, FileSpreadsheet, X, Pencil } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import ComboboxInput from "@/components/ComboboxInput";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
