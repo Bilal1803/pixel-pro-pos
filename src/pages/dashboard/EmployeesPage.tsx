@@ -260,6 +260,8 @@ const EmployeesPage = () => {
         </Dialog>
       </div>
 
+      <SectionHelp tips={SECTION_TIPS.employees} />
+
       {isLoading ? (
         <div className="p-8 text-center text-muted-foreground">Загрузка...</div>
       ) : profiles.length === 0 ? (
