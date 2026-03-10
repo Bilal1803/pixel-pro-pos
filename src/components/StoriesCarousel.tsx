@@ -11,6 +11,7 @@ interface Story {
   title: string;
   description: string | null;
   image_url: string;
+  thumbnail_url: string | null;
   action_url: string | null;
   action_label: string | null;
   text_color: string | null;

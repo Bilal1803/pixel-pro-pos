@@ -16,6 +16,7 @@ interface Story {
   title: string;
   description: string | null;
   image_url: string;
+  thumbnail_url: string | null;
   action_url: string | null;
   action_label: string | null;
   text_color: string | null;
@@ -24,7 +25,7 @@ interface Story {
   expires_at: string | null;
 }
 
-const emptyForm = { title: "", description: "", image_url: "", action_url: "", action_label: "Перейти", text_color: "#ffffff", is_active: true };
+const emptyForm = { title: "", description: "", image_url: "", thumbnail_url: "", action_url: "", action_label: "Перейти", text_color: "#ffffff", is_active: true };
 
 const AdminStoriesPage = () => {
   const { toast } = useToast();
@@ -32,10 +33,18 @@ const AdminStoriesPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  // Thumbnail (1:1)
+  const [thumbFile, setThumbFile] = useState<File | null>(null);
+  const [thumbPreview, setThumbPreview] = useState<string | null>(null);
+  const thumbInputRef = useRef<HTMLInputElement>(null);
+
+  // Full story image
+  const [storyFile, setStoryFile] = useState<File | null>(null);
+  const [storyPreview, setStoryPreview] = useState<string | null>(null);
+  const storyInputRef = useRef<HTMLInputElement>(null);
+
   const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: stories = [], isLoading } = useQuery({
     queryKey: ["admin-stories"],
@@ -48,9 +57,9 @@ const AdminStoriesPage = () => {
     },
   });
 
-  const uploadImage = async (file: File): Promise<string> => {
+  const uploadImage = async (file: File, prefix: string): Promise<string> => {
     const ext = file.name.split(".").pop() || "jpg";
-    const fileName = `${crypto.randomUUID()}.${ext}`;
+    const fileName = `${prefix}/${crypto.randomUUID()}.${ext}`;
     const { error } = await supabase.storage.from("stories").upload(fileName, file, { contentType: file.type });
     if (error) throw error;
     const { data } = supabase.storage.from("stories").getPublicUrl(fileName);
@@ -60,18 +69,25 @@ const AdminStoriesPage = () => {
   const saveMutation = useMutation({
     mutationFn: async () => {
       setUploading(true);
-      let imageUrl = form.image_url;
 
-      if (imageFile) {
-        imageUrl = await uploadImage(imageFile);
+      let storyImageUrl = form.image_url;
+      let thumbnailUrl = form.thumbnail_url;
+
+      if (storyFile) {
+        storyImageUrl = await uploadImage(storyFile, "full");
+      }
+      if (thumbFile) {
+        thumbnailUrl = await uploadImage(thumbFile, "thumbs");
       }
 
-      if (!imageUrl) throw new Error("Изображение обязательно");
+      if (!storyImageUrl || storyImageUrl === "pending-upload") throw new Error("Изображение Story обязательно");
+      if (!thumbnailUrl || thumbnailUrl === "pending-upload") throw new Error("Превью обязательно");
 
       const payload = {
         title: form.title,
         description: form.description || null,
-        image_url: imageUrl,
+        image_url: storyImageUrl,
+        thumbnail_url: thumbnailUrl,
         action_url: form.action_url || null,
         action_label: form.action_url ? (form.action_label || "Перейти") : null,
         text_color: form.text_color || "#ffffff",
@@ -89,11 +105,7 @@ const AdminStoriesPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-stories"] });
       setDialogOpen(false);
-      setEditId(null);
-      setForm(emptyForm);
-      setImageFile(null);
-      setImagePreview(null);
-      setUploading(false);
+      resetForm();
       toast({ title: editId ? "Story обновлена" : "Story создана" });
     },
     onError: (e: any) => {
@@ -113,46 +125,103 @@ const AdminStoriesPage = () => {
     },
   });
 
+  const resetForm = () => {
+    setEditId(null);
+    setForm(emptyForm);
+    setThumbFile(null);
+    setThumbPreview(null);
+    setStoryFile(null);
+    setStoryPreview(null);
+    setUploading(false);
+  };
+
   const openEdit = (s: Story) => {
     setEditId(s.id);
     setForm({
       title: s.title,
       description: s.description || "",
       image_url: s.image_url,
+      thumbnail_url: (s as any).thumbnail_url || "",
       action_url: s.action_url || "",
       action_label: s.action_label || "Перейти",
       text_color: (s as any).text_color || "#ffffff",
       is_active: s.is_active,
     });
-    setImageFile(null);
-    setImagePreview(s.image_url);
+    setThumbFile(null);
+    setThumbPreview((s as any).thumbnail_url || s.image_url);
+    setStoryFile(null);
+    setStoryPreview(s.image_url);
     setDialogOpen(true);
   };
 
   const openNew = () => {
-    setEditId(null);
-    setForm(emptyForm);
-    setImageFile(null);
-    setImagePreview(null);
+    resetForm();
     setDialogOpen(true);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setFile: (f: File | null) => void,
+    setPreview: (p: string | null) => void,
+    formKey: "image_url" | "thumbnail_url",
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
-    setForm({ ...form, image_url: "pending-upload" });
+    setFile(file);
+    setPreview(URL.createObjectURL(file));
+    setForm((prev) => ({ ...prev, [formKey]: "pending-upload" }));
   };
 
-  const removeImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
-    setForm({ ...form, image_url: "" });
-    if (fileInputRef.current) fileInputRef.current.value = "";
+  const removeFile = (
+    setFile: (f: File | null) => void,
+    setPreview: (p: string | null) => void,
+    formKey: "image_url" | "thumbnail_url",
+    inputRef: React.RefObject<HTMLInputElement>,
+  ) => {
+    setFile(null);
+    setPreview(null);
+    setForm((prev) => ({ ...prev, [formKey]: "" }));
+    if (inputRef.current) inputRef.current.value = "";
   };
 
-  const canSave = form.title && (imageFile || form.image_url);
+  const canSave = form.title && (thumbFile || form.thumbnail_url) && (storyFile || form.image_url);
+
+  const renderUploader = (
+    label: string,
+    aspect: string,
+    preview: string | null,
+    inputRef: React.RefObject<HTMLInputElement>,
+    onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
+    onRemove: () => void,
+    aspectClass: string,
+  ) => (
+    <div>
+      <Label>{label}</Label>
+      <input ref={inputRef} type="file" accept="image/*" onChange={onFileChange} className="hidden" />
+      {preview ? (
+        <div className={`relative mt-2 rounded-lg overflow-hidden border border-border ${aspectClass}`}>
+          <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+          <button
+            type="button"
+            onClick={onRemove}
+            className="absolute top-2 right-2 rounded-full bg-black/60 p-1 text-white hover:bg-black/80 transition"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="mt-2 w-full border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center gap-2 text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors"
+        >
+          <Upload className="h-6 w-6" />
+          <span className="text-sm font-medium">Загрузить ({aspect})</span>
+          <span className="text-xs">JPG, PNG, WebP</span>
+        </button>
+      )}
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -172,7 +241,7 @@ const AdminStoriesPage = () => {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {stories.map((s) => (
             <Card key={s.id} className="overflow-hidden">
-              <img src={s.image_url} alt={s.title} className="w-full h-40 object-cover" />
+              <img src={(s as any).thumbnail_url || s.image_url} alt={s.title} className="w-full h-40 object-cover" />
               <div className="p-4 space-y-2">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-sm">{s.title}</h3>
@@ -196,7 +265,7 @@ const AdminStoriesPage = () => {
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editId ? "Редактировать Story" : "Новая Story"}</DialogTitle>
           </DialogHeader>
@@ -209,38 +278,28 @@ const AdminStoriesPage = () => {
               <Label>Описание</Label>
               <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} />
             </div>
-            <div>
-              <Label>Изображение (1080×1920) *</Label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              {imagePreview ? (
-                <div className="relative mt-2 rounded-lg overflow-hidden border border-border">
-                  <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover" />
-                  <button
-                    type="button"
-                    onClick={removeImage}
-                    className="absolute top-2 right-2 rounded-full bg-black/60 p-1 text-white hover:bg-black/80 transition"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="mt-2 w-full border-2 border-dashed border-border rounded-lg p-8 flex flex-col items-center gap-2 text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors"
-                >
-                  <Upload className="h-8 w-8" />
-                  <span className="text-sm font-medium">Нажмите для загрузки</span>
-                  <span className="text-xs">JPG, PNG, WebP</span>
-                </button>
+
+            <div className="grid grid-cols-2 gap-4">
+              {renderUploader(
+                "Превью (1:1) *",
+                "1:1",
+                thumbPreview,
+                thumbInputRef,
+                (e) => handleFile(e, setThumbFile, setThumbPreview, "thumbnail_url"),
+                () => removeFile(setThumbFile, setThumbPreview, "thumbnail_url", thumbInputRef),
+                "aspect-square max-h-48",
+              )}
+              {renderUploader(
+                "Изображение Story *",
+                "9:16",
+                storyPreview,
+                storyInputRef,
+                (e) => handleFile(e, setStoryFile, setStoryPreview, "image_url"),
+                () => removeFile(setStoryFile, setStoryPreview, "image_url", storyInputRef),
+                "aspect-[9/16] max-h-48",
               )}
             </div>
+
             <div>
               <Label>URL действия <span className="text-muted-foreground font-normal">(необязательно)</span></Label>
               <Input value={form.action_url} onChange={(e) => setForm({ ...form, action_url: e.target.value })} placeholder="https://..." />
