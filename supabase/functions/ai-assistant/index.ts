@@ -29,12 +29,13 @@ serve(async (req) => {
 
     const companyId = profile.company_id;
 
-    // Fetch business context
-    const [salesRes, devicesRes, productsRes, clientsRes] = await Promise.all([
+    // Fetch business context + survey
+    const [salesRes, devicesRes, productsRes, clientsRes, surveyRes] = await Promise.all([
       supabase.from("sales").select("*, sale_items(name, price, cost_price, item_type, quantity)").eq("company_id", companyId).order("created_at", { ascending: false }).limit(100),
       supabase.from("devices").select("*").eq("company_id", companyId),
       supabase.from("products").select("*").eq("company_id", companyId),
       supabase.from("clients").select("*").eq("company_id", companyId),
+      supabase.from("ai_survey_answers").select("*").eq("company_id", companyId).maybeSingle(),
     ]);
 
     const sales = salesRes.data || [];
