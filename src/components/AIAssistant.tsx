@@ -5,6 +5,9 @@ import { Sparkles, Send, X, Loader2 } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import AISurvey from "./AISurvey";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -12,11 +15,28 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assistant
 
 const AIAssistant = () => {
   const { subscription } = useSubscription();
+  const { companyId } = useAuth();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const { data: surveyData, isLoading: surveyLoading, refetch: refetchSurvey } = useQuery({
+    queryKey: ["ai-survey", companyId],
+    queryFn: async () => {
+      if (!companyId) return null;
+      const { data } = await supabase
+        .from("ai_survey_answers" as any)
+        .select("*")
+        .eq("company_id", companyId)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!companyId,
+  });
+
+  const hasSurvey = !!surveyData;
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -111,6 +131,21 @@ const AIAssistant = () => {
       >
         <Sparkles className="h-6 w-6" />
       </button>
+    );
+  }
+
+  // Show survey if not completed yet
+  if (!surveyLoading && !hasSurvey) {
+    return (
+      <Card className="fixed bottom-6 right-6 z-50 w-[380px] h-[520px] flex flex-col shadow-2xl border">
+        <button
+          onClick={() => setOpen(false)}
+          className="absolute top-3 right-3 z-10 text-muted-foreground hover:text-foreground"
+        >
+          <X className="h-4 w-4" />
+        </button>
+        <AISurvey onComplete={() => refetchSurvey()} />
+      </Card>
     );
   }
 

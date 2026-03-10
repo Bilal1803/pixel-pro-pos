@@ -29,18 +29,39 @@ serve(async (req) => {
 
     const companyId = profile.company_id;
 
-    // Fetch business context
-    const [salesRes, devicesRes, productsRes, clientsRes] = await Promise.all([
+    // Fetch business context + survey
+    const [salesRes, devicesRes, productsRes, clientsRes, surveyRes] = await Promise.all([
       supabase.from("sales").select("*, sale_items(name, price, cost_price, item_type, quantity)").eq("company_id", companyId).order("created_at", { ascending: false }).limit(100),
       supabase.from("devices").select("*").eq("company_id", companyId),
       supabase.from("products").select("*").eq("company_id", companyId),
       supabase.from("clients").select("*").eq("company_id", companyId),
+      supabase.from("ai_survey_answers").select("*").eq("company_id", companyId).maybeSingle(),
     ]);
 
     const sales = salesRes.data || [];
     const devices = devicesRes.data || [];
     const products = productsRes.data || [];
     const clients = clientsRes.data || [];
+    const survey = surveyRes.data as any;
+
+    const surveyLabels: Record<string, Record<string, string>> = {
+      store_type: { phones_only: "Только смартфоны", phones_accessories: "Смартфоны + аксессуары", phones_repairs: "Смартфоны + ремонт", full_service: "Смартфоны, аксессуары и ремонт" },
+      price_segment: { budget: "Бюджетный (до 15 000 ₽)", mid: "Средний (15-40 тыс ₽)", premium: "Премиум (от 40 000 ₽)", mixed: "Все сегменты" },
+      avg_daily_sales: { "1-3": "1–3 продажи/день", "4-10": "4–10 продаж/день", "11-30": "11–30 продаж/день", "30+": "Более 30 продаж/день" },
+      sales_channel: { offline: "Офлайн", online: "Онлайн", both: "Офлайн + онлайн", wholesale: "Оптовые" },
+      main_goal: { increase_sales: "Увеличить продажи", reduce_stock: "Сократить залежавшийся товар", improve_margins: "Повысить маржинальность", attract_clients: "Привлечь клиентов" },
+    };
+
+    const surveyContext = survey ? `
+ПРОФИЛЬ МАГАЗИНА (из опроса владельца):
+- Тип: ${surveyLabels.store_type[survey.store_type] || survey.store_type}
+- Ценовой сегмент: ${surveyLabels.price_segment[survey.price_segment] || survey.price_segment}
+- Объём продаж: ${surveyLabels.avg_daily_sales[survey.avg_daily_sales] || survey.avg_daily_sales}
+- Канал продаж: ${surveyLabels.sales_channel[survey.sales_channel] || survey.sales_channel}
+- Главная цель: ${surveyLabels.main_goal[survey.main_goal] || survey.main_goal}
+
+Учитывай этот профиль при всех рекомендациях. Подстраивай советы под тип магазина, ценовой сегмент и главную цель владельца.
+` : "";
 
     // Build analytics summary
     const availableDevices = devices.filter((d: any) => ["testing", "available", "reserved"].includes(d.status));
@@ -68,7 +89,8 @@ serve(async (req) => {
       .map((d: any) => ({ model: d.model, memory: d.memory, days: Math.floor((now - new Date(d.created_at).getTime()) / 86400000), sale_price: d.sale_price }));
 
     const context = `
-Ты — AI-ассистент CRM для магазина смартфонов. Отвечай на русском. Будь конкретен и полезен.
+Ты — AI-ассистент CRM для магазина смартфонов. Отвечай на русском. Будь конкретен и полезен. Не используй лишние заголовки и форматирование — пиши чётко, по делу, структурированно.
+${surveyContext}
 
 ДАННЫЕ МАГАЗИНА:
 - Всего продаж: ${sales.length}, выручка: ${totalRevenue} ₽, прибыль: ${totalProfit} ₽

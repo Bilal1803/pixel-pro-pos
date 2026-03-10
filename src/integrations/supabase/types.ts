@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_survey_answers: {
+        Row: {
+          avg_daily_sales: string
+          company_id: string
+          created_at: string
+          id: string
+          main_goal: string
+          price_segment: string
+          sales_channel: string
+          store_type: string
+          user_id: string
+        }
+        Insert: {
+          avg_daily_sales: string
+          company_id: string
+          created_at?: string
+          id?: string
+          main_goal: string
+          price_segment: string
+          sales_channel: string
+          store_type: string
+          user_id: string
+        }
+        Update: {
+          avg_daily_sales?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          main_goal?: string
+          price_segment?: string
+          sales_channel?: string
+          store_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_survey_answers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buybacks: {
         Row: {
           battery_health: string | null
