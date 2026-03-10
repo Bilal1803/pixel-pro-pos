@@ -100,46 +100,44 @@ const StoriesCarousel = () => {
       </div>
 
       <Dialog open={!!activeStory} onOpenChange={(o) => !o && setActiveStory(null)}>
-        <DialogContent className="sm:max-w-md p-0 overflow-hidden gap-0 border-0 bg-transparent shadow-none [&>button]:hidden">
+        <DialogContent className="sm:max-w-[380px] p-0 overflow-hidden gap-0 border-0 bg-transparent shadow-none [&>button]:hidden">
           {activeStory && (
-            <div className="relative rounded-lg overflow-hidden overflow-y-auto max-h-[90vh] bg-black">
+            <div className="relative rounded-lg overflow-hidden bg-black" style={{ aspectRatio: "9/16", maxHeight: "85vh" }}>
               <button
                 onClick={() => setActiveStory(null)}
                 className="absolute top-3 right-3 z-10 rounded-full bg-black/50 p-1.5 text-white hover:bg-black/70 transition"
               >
                 <X className="h-4 w-4" />
               </button>
-              <div className="relative">
-                <img
-                  src={activeStory.image_url}
-                  alt={activeStory.title || "Story"}
-                  className="w-full object-contain"
-                />
-                {(activeStory.title && activeStory.title !== "Story" || activeStory.description || activeStory.action_url) && (
-                  <div
-                    className="absolute inset-x-0 bottom-0 p-5 space-y-3"
-                    style={{
-                      color: activeStory.text_color || "#ffffff",
-                      background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 60%, transparent 100%)",
-                    }}
-                  >
-                    {activeStory.title && activeStory.title !== "Story" && (
-                      <h3 className="text-lg font-bold">{activeStory.title}</h3>
-                    )}
-                    {activeStory.description && (
-                      <p className="text-sm opacity-90">{activeStory.description}</p>
-                    )}
-                    {activeStory.action_url && (
-                      <Button
-                        className="w-full"
-                        onClick={() => window.open(activeStory!.action_url!, "_blank")}
-                      >
-                        {activeStory.action_label || "Перейти"}
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </div>
+              <img
+                src={activeStory.image_url}
+                alt={activeStory.title || "Story"}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              {(activeStory.title && activeStory.title !== "Story" || activeStory.description || activeStory.action_url) && (
+                <div
+                  className="absolute inset-x-0 bottom-0 p-5 space-y-3"
+                  style={{
+                    color: activeStory.text_color || "#ffffff",
+                    background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 60%, transparent 100%)",
+                  }}
+                >
+                  {activeStory.title && activeStory.title !== "Story" && (
+                    <h3 className="text-lg font-bold">{activeStory.title}</h3>
+                  )}
+                  {activeStory.description && (
+                    <p className="text-sm opacity-90">{activeStory.description}</p>
+                  )}
+                  {activeStory.action_url && (
+                    <Button
+                      className="w-full"
+                      onClick={() => window.open(activeStory!.action_url!, "_blank")}
+                    >
+                      {activeStory.action_label || "Перейти"}
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
