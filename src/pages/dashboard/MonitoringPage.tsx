@@ -445,17 +445,15 @@ const MonitoringPage = () => {
                             ) : (
                               <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />
                             )}
-                            {entry && (
-                              <button
-                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDeleteTarget({ key, id: entry.id });
-                                }}
-                              >
-                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                              </button>
-                            )}
+                            <button
+                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteTarget({ key, id: entry?.id, isCustom: row.isCustom });
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                            </button>
                           </div>
                         </td>
                       </tr>
