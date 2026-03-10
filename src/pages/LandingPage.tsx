@@ -301,6 +301,9 @@ const LandingPage = () => {
                 <div className="mt-6">
                   <span className="text-4xl font-extrabold">{p.price}</span>
                   <span className="text-muted-foreground">{p.priceSuffix}</span>
+                  {(p as any).trial && (
+                    <p className="mt-2 text-xs font-medium text-success">{(p as any).trial}</p>
+                  )}
                 </div>
                 <ul className="mt-8 space-y-3 flex-1">
                   {p.features.map((f) => (
@@ -315,7 +318,7 @@ const LandingPage = () => {
                   ))}
                 </ul>
                 <Button className="mt-8 w-full" size="lg" variant={p.popular ? "default" : "outline"} asChild>
-                  <Link to="/register">{p.price === "Бесплатно" ? "Начать бесплатно" : "Выбрать"}</Link>
+                  <Link to="/register">{(p as any).trial ? "Попробовать бесплатно" : "Выбрать"}</Link>
                 </Button>
               </div>
             ))}
