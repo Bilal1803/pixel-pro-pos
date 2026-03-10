@@ -275,7 +275,7 @@ const LandingPage = () => {
         <div className="container">
           <div className="text-center max-w-2xl mx-auto">
             <h2 className="text-3xl font-bold sm:text-4xl">Простые и прозрачные тарифы</h2>
-            <p className="mt-4 text-muted-foreground text-lg">Начните бесплатно, масштабируйтесь по мере роста</p>
+            <p className="mt-4 text-muted-foreground text-lg">Попробуйте бесплатно 3 дня, масштабируйтесь по мере роста</p>
           </div>
           <div className="mx-auto mt-14 grid max-w-5xl gap-6 lg:grid-cols-3">
             {plans.map((p) => (
