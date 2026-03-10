@@ -99,12 +99,61 @@ const NetworkPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">Сеть магазинов</h1>
-        <Button variant="outline" onClick={() => navigate("/dashboard/comparison")}>
-          Сравнение магазинов
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" disabled={!canAddStore}>
+                <Plus className="h-4 w-4 mr-1" />
+                Добавить магазин
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Новый магазин</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label>Название *</Label>
+                  <Input
+                    placeholder="Например: ТЦ Мега"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Адрес</Label>
+                  <Input
+                    placeholder="ул. Примерная, 1"
+                    value={form.address}
+                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Телефон</Label>
+                  <Input
+                    placeholder="+7 999 123-45-67"
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  />
+                </div>
+                {!canAddStore && (
+                  <p className="text-sm text-destructive">
+                    Лимит магазинов ({subscription?.max_stores}) достигнут. Повысьте тариф.
+                  </p>
+                )}
+                <Button className="w-full" onClick={handleAddStore} disabled={saving || !form.name.trim() || !canAddStore}>
+                  {saving ? "Сохранение…" : "Создать магазин"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/comparison")}>
+            Сравнение
+            <ArrowRight className="ml-1 h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Network KPIs */}
