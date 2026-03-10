@@ -263,6 +263,20 @@ const BuybackPage = () => {
     onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
 
+  // Delete model from price monitoring
+  const deleteModelEntry = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("price_monitoring").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["price-monitoring"] });
+      toast({ title: "Модель удалена из прайс-листа" });
+      setDeleteModelTarget(null);
+    },
+    onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
+  });
+
   const getModelMargins = (modelKey: string) => {
     const entry = monitoringMap[modelKey];
     return {
