@@ -99,12 +99,6 @@ Deno.serve(async (req) => {
       .update({ status: "used", used_by: newUser.user?.id, used_at: new Date().toISOString() })
       .eq("id", invite.id);
 
-    // Sign in the user to return a session
-    const { data: signInData, error: signInError } = await adminClient.auth.admin.generateLink({
-      type: "magiclink",
-      email,
-    });
-
     // Generate a session token for the employee
     // We'll use signInWithPassword since we know the password
     const anonKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
