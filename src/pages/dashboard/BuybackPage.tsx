@@ -446,7 +446,7 @@ const BuybackPage = () => {
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Цена скупки</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Статус</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Дата</th>
-                  </tr>
+                    {isOwner && <th className="px-4 py-3"></th>}
                 </thead>
                 <tbody className="divide-y">
                   {buybacks.map((b: any) => {
