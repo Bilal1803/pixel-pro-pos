@@ -8,8 +8,9 @@ const plans = [
   {
     id: "start",
     name: "Старт",
-    price: "Бесплатно",
+    price: "1 990 ₽/мес",
     description: "Для начинающих предпринимателей",
+    trial: "3 дня бесплатно",
     features: [
       { text: "1 магазин", included: true },
       { text: "До 2 сотрудников", included: true },
@@ -24,6 +25,7 @@ const plans = [
     name: "Бизнес",
     price: "2 990 ₽/мес",
     description: "Для растущего бизнеса",
+    trial: "3 дня бесплатно",
     popular: true,
     features: [
       { text: "До 3 магазинов", included: true },
@@ -84,6 +86,9 @@ const PricingPage = () => {
                 <h3 className="text-xl font-bold">{plan.name}</h3>
                 <p className="text-sm text-muted-foreground">{plan.description}</p>
                 <p className="text-3xl font-extrabold">{plan.price}</p>
+                {(plan as any).trial && (
+                  <p className="text-xs font-medium text-success">{(plan as any).trial}</p>
+                )}
               </div>
 
               <div className="space-y-3 flex-1">

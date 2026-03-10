@@ -30,9 +30,10 @@ const plans = [
   {
     id: "start",
     name: "Старт",
-    price: "Бесплатно",
-    priceSuffix: "",
+    price: "1 990",
+    priceSuffix: " ₽/мес",
     desc: "Для начинающих предпринимателей",
+    trial: "3 дня бесплатно",
     features: [
       { text: "1 магазин", included: true },
       { text: "До 2 сотрудников", included: true },
@@ -50,6 +51,7 @@ const plans = [
     price: "2 990",
     priceSuffix: " ₽/мес",
     desc: "Для растущего бизнеса",
+    trial: "3 дня бесплатно",
     popular: true,
     features: [
       { text: "До 3 магазинов", included: true },
@@ -273,7 +275,7 @@ const LandingPage = () => {
         <div className="container">
           <div className="text-center max-w-2xl mx-auto">
             <h2 className="text-3xl font-bold sm:text-4xl">Простые и прозрачные тарифы</h2>
-            <p className="mt-4 text-muted-foreground text-lg">Начните бесплатно, масштабируйтесь по мере роста</p>
+            <p className="mt-4 text-muted-foreground text-lg">Попробуйте бесплатно 3 дня, масштабируйтесь по мере роста</p>
           </div>
           <div className="mx-auto mt-14 grid max-w-5xl gap-6 lg:grid-cols-3">
             {plans.map((p) => (
@@ -299,6 +301,9 @@ const LandingPage = () => {
                 <div className="mt-6">
                   <span className="text-4xl font-extrabold">{p.price}</span>
                   <span className="text-muted-foreground">{p.priceSuffix}</span>
+                  {(p as any).trial && (
+                    <p className="mt-2 text-xs font-medium text-success">{(p as any).trial}</p>
+                  )}
                 </div>
                 <ul className="mt-8 space-y-3 flex-1">
                   {p.features.map((f) => (
@@ -313,7 +318,7 @@ const LandingPage = () => {
                   ))}
                 </ul>
                 <Button className="mt-8 w-full" size="lg" variant={p.popular ? "default" : "outline"} asChild>
-                  <Link to="/register">{p.price === "Бесплатно" ? "Начать бесплатно" : "Выбрать"}</Link>
+                  <Link to="/register">{(p as any).trial ? "Попробовать бесплатно" : "Выбрать"}</Link>
                 </Button>
               </div>
             ))}
