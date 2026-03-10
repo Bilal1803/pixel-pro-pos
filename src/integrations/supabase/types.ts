@@ -287,6 +287,7 @@ export type Database = {
           notes: string | null
           purchase_price: number | null
           sale_price: number | null
+          sim_type: string | null
           status: Database["public"]["Enums"]["device_status"]
           store_id: string | null
           updated_at: string
@@ -304,6 +305,7 @@ export type Database = {
           notes?: string | null
           purchase_price?: number | null
           sale_price?: number | null
+          sim_type?: string | null
           status?: Database["public"]["Enums"]["device_status"]
           store_id?: string | null
           updated_at?: string
@@ -321,6 +323,7 @@ export type Database = {
           notes?: string | null
           purchase_price?: number | null
           sale_price?: number | null
+          sim_type?: string | null
           status?: Database["public"]["Enums"]["device_status"]
           store_id?: string | null
           updated_at?: string
