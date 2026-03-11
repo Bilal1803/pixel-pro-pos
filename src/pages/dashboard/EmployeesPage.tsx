@@ -341,6 +341,9 @@ const EmployeesPage = () => {
                 <p className="text-sm text-muted-foreground">
                   Сообщите сотруднику этот код. Он действует 24 часа и может быть использован один раз. Сотрудник вводит его в Mini App.
                 </p>
+                {form.telegram && (
+                  <p className="text-xs text-muted-foreground">Telegram: <span className="font-medium">{form.telegram}</span></p>
+                )}
                 <div>
                   <Label>Код приглашения</Label>
                   <div className="flex items-center gap-2 mt-1">
