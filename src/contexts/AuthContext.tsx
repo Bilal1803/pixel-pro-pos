@@ -21,35 +21,74 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [companyId, setCompanyId] = useState<string | null>(null);
 
   const fetchCompanyId = async (userId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("company_id")
       .eq("user_id", userId)
-      .single();
-    if (data) setCompanyId(data.company_id);
+      .maybeSingle();
+
+    if (error || !data) {
+      setCompanyId(null);
+      return;
+    }
+
+    setCompanyId(data.company_id);
   };
 
   useEffect(() => {
-    // First restore session from storage
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) fetchCompanyId(session.user.id);
-      setLoading(false);
-    });
+    let isMounted = true;
 
-    // Then listen for future changes (sign in/out/token refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        setTimeout(() => fetchCompanyId(session.user.id), 0);
+    const syncSessionState = async (nextSession: Session | null) => {
+      if (!isMounted) return;
+
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+
+      if (nextSession?.user) {
+        await fetchCompanyId(nextSession.user.id);
       } else {
         setCompanyId(null);
       }
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      void syncSessionState(nextSession);
     });
 
-    return () => subscription.unsubscribe();
+    const initializeAuth = async () => {
+      setLoading(true);
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      await syncSessionState(sessionData.session ?? null);
+
+      const expiresAt = sessionData.session?.expires_at;
+      if (expiresAt && expiresAt * 1000 <= Date.now() + 60_000) {
+        const { data: refreshedData } = await supabase.auth.refreshSession();
+        await syncSessionState(refreshedData.session ?? null);
+      }
+
+      if (isMounted) setLoading(false);
+    };
+
+    const recoverSessionOnFocus = () => {
+      if (document.visibilityState !== "visible") return;
+      void supabase.auth.getSession().then(({ data }) => {
+        if (data.session) {
+          void syncSessionState(data.session);
+        }
+      });
+    };
+
+    void initializeAuth();
+    document.addEventListener("visibilitychange", recoverSessionOnFocus);
+    window.addEventListener("focus", recoverSessionOnFocus);
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+      document.removeEventListener("visibilitychange", recoverSessionOnFocus);
+      window.removeEventListener("focus", recoverSessionOnFocus);
+    };
   }, []);
 
   const signUp = async (email: string, password: string, companyName: string, fullName: string) => {

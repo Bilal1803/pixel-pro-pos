@@ -47,10 +47,10 @@ const TmaLayout = () => {
     if (user) return;
 
     const tg = (window as any).Telegram?.WebApp;
-    const telegramId = tg?.initDataUnsafe?.user?.id;
-    const initData = tg?.initData;
+    const telegramId = tg?.initDataUnsafe?.user?.id ?? null;
+    const initData = tg?.initData ?? null;
 
-    if (!telegramId) return;
+    if (!telegramId && !initData) return;
 
     const autoAuth = async () => {
       setTmaAuthLoading(true);
@@ -59,7 +59,10 @@ const TmaLayout = () => {
 
       try {
         const { data, error } = await supabase.functions.invoke("tma-auth", {
-          body: { initData: initData || null, telegramId },
+          body: {
+            initData,
+            telegramId: telegramId ? telegramId.toString() : null,
+          },
         });
 
         if (error) {
