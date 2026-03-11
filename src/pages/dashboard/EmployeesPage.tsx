@@ -282,9 +282,9 @@ const EmployeesPage = () => {
     setForm({ fullName: "", phone: "", role: "employee", storeId: "" });
   };
 
-  const copyLink = (url: string) => {
-    navigator.clipboard.writeText(url);
-    toast({ title: "Ссылка скопирована" });
+  const copyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast({ title: "Код скопирован" });
   };
 
   const openEdit = (profile: any) => {
