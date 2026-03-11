@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const encoder = new TextEncoder();
@@ -22,9 +22,6 @@ function bufToHex(buf: ArrayBuffer): string {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-/**
- * Validates Telegram WebApp initData using HMAC-SHA256 (Web Crypto API).
- */
 async function validateInitData(initData: string, botToken: string): Promise<Record<string, string> | null> {
   try {
     const params = new URLSearchParams(initData);
@@ -66,6 +63,7 @@ Deno.serve(async (req) => {
     const { initData, telegramId: rawTelegramId } = await req.json();
 
     let telegramId: string | null = null;
+    let telegramUser: { first_name?: string; last_name?: string; username?: string } = {};
 
     // If initData is provided, validate it cryptographically
     if (initData && botToken) {
@@ -77,10 +75,14 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Extract user from validated data
       try {
         const user = JSON.parse(validated.user || "{}");
         telegramId = user.id?.toString() || null;
+        telegramUser = {
+          first_name: user.first_name,
+          last_name: user.last_name,
+          username: user.username,
+        };
       } catch {
         return new Response(JSON.stringify({ error: "Не удалось получить данные пользователя" }), {
           status: 400,
@@ -88,7 +90,7 @@ Deno.serve(async (req) => {
         });
       }
     } else if (rawTelegramId) {
-      // Fallback: trust telegramId directly (for development/testing)
+      // Fallback for development/testing
       telegramId = rawTelegramId.toString();
     }
 
@@ -107,49 +109,69 @@ Deno.serve(async (req) => {
       .single();
 
     if (profileError || !profile) {
-      return new Response(JSON.stringify({ error: "not_found", message: "Сотрудник не найден. Используйте ссылку приглашения." }), {
-        status: 404,
+      // Return 200 with error field so the client can handle gracefully
+      return new Response(JSON.stringify({
+        error: "not_found",
+        message: "Сотрудник не найден. Используйте код приглашения.",
+        telegramUser,
+      }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Generate a session for this user using admin API
-    // We'll get the user's email from auth.users and sign them in
+    // Get auth user
     const { data: authUser, error: authError } = await adminClient.auth.admin.getUserById(profile.user_id);
 
     if (authError || !authUser?.user) {
       return new Response(JSON.stringify({ error: "Пользователь не найден в системе" }), {
-        status: 404,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Generate a magic link / session using admin generateLink
+    // Generate a magic link token
     const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
       type: "magiclink",
       email: authUser.user.email!,
     });
 
     if (linkError || !linkData) {
+      console.error("generateLink error:", linkError);
       return new Response(JSON.stringify({ error: "Не удалось создать сессию" }), {
-        status: 500,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Use the OTP token to verify and create session
+    // Extract the token from the action_link
+    // The action_link looks like: https://xxx.supabase.co/auth/v1/verify?token=TOKEN&type=magiclink&redirect_to=...
+    const actionLink = linkData.properties?.action_link || "";
+    const linkUrl = new URL(actionLink);
+    const token = linkUrl.searchParams.get("token");
+
+    if (!token) {
+      console.error("No token in action_link:", actionLink);
+      return new Response(JSON.stringify({ error: "Не удалось создать токен авторизации" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Verify the OTP to get a session
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
     const userClient = createClient(supabaseUrl, anonKey);
 
     const { data: sessionData, error: sessionError } = await userClient.auth.verifyOtp({
       email: authUser.user.email!,
-      token: linkData.properties?.hashed_token || "",
+      token: token,
       type: "email",
     });
 
     if (sessionError || !sessionData.session) {
+      console.error("verifyOtp error:", sessionError);
       return new Response(JSON.stringify({ error: "Не удалось авторизовать" }), {
-        status: 500,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -164,8 +186,9 @@ Deno.serve(async (req) => {
     });
 
   } catch (err) {
+    console.error("tma-auth error:", err);
     return new Response(JSON.stringify({ error: (err as Error).message }), {
-      status: 500,
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

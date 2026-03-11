@@ -5,6 +5,9 @@ import { cn } from "@/lib/utils";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 
 const tmaNavItems = [
   { to: "/tma", label: "Главная", icon: Home, exact: true },
@@ -19,8 +22,12 @@ const TmaLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { toast } = useToast();
   const [tmaAuthLoading, setTmaAuthLoading] = useState(false);
   const [tmaAuthError, setTmaAuthError] = useState("");
+  const [showNotFound, setShowNotFound] = useState(false);
+  const [inviteCode, setInviteCode] = useState("");
+  const [inviteLoading, setInviteLoading] = useState(false);
 
   // Init Telegram WebApp + handle startapp (invite links)
   useEffect(() => {
@@ -42,34 +49,40 @@ const TmaLayout = () => {
 
   // Auto-authenticate via Telegram ID if not already logged in
   useEffect(() => {
-    if (authLoading) return; // Wait for auth check to finish
-    if (user) return; // Already logged in
+    if (authLoading) return;
+    if (user) return;
 
     const tg = (window as any).Telegram?.WebApp;
     const telegramId = tg?.initDataUnsafe?.user?.id;
     const initData = tg?.initData;
 
-    if (!telegramId) return; // Not in Telegram context
+    if (!telegramId) return;
 
     const autoAuth = async () => {
       setTmaAuthLoading(true);
       setTmaAuthError("");
+      setShowNotFound(false);
 
       try {
         const { data, error } = await supabase.functions.invoke("tma-auth", {
           body: { initData: initData || null, telegramId },
         });
 
-        if (error) throw error;
+        if (error) {
+          // Network or invocation error
+          throw new Error("Ошибка подключения к серверу. Попробуйте позже.");
+        }
 
-        if (data.error === "not_found") {
-          setTmaAuthError("Аккаунт не найден. Попросите владельца отправить ссылку приглашения.");
+        if (data?.error === "not_found") {
+          setShowNotFound(true);
           return;
         }
 
-        if (data.error) throw new Error(data.error);
+        if (data?.error) {
+          throw new Error(data.error);
+        }
 
-        if (data.session) {
+        if (data?.session) {
           await supabase.auth.setSession({
             access_token: data.session.access_token,
             refresh_token: data.session.refresh_token,
@@ -85,12 +98,48 @@ const TmaLayout = () => {
     autoAuth();
   }, [authLoading, user]);
 
+  const handleInviteSubmit = async () => {
+    if (!inviteCode.trim()) return;
+
+    setInviteLoading(true);
+    try {
+      const tg = (window as any).Telegram?.WebApp;
+      const telegramId = tg?.initDataUnsafe?.user?.id || null;
+
+      const res = await supabase.functions.invoke("accept-invite", {
+        body: { code: inviteCode.trim(), telegramId: telegramId?.toString() },
+      });
+
+      const data = res.data;
+      if (data?.error) throw new Error(data.error);
+      if (res.error && !data) throw res.error;
+
+      if (data?.session) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+      }
+
+      toast({ title: "Добро пожаловать!", description: "Вы подключены к магазину." });
+      setShowNotFound(false);
+    } catch (err: any) {
+      toast({
+        title: "Ошибка",
+        description: err.message || "Не удалось активировать приглашение",
+        variant: "destructive",
+      });
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
   const isActive = (item: typeof tmaNavItems[0]) => {
     if (item.exact) return location.pathname === item.to;
     return location.pathname.startsWith(item.to);
   };
 
-  // Show loading while checking auth or performing TMA auth
+  // Loading state
   if (authLoading || tmaAuthLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -102,19 +151,58 @@ const TmaLayout = () => {
     );
   }
 
-  // Show error if TMA auth failed and no user
+  // Not found — show invite code input
+  if (!user && showNotFound) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="text-center space-y-6 max-w-sm w-full">
+          <div className="space-y-2">
+            <p className="text-lg font-semibold">Вы не подключены к магазину</p>
+            <p className="text-muted-foreground text-sm">
+              Попросите владельца или менеджера отправить вам ссылку приглашения, или введите код вручную.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <Input
+              placeholder="Код приглашения"
+              value={inviteCode}
+              onChange={(e) => setInviteCode(e.target.value)}
+              className="text-center text-lg tracking-wider"
+              disabled={inviteLoading}
+            />
+            <Button
+              onClick={handleInviteSubmit}
+              disabled={!inviteCode.trim() || inviteLoading}
+              className="w-full"
+            >
+              {inviteLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Подключиться
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
   if (!user && tmaAuthError) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <div className="text-center space-y-4 max-w-sm">
           <p className="text-lg font-semibold text-destructive">Не удалось войти</p>
           <p className="text-muted-foreground text-sm">{tmaAuthError}</p>
+          <Button variant="outline" onClick={() => window.location.reload()}>
+            Попробовать снова
+          </Button>
         </div>
       </div>
     );
   }
 
-  // If no user and no Telegram context, prompt login
+  // No user and no Telegram context
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
