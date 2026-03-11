@@ -81,6 +81,7 @@ const App = () => (
               <Route path="monitoring" element={<PlanGate feature="monitoring"><MonitoringPage /></PlanGate>} />
               <Route path="listings" element={<PlanGate feature="listings"><ListingsPage /></PlanGate>} />
               <Route path="finances" element={<FinancesPage />} />
+              <Route path="cash" element={<CashPage />} />
               <Route path="employees" element={<EmployeesPage />} />
               <Route path="shifts" element={<ShiftsPage />} />
               <Route path="reports" element={<ReportsPage />} />
