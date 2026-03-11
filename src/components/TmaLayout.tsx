@@ -29,7 +29,7 @@ const TmaLayout = () => {
   const [inviteCode, setInviteCode] = useState("");
   const [inviteLoading, setInviteLoading] = useState(false);
 
-  // Init Telegram WebApp + handle startapp (invite links)
+  // Init Telegram WebApp
   useEffect(() => {
     const tg = (window as any).Telegram?.WebApp;
     if (tg) {
@@ -38,14 +38,8 @@ const TmaLayout = () => {
       if (tg.themeParams?.bg_color) {
         document.documentElement.style.setProperty("--background", tg.themeParams.bg_color);
       }
-      // Handle startapp parameter for invite links
-      const startParam = tg.initDataUnsafe?.start_param;
-      if (startParam && startParam.startsWith("invite_")) {
-        const code = startParam.replace("invite_", "");
-        navigate(`/invite/${code}`);
-      }
     }
-  }, [navigate]);
+  }, []);
 
   // Auto-authenticate via Telegram ID if not already logged in
   useEffect(() => {

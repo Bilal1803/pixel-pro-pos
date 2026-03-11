@@ -1,0 +1,1 @@
+ALTER TABLE public.invitations ALTER COLUMN code SET DEFAULT lpad(floor(random() * 1000000)::text, 6, '0');

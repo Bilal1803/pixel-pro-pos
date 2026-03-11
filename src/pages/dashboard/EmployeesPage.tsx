@@ -123,9 +123,7 @@ const EmployeesPage = () => {
     return store?.name || "—";
   };
 
-  const getInviteUrl = (code: string) => {
-    return `https://t.me/filtercrm_bot/app?startapp=invite_${code}`;
-  };
+  
 
   // Create invitation
   const createInvitation = useMutation({
@@ -148,8 +146,7 @@ const EmployeesPage = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["invitations"] });
-      const url = getInviteUrl(data.code);
-      setInviteLink(url);
+      setInviteLink(data.code);
       toast({ title: "Приглашение создано" });
     },
     onError: (e: any) => {
@@ -186,10 +183,9 @@ const EmployeesPage = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["invitations"] });
-      const url = getInviteUrl(data.code);
-      setLinkDialogUrl(url);
+      setLinkDialogUrl(data.code);
       setLinkDialogOpen(true);
-      toast({ title: "Новая ссылка создана" });
+      toast({ title: "Новый код создан" });
     },
     onError: (e: any) => {
       toast({ title: "Ошибка", description: e.message, variant: "destructive" });
@@ -286,9 +282,9 @@ const EmployeesPage = () => {
     setForm({ fullName: "", phone: "", role: "employee", storeId: "" });
   };
 
-  const copyLink = (url: string) => {
-    navigator.clipboard.writeText(url);
-    toast({ title: "Ссылка скопирована" });
+  const copyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast({ title: "Код скопирован" });
   };
 
   const openEdit = (profile: any) => {
@@ -327,13 +323,13 @@ const EmployeesPage = () => {
             {inviteLink ? (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Отправьте сотруднику эту ссылку. Она действует 24 часа и может быть использована один раз.
+                  Сообщите сотруднику этот код. Он действует 24 часа и может быть использован один раз. Сотрудник вводит его в Mini App.
                 </p>
                 <div>
-                  <Label>Ссылка-приглашение</Label>
+                  <Label>Код приглашения</Label>
                   <div className="flex items-center gap-2 mt-1">
-                    <code className="flex-1 rounded bg-muted px-3 py-2 text-xs font-mono break-all">{inviteLink}</code>
-                    <Button variant="outline" size="icon" onClick={() => copyLink(inviteLink)}>
+                    <code className="flex-1 rounded bg-muted px-4 py-3 text-2xl font-mono text-center tracking-[0.3em]">{inviteLink}</code>
+                    <Button variant="outline" size="icon" onClick={() => copyCode(inviteLink!)}>
                       <Copy className="h-4 w-4" />
                     </Button>
                   </div>
@@ -396,11 +392,11 @@ const EmployeesPage = () => {
                 <div>
                   <p className="font-medium text-sm">{inv.full_name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {roleLabels[inv.role] || inv.role} • до {format(new Date(inv.expires_at), "dd.MM HH:mm")}
+                    {roleLabels[inv.role] || inv.role} • код: <span className="font-mono font-bold">{inv.code}</span> • до {format(new Date(inv.expires_at), "dd.MM HH:mm")}
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyLink(getInviteUrl(inv.code))}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyCode(inv.code)}>
                     <Copy className="h-4 w-4" />
                   </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => regenerateLink.mutate(inv.id)}>
@@ -548,10 +544,10 @@ const EmployeesPage = () => {
             <DialogTitle>Новая ссылка-приглашение</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">Старая ссылка больше не действует. Отправьте новую:</p>
+            <p className="text-sm text-muted-foreground">Старый код больше не действует. Новый код:</p>
             <div className="flex items-center gap-2">
-              <code className="flex-1 rounded bg-muted px-3 py-2 text-xs font-mono break-all">{linkDialogUrl}</code>
-              <Button variant="outline" size="icon" onClick={() => copyLink(linkDialogUrl)}>
+              <code className="flex-1 rounded bg-muted px-4 py-3 text-2xl font-mono text-center tracking-[0.3em]">{linkDialogUrl}</code>
+              <Button variant="outline" size="icon" onClick={() => copyCode(linkDialogUrl)}>
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
