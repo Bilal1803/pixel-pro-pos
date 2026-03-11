@@ -467,7 +467,7 @@ const TmaSalesPage = () => {
               <button
                 key={p.id}
                 onClick={() => addProduct(p)}
-                className="w-full text-left rounded-xl border bg-card p-3 transition-all active:scale-[0.98]"
+                className="w-full text-left rounded-xl bg-white border border-gray-100 p-3 shadow-sm active:scale-[0.98] transition-transform"
               >
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium">{p.name}</p>
