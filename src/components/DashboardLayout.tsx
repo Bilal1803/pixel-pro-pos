@@ -47,7 +47,7 @@ const DashboardContent = () => {
             <NotificationBell />
           </div>
         </header>
-        <main className={`p-3 md:p-6 ${isMobile ? "pb-24" : ""}`}>
+        <main className={`p-3 md:p-6 ${isMobile ? "pb-28" : ""}`} style={isMobile ? { paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 7rem)" } : undefined}>
           <Outlet />
         </main>
       </div>
