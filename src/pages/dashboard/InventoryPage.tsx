@@ -628,20 +628,31 @@ const InventoryPage = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div><Label>Цена закупки</Label><Input type="number" value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} /></div>
+                  <div>
+                    <Label>Цена закупки</Label>
+                    <Input type="number" value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} />
+                    {(() => {
+                      const rec = getRecommendedPurchasePrice(form.model, form.memory, form.condition);
+                      if (!rec && form.model && form.memory) return <p className="mt-1 text-[11px] text-muted-foreground">Нет данных скупки для данной модели</p>;
+                      return rec ? (
+                        <div className="mt-1 flex items-center gap-2">
+                          <span className="text-[11px] text-muted-foreground">Рекомендуемая цена закупки: <span className="font-medium text-foreground">{rec.toLocaleString()} ₽</span></span>
+                          <button type="button" className="text-[11px] text-primary hover:underline font-medium" onClick={() => setForm({ ...form, purchase_price: String(rec) })}>Использовать</button>
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
                   <div>
                     <Label>Цена продажи</Label>
                     <Input type="number" value={form.sale_price} onChange={(e) => setForm({ ...form, sale_price: e.target.value })} />
                     {(() => {
-                      const rec = getRecommendedPrice(form.model);
+                      const rec = getRecommendedSalePrice(form.model, form.memory);
+                      if (!rec && form.model && form.memory) return <p className="mt-1 text-[11px] text-muted-foreground">Нет данных мониторинга для данной модели</p>;
                       return rec ? (
-                        <button
-                          type="button"
-                          className="mt-1 text-xs text-primary hover:underline"
-                          onClick={() => setForm({ ...form, sale_price: String(rec) })}
-                        >
-                          Рекомендуемая: {rec.toLocaleString()} ₽
-                        </button>
+                        <div className="mt-1 flex items-center gap-2">
+                          <span className="text-[11px] text-muted-foreground">{rec.source === "our" ? "Наша цена" : "Средняя цена по рынку"}: <span className="font-medium text-foreground">{rec.price.toLocaleString()} ₽</span></span>
+                          <button type="button" className="text-[11px] text-primary hover:underline font-medium" onClick={() => setForm({ ...form, sale_price: String(rec.price) })}>Использовать</button>
+                        </div>
                       ) : null;
                     })()}
                   </div>
