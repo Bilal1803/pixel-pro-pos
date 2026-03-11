@@ -273,7 +273,7 @@ const TmaSalesPage = () => {
 
         <div className="space-y-2">
           {cart.map((item) => (
-            <Card key={item.id} className="p-3">
+            <Card key={item.id} className="p-3 bg-white border-gray-100 shadow-sm">
               <div className="flex items-center justify-between">
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium truncate">{item.name}</p>
