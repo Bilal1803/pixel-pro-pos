@@ -113,10 +113,9 @@ const DashboardHome = () => {
   const inStock = filteredDevices.filter(d => d.status === "available").length;
   const avgCheck = todaySales.length > 0 ? Math.round(todaySalesRevenue / todaySales.length) : 0;
 
-  const currentCash = (activeShift?.cash_start || 0) +
-    cashOps.reduce((sum: number, op: any) => {
-      return sum + (op.type === "income" ? (op.amount || 0) : -(op.amount || 0));
-    }, 0);
+  const deposits = cashOps.filter((o: any) => o.type === "deposit").reduce((s: number, o: any) => s + (o.amount || 0), 0);
+  const withdrawals = cashOps.filter((o: any) => o.type === "withdraw").reduce((s: number, o: any) => s + (o.amount || 0), 0);
+  const currentCash = (activeShift?.cash_start || 0) + shiftCashSales + deposits - withdrawals;
 
   const stats = [
     { label: "Выручка сегодня", value: `${todayRevenue.toLocaleString("ru")} ₽`, icon: DollarSign },
