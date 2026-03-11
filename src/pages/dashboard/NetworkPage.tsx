@@ -196,9 +196,9 @@ const NetworkPage = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const copyLink = (url: string) => {
-    navigator.clipboard.writeText(url);
-    toast.success("Ссылка скопирована");
+  const copyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast.success("Код скопирован");
   };
 
   const handleInviteSubmit = () => {
