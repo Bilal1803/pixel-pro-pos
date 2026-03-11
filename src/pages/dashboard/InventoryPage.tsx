@@ -1,9 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, Upload, FileSpreadsheet, X, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, Upload, FileSpreadsheet, X, Pencil, Trash2, AlertTriangle, Info } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import ComboboxInput from "@/components/ComboboxInput";
@@ -91,6 +91,52 @@ const InventoryPage = () => {
   const [form, setForm] = useState({ model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing" as string, notes: "", sim_type: "", condition: "used" });
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({ id: "", model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing" as string, notes: "", sim_type: "", condition: "used" });
+
+  // IMEI duplicate check
+  const [imeiDuplicate, setImeiDuplicate] = useState<{ blocked: boolean; message: string; device?: { model: string; memory: string | null; color: string | null; status: string; store_name?: string } } | null>(null);
+  const [imeiChecking, setImeiChecking] = useState(false);
+  const imeiCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const checkImeiDuplicate = useCallback(async (imei: string) => {
+    if (!imei || imei.length < 5 || !companyId) {
+      setImeiDuplicate(null);
+      return;
+    }
+    setImeiChecking(true);
+    try {
+      const { data, error } = await supabase
+        .from("devices")
+        .select("model, memory, color, status, stores:store_id(name)")
+        .eq("company_id", companyId)
+        .eq("imei", imei.trim());
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        setImeiDuplicate(null);
+        return;
+      }
+      const active = data.find((d: any) => d.status !== "sold");
+      if (active) {
+        const storeName = (active as any).stores?.name || undefined;
+        setImeiDuplicate({
+          blocked: true,
+          message: "Устройство с таким IMEI уже есть на складе.",
+          device: { model: active.model, memory: active.memory, color: active.color, status: active.status, store_name: storeName },
+        });
+        return;
+      }
+      setImeiDuplicate({ blocked: false, message: "Этот IMEI уже был продан ранее." });
+    } catch {
+      setImeiDuplicate(null);
+    } finally {
+      setImeiChecking(false);
+    }
+  }, [companyId]);
+
+  const handleImeiChange = (imei: string) => {
+    setForm(prev => ({ ...prev, imei }));
+    if (imeiCheckTimer.current) clearTimeout(imeiCheckTimer.current);
+    imeiCheckTimer.current = setTimeout(() => checkImeiDuplicate(imei), 400);
+  };
 
   const { data: devices = [], isLoading } = useQuery({
     queryKey: ["devices", companyId],
@@ -231,6 +277,7 @@ const InventoryPage = () => {
       toast({ title: "Устройство добавлено" });
       setOpen(false);
       setForm({ model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing", notes: "", sim_type: "", condition: "used" });
+      setImeiDuplicate(null);
     },
     onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
@@ -615,7 +662,34 @@ const InventoryPage = () => {
                   </div>
                   <div><Label>Память</Label><ComboboxInput value={form.memory} onChange={(v) => setForm({ ...form, memory: v })} options={getMemoryOptions(form.model)} placeholder="128GB" /></div>
                   <div><Label>Цвет</Label><ComboboxInput value={form.color} onChange={(v) => setForm({ ...form, color: v })} options={getColorOptions(form.model)} /></div>
-                  <div><Label>IMEI *</Label><Input value={form.imei} onChange={(e) => setForm({ ...form, imei: e.target.value })} required /></div>
+                  <div>
+                    <Label>IMEI *</Label>
+                    <Input value={form.imei} onChange={(e) => handleImeiChange(e.target.value)} required />
+                    {imeiChecking && <p className="mt-1 text-[11px] text-muted-foreground">Проверка IMEI...</p>}
+                    {imeiDuplicate?.blocked && (
+                      <div className="mt-1.5 rounded-md border border-destructive/30 bg-destructive/5 p-2">
+                        <div className="flex items-center gap-1.5 text-[12px] font-medium text-destructive">
+                          <AlertTriangle className="h-3.5 w-3.5" />
+                          {imeiDuplicate.message}
+                        </div>
+                        {imeiDuplicate.device && (
+                          <div className="mt-1 grid grid-cols-2 gap-x-3 text-[11px] text-muted-foreground">
+                            <span>Модель: <strong className="text-foreground">{imeiDuplicate.device.model}</strong></span>
+                            <span>Память: <strong className="text-foreground">{imeiDuplicate.device.memory || "—"}</strong></span>
+                            <span>Цвет: <strong className="text-foreground">{imeiDuplicate.device.color || "—"}</strong></span>
+                            <span>Статус: <strong className="text-foreground">{statusLabels[imeiDuplicate.device.status]?.label || imeiDuplicate.device.status}</strong></span>
+                            {imeiDuplicate.device.store_name && <span className="col-span-2">Магазин: <strong className="text-foreground">{imeiDuplicate.device.store_name}</strong></span>}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {imeiDuplicate && !imeiDuplicate.blocked && (
+                      <div className="mt-1.5 flex items-center gap-1.5 text-[12px] text-amber-600">
+                        <Info className="h-3.5 w-3.5" />
+                        {imeiDuplicate.message}
+                      </div>
+                    )}
+                  </div>
                   <div><Label>АКБ</Label><Input placeholder="94%" value={form.battery_health} onChange={(e) => setForm({ ...form, battery_health: e.target.value })} /></div>
                   <div>
                     <Label>SIM</Label>
@@ -670,7 +744,7 @@ const InventoryPage = () => {
                   </Select>
                 </div>
                 <div><Label>Заметки</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-                <Button type="submit" className="w-full" disabled={addDevice.isPending}>
+                <Button type="submit" className="w-full" disabled={addDevice.isPending || !!imeiDuplicate?.blocked}>
                   {addDevice.isPending ? "Сохранение..." : "Добавить"}
                 </Button>
               </form>
