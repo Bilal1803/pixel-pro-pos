@@ -1,26 +1,41 @@
 import { Navigate, Outlet, NavLink, useLocation } from "react-router-dom";
-import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
+import { usePlatformAdmin, PlatformAdminRole } from "@/hooks/usePlatformAdmin";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Shield, Image, Building2, Users, CreditCard, ArrowLeft,
   LayoutDashboard, DollarSign, HeadphonesIcon, BarChart3, Settings2,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
-const navItems = [
-  { to: "/admin", label: "Дашборд", icon: LayoutDashboard, exact: true },
-  { to: "/admin/companies", label: "Компании", icon: Building2 },
-  { to: "/admin/users", label: "Пользователи", icon: Users },
-  { to: "/admin/subscriptions", label: "Подписки", icon: CreditCard },
-  { to: "/admin/finances", label: "Финансы", icon: DollarSign },
-  { to: "/admin/stories", label: "Stories", icon: Image },
-  { to: "/admin/support", label: "Поддержка", icon: HeadphonesIcon },
-  { to: "/admin/analytics", label: "Аналитика", icon: BarChart3 },
-  { to: "/admin/system", label: "Система", icon: Settings2 },
+type NavItem = {
+  to: string;
+  label: string;
+  icon: React.ComponentType<any>;
+  exact?: boolean;
+  roles: PlatformAdminRole[];
+};
+
+const navItems: NavItem[] = [
+  { to: "/admin", label: "Дашборд", icon: LayoutDashboard, exact: true, roles: ["full_admin", "manager"] },
+  { to: "/admin/companies", label: "Компании", icon: Building2, roles: ["full_admin", "manager", "support"] },
+  { to: "/admin/users", label: "Пользователи", icon: Users, roles: ["full_admin", "manager", "support"] },
+  { to: "/admin/subscriptions", label: "Подписки", icon: CreditCard, roles: ["full_admin", "manager"] },
+  { to: "/admin/finances", label: "Финансы", icon: DollarSign, roles: ["full_admin", "manager"] },
+  { to: "/admin/stories", label: "Stories", icon: Image, roles: ["full_admin"] },
+  { to: "/admin/support", label: "Поддержка", icon: HeadphonesIcon, roles: ["full_admin", "manager", "support"] },
+  { to: "/admin/analytics", label: "Аналитика", icon: BarChart3, roles: ["full_admin", "manager"] },
+  { to: "/admin/system", label: "Система", icon: Settings2, roles: ["full_admin"] },
 ];
+
+const roleLabels: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
+  full_admin: { label: "Полный доступ", variant: "default" },
+  manager: { label: "Менеджер", variant: "secondary" },
+  support: { label: "Поддержка", variant: "outline" },
+};
 
 const AdminLayout = () => {
   const { user, loading: authLoading } = useAuth();
-  const { isAdmin, isLoading } = usePlatformAdmin();
+  const { isAdmin, adminRole, isLoading } = usePlatformAdmin();
   const location = useLocation();
 
   if (authLoading || isLoading) {
@@ -35,6 +50,9 @@ const AdminLayout = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
+  const visibleNavItems = navItems.filter(item => adminRole && item.roles.includes(adminRole));
+  const rl = adminRole ? roleLabels[adminRole] : null;
+
   return (
     <div className="flex min-h-screen">
       <aside className="flex h-screen w-64 flex-col border-r bg-card sticky top-0">
@@ -42,9 +60,14 @@ const AdminLayout = () => {
           <Shield className="h-6 w-6 text-destructive" />
           <span className="text-lg font-bold">Админ-панель</span>
         </div>
+        {rl && (
+          <div className="px-6 py-2 border-b">
+            <Badge variant={rl.variant} className="text-xs">{rl.label}</Badge>
+          </div>
+        )}
         <nav className="flex-1 overflow-y-auto p-3">
           <ul className="space-y-1">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const isActive = item.exact
                 ? location.pathname === item.to
                 : location.pathname.startsWith(item.to) && item.to !== "/admin";

@@ -9,11 +9,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { CalendarPlus, CheckCircle, Clock } from "lucide-react";
 
 const AdminSubscriptionsPage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { adminRole } = usePlatformAdmin();
+  const canChangePlan = adminRole === "full_admin" || adminRole === "manager";
   const [trialDialog, setTrialDialog] = useState<{ id: string; companyName: string } | null>(null);
   const [trialDays, setTrialDays] = useState("7");
 
@@ -105,8 +108,8 @@ const AdminSubscriptionsPage = () => {
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Магазины</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Сотр.</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Устр.</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Тариф</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Действия</th>
+                  {canChangePlan && <th className="px-4 py-3 text-left font-medium text-muted-foreground">Тариф</th>}
+                  {canChangePlan && <th className="px-4 py-3 text-left font-medium text-muted-foreground">Действия</th>}
                 </tr>
               </thead>
               <tbody>
@@ -127,45 +130,49 @@ const AdminSubscriptionsPage = () => {
                       <td className="px-4 py-3">{s.max_stores}</td>
                       <td className="px-4 py-3">{s.max_employees > 9999 ? "∞" : s.max_employees}</td>
                       <td className="px-4 py-3">{s.max_devices > 9999 ? "∞" : s.max_devices}</td>
-                      <td className="px-4 py-3">
-                        <Select value={s.plan} onValueChange={(v) => updatePlan.mutate({ id: s.id, plan: v })}>
-                          <SelectTrigger className="w-28 h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="start">Старт</SelectItem>
-                            <SelectItem value="business">Бизнес</SelectItem>
-                            <SelectItem value="premier">Премьер</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-1">
-                          {!s.paid && (
+                      {canChangePlan && (
+                        <td className="px-4 py-3">
+                          <Select value={s.plan} onValueChange={(v) => updatePlan.mutate({ id: s.id, plan: v })}>
+                            <SelectTrigger className="w-28 h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="start">Старт</SelectItem>
+                              <SelectItem value="business">Бизнес</SelectItem>
+                              <SelectItem value="premier">Премьер</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </td>
+                      )}
+                      {canChangePlan && (
+                        <td className="px-4 py-3">
+                          <div className="flex gap-1">
+                            {!s.paid && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 text-xs gap-1"
+                                onClick={() => activatePaid.mutate(s.id)}
+                              >
+                                <CheckCircle className="h-3 w-3" />
+                                Оплачено
+                              </Button>
+                            )}
                             <Button
                               size="sm"
                               variant="outline"
                               className="h-8 text-xs gap-1"
-                              onClick={() => activatePaid.mutate(s.id)}
+                              onClick={() => {
+                                setTrialDays("7");
+                                setTrialDialog({ id: s.id, companyName: companyMap[s.company_id] || "Компания" });
+                              }}
                             >
-                              <CheckCircle className="h-3 w-3" />
-                              Оплачено
+                              <CalendarPlus className="h-3 w-3" />
+                              Триал
                             </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 text-xs gap-1"
-                            onClick={() => {
-                              setTrialDays("7");
-                              setTrialDialog({ id: s.id, companyName: companyMap[s.company_id] || "Компания" });
-                            }}
-                          >
-                            <CalendarPlus className="h-3 w-3" />
-                            Триал
-                          </Button>
-                        </div>
-                      </td>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

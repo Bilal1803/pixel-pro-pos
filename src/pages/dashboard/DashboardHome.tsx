@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DollarSign, TrendingUp, ShoppingCart, Smartphone, Sparkles, Store, ArrowRight } from "lucide-react";
+import { DollarSign, TrendingUp, ShoppingCart, Smartphone, Sparkles, Store, ArrowRight, Banknote, ReceiptText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -10,13 +10,25 @@ import StoriesCarousel from "@/components/StoriesCarousel";
 import SectionHelp from "@/components/SectionHelp";
 import { SECTION_TIPS } from "@/data/sectionTips";
 import { useStoreContext } from "@/contexts/StoreContext";
+import { useState, useEffect } from "react";
+
+const TIPS_DISMISSED_KEY = "dashboard_tips_dismissed";
 
 const DashboardHome = () => {
-  const { companyId } = useAuth();
+  const { companyId, user } = useAuth();
   const navigate = useNavigate();
   const { subscription } = useSubscription();
   const { stores, activeStoreId } = useStoreContext();
   const isPremier = subscription.plan === "premier";
+
+  const [tipsDismissed, setTipsDismissed] = useState(() => {
+    try { return localStorage.getItem(TIPS_DISMISSED_KEY) === "true"; } catch { return false; }
+  });
+
+  const dismissTips = () => {
+    setTipsDismissed(true);
+    try { localStorage.setItem(TIPS_DISMISSED_KEY, "true"); } catch {}
+  };
 
   const { data: devices = [] } = useQuery({
     queryKey: ["devices-dash", companyId],
@@ -38,24 +50,66 @@ const DashboardHome = () => {
     enabled: !!companyId,
   });
 
+  const { data: repairs = [] } = useQuery({
+    queryKey: ["repairs-dash", companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const today = new Date().toISOString().split("T")[0];
+      const { data } = await supabase.from("repairs").select("price, status, created_at").eq("company_id", companyId).in("status", ["done", "ready"]);
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+
+  const { data: activeShift } = useQuery({
+    queryKey: ["active-shift-dash", user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await supabase.from("shifts").select("id, cash_start").eq("employee_id", user.id).eq("status", "active").limit(1).single();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const { data: cashOps = [] } = useQuery({
+    queryKey: ["cash-ops-dash", activeShift?.id],
+    queryFn: async () => {
+      if (!activeShift?.id) return [];
+      const { data } = await supabase.from("cash_operations").select("amount, type").eq("shift_id", activeShift.id);
+      return data || [];
+    },
+    enabled: !!activeShift?.id,
+  });
+
   // Filter by active store if selected
   const filteredDevices = activeStoreId ? devices.filter(d => d.store_id === activeStoreId) : devices;
   const filteredSales = activeStoreId ? sales.filter((s: any) => s.store_id === activeStoreId) : sales;
 
   const today = new Date().toISOString().split("T")[0];
   const todaySales = filteredSales.filter((s: any) => s.created_at?.startsWith(today));
-  const todayRevenue = todaySales.reduce((sum: number, s: any) => sum + (s.total || 0), 0);
+  const todayRepairs = repairs.filter((r: any) => r.created_at?.startsWith(today));
+  const todayRepairRevenue = todayRepairs.reduce((sum: number, r: any) => sum + (r.price || 0), 0);
+  const todaySalesRevenue = todaySales.reduce((sum: number, s: any) => sum + (s.total || 0), 0);
+  const todayRevenue = todaySalesRevenue + todayRepairRevenue;
   const todayProfit = todaySales.reduce((sum: number, s: any) => {
     const itemProfit = (s.sale_items || []).reduce((p: number, i: any) => p + ((i.price || 0) - (i.cost_price || 0)), 0);
     return sum + itemProfit;
-  }, 0);
+  }, 0) + todayRepairRevenue;
   const inStock = filteredDevices.filter(d => d.status === "available").length;
+  const avgCheck = todaySales.length > 0 ? Math.round(todaySalesRevenue / todaySales.length) : 0;
+
+  const currentCash = (activeShift?.cash_start || 0) +
+    cashOps.reduce((sum: number, op: any) => {
+      return sum + (op.type === "income" ? (op.amount || 0) : -(op.amount || 0));
+    }, 0);
 
   const stats = [
     { label: "Выручка сегодня", value: `${todayRevenue.toLocaleString("ru")} ₽`, icon: DollarSign },
     { label: "Прибыль сегодня", value: `${todayProfit.toLocaleString("ru")} ₽`, icon: TrendingUp },
     { label: "Продажи сегодня", value: `${todaySales.length}`, icon: ShoppingCart },
     { label: "На складе", value: `${inStock}`, icon: Smartphone },
+    { label: "Средний чек", value: `${avgCheck.toLocaleString("ru")} ₽`, icon: ReceiptText },
+    { label: "Касса", value: `${currentCash.toLocaleString("ru")} ₽`, icon: Banknote },
   ];
 
   const recentDevices = filteredDevices.slice(0, 5);
@@ -71,15 +125,27 @@ const DashboardHome = () => {
   return (
     <div className="space-y-6">
       <StoriesCarousel />
-      <SectionHelp tips={SECTION_TIPS.dashboard} />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      
+      {!tipsDismissed && (
+        <div className="relative">
+          <SectionHelp tips={SECTION_TIPS.dashboard} />
+          <button
+            onClick={dismissTips}
+            className="absolute top-2 right-2 text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-muted transition-colors"
+          >
+            Скрыть навсегда
+          </button>
+        </div>
+      )}
+
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
         {stats.map((s) => (
-          <Card key={s.label} className="p-5 card-shadow">
+          <Card key={s.label} className="p-4 md:p-5 card-shadow">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">{s.label}</span>
-              <s.icon className="h-5 w-5 text-muted-foreground" />
+              <span className="text-xs md:text-sm text-muted-foreground">{s.label}</span>
+              <s.icon className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
             </div>
-            <div className="mt-2 text-2xl font-bold">{s.value}</div>
+            <div className="mt-2 text-lg md:text-2xl font-bold">{s.value}</div>
           </Card>
         ))}
       </div>

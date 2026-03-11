@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DollarSign, TrendingDown, TrendingUp, Plus } from "lucide-react";
+import { DollarSign, TrendingDown, TrendingUp, Plus, Wrench } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -30,6 +30,21 @@ const FinancesPage = () => {
         .from("sales")
         .select("total, created_at, sale_items(price, cost_price)")
         .eq("company_id", companyId)
+        .gte("created_at", monthStart);
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+
+  const { data: repairs = [] } = useQuery({
+    queryKey: ["finances-repairs", companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data } = await supabase
+        .from("repairs")
+        .select("price, status")
+        .eq("company_id", companyId)
+        .in("status", ["done", "ready"])
         .gte("created_at", monthStart);
       return data || [];
     },
@@ -79,7 +94,10 @@ const FinancesPage = () => {
 
   const monthExpenses = expenses.filter((e: any) => new Date(e.date) >= new Date(monthStart));
 
-  const revenue = sales.reduce((s: number, sale: any) => s + (sale.total || 0), 0);
+  const salesRevenue = sales.reduce((s: number, sale: any) => s + (sale.total || 0), 0);
+  const repairRevenue = repairs.reduce((s: number, r: any) => s + (r.price || 0), 0);
+  const revenue = salesRevenue + repairRevenue;
+
   const costOfGoods = sales.reduce((s: number, sale: any) => {
     return s + (sale.sale_items || []).reduce((a: number, i: any) => a + (i.cost_price || 0), 0);
   }, 0);
@@ -92,8 +110,8 @@ const FinancesPage = () => {
 
   const stats = [
     { label: "Выручка за месяц", value: `${revenue.toLocaleString("ru")} ₽`, icon: DollarSign },
+    { label: "Доход от ремонта", value: `${repairRevenue.toLocaleString("ru")} ₽`, icon: Wrench },
     { label: "Товары по себестоимости", value: `${totalInventoryCost.toLocaleString("ru")} ₽`, icon: DollarSign },
-    { label: "Закупки (себестоимость)", value: `${costOfGoods.toLocaleString("ru")} ₽`, icon: TrendingDown },
     { label: "Расходы за месяц", value: `${totalExpenses.toLocaleString("ru")} ₽`, icon: TrendingDown },
     { label: "Чистая прибыль", value: `${netProfit.toLocaleString("ru")} ₽`, icon: TrendingUp },
   ];
