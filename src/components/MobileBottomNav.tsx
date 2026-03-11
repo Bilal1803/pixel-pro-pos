@@ -28,6 +28,7 @@ const moreItems = [
   { to: "/dashboard/shifts", label: "Смены", icon: Clock },
   { to: "/dashboard/repairs", label: "Ремонт", icon: Wrench },
   { to: "/dashboard/accessories", label: "Аксессуары", icon: Headphones },
+  { to: "/dashboard/cash", label: "Касса", icon: Banknote },
   { to: "/dashboard/monitoring", label: "Мониторинг", icon: TrendingUp },
   { to: "/dashboard/price-tags", label: "Ценники", icon: Tag },
   { to: "/dashboard/listings", label: "Объявления", icon: Megaphone },
