@@ -123,9 +123,7 @@ const EmployeesPage = () => {
     return store?.name || "—";
   };
 
-  const getInviteUrl = (code: string) => {
-    return `https://t.me/filtercrm_bot/app?startapp=invite_${code}`;
-  };
+  const getInviteCode = (code: string) => code;
 
   // Create invitation
   const createInvitation = useMutation({
