@@ -276,7 +276,7 @@ const SalesPage = () => {
   const openReturnDialog = (sale: any) => {
     setReturnTarget(sale);
     // Pre-select all items
-    const allIds = new Set((sale.sale_items || []).map((i: any) => i.id));
+    const allIds = new Set<string>((sale.sale_items || []).map((i: any) => i.id));
     setSelectedReturnItems(allIds);
     setReturnOpen(true);
   };
