@@ -123,7 +123,7 @@ const EmployeesPage = () => {
     return store?.name || "—";
   };
 
-  const getInviteCode = (code: string) => code;
+  
 
   // Create invitation
   const createInvitation = useMutation({
