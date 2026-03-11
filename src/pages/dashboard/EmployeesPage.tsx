@@ -415,7 +415,8 @@ const EmployeesPage = () => {
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyCode(inv.code)}>
                     <Copy className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => regenerateLink.mutate(inv.id)}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => sendCodeViaTelegram(inv.code, inv.full_name)} title="Отправить в Telegram">
+                    <Send className="h-4 w-4" />
                     <RefreshCw className="h-4 w-4" />
                   </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => cancelInvitation.mutate(inv.id)}>
