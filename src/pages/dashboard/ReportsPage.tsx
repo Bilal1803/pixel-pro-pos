@@ -77,13 +77,16 @@ const ReportsPage = () => {
       const profileMap = new Map(profiles.map((p: any) => [p.user_id, p]));
 
       const salesRevenue = sales.reduce((s: number, sale: any) => s + Number(sale.total || 0), 0);
+      const totalPaymentFees = sales.reduce((s: number, sale: any) => s + Number(sale.payment_fee || 0), 0);
+      const salesProductRevenue = salesRevenue - totalPaymentFees;
       const repairRevenue = repairs.reduce((s: number, r: any) => s + Number(r.price || 0), 0);
       const totalRevenue = salesRevenue + repairRevenue;
       const totalCost = sales.reduce((s: number, sale: any) => {
         return s + (sale.sale_items || []).reduce((is: number, i: any) => is + Number(i.cost_price || 0) * (i.quantity || 1), 0);
       }, 0);
       const totalExpenses = expenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-      const netProfit = totalRevenue - totalCost - totalExpenses;
+      // Profit excludes payment fees
+      const netProfit = salesProductRevenue + repairRevenue - totalCost - totalExpenses;
       const totalBuybacks = buybacks.reduce((s: number, b: any) => s + Number(b.purchase_price || 0), 0);
       const avgCheck = sales.length > 0 ? Math.round(salesRevenue / sales.length) : 0;
 
@@ -96,6 +99,7 @@ const ReportsPage = () => {
       return {
         sales, devices, shifts, profiles, expenses, buybacks, profileMap,
         totalRevenue, totalCost, totalExpenses, netProfit, totalBuybacks, avgCheck,
+        totalPaymentFees, salesProductRevenue,
         employeeStats,
       };
     },
