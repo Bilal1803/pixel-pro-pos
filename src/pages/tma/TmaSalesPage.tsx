@@ -418,7 +418,7 @@ const TmaSalesPage = () => {
 
       {/* Devices */}
       <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Устройства</p>
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Устройства</p>
         {filteredDevices.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4 text-center">Устройства не найдены</p>
         ) : (
