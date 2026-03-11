@@ -461,7 +461,7 @@ const TmaSalesPage = () => {
       {/* Accessories */}
       {products.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Аксессуары</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Аксессуары</p>
           <div className="space-y-2">
             {products.slice(0, 10).map((p) => (
               <button
