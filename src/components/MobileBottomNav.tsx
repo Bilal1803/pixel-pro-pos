@@ -50,6 +50,8 @@ const MobileBottomNav = () => {
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { subscription } = useSubscription();
+  const { isAdmin } = usePlatformAdmin();
+  const { signOut } = useAuth();
   const isPremier = subscription.plan === "premier";
 
   const allMoreItems = isPremier ? [...premierMoreItems, ...moreItems] : moreItems;
