@@ -363,7 +363,7 @@ const TmaSalesPage = () => {
         )}
 
         {/* Total & Submit */}
-        <div className="rounded-2xl bg-primary p-4 text-primary-foreground">
+        <div className="rounded-2xl bg-blue-600 p-4 text-white">
           <div className="space-y-1 mb-3">
             <div className="flex items-center justify-between text-sm opacity-80">
               <span>Стоимость товаров</span>
