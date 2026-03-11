@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import SectionHelp from "@/components/SectionHelp";
 import { SECTION_TIPS } from "@/data/sectionTips";
 import { Send } from "lucide-react";
+import PaymentSettingsCard from "@/components/PaymentSettingsCard";
 
 const planLabels: Record<string, string> = { start: "Старт", business: "Бизнес", premier: "Премьер" };
 const planPrices: Record<string, string> = { start: "1 990 ₽/мес", business: "2 990 ₽/мес", premier: "7 990 ₽/мес" };
