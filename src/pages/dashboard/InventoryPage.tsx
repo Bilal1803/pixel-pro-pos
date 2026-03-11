@@ -661,7 +661,34 @@ const InventoryPage = () => {
                   </div>
                   <div><Label>Память</Label><ComboboxInput value={form.memory} onChange={(v) => setForm({ ...form, memory: v })} options={getMemoryOptions(form.model)} placeholder="128GB" /></div>
                   <div><Label>Цвет</Label><ComboboxInput value={form.color} onChange={(v) => setForm({ ...form, color: v })} options={getColorOptions(form.model)} /></div>
-                  <div><Label>IMEI *</Label><Input value={form.imei} onChange={(e) => setForm({ ...form, imei: e.target.value })} required /></div>
+                  <div>
+                    <Label>IMEI *</Label>
+                    <Input value={form.imei} onChange={(e) => handleImeiChange(e.target.value)} required />
+                    {imeiChecking && <p className="mt-1 text-[11px] text-muted-foreground">Проверка IMEI...</p>}
+                    {imeiDuplicate?.blocked && (
+                      <div className="mt-1.5 rounded-md border border-destructive/30 bg-destructive/5 p-2">
+                        <div className="flex items-center gap-1.5 text-[12px] font-medium text-destructive">
+                          <AlertTriangle className="h-3.5 w-3.5" />
+                          {imeiDuplicate.message}
+                        </div>
+                        {imeiDuplicate.device && (
+                          <div className="mt-1 grid grid-cols-2 gap-x-3 text-[11px] text-muted-foreground">
+                            <span>Модель: <strong className="text-foreground">{imeiDuplicate.device.model}</strong></span>
+                            <span>Память: <strong className="text-foreground">{imeiDuplicate.device.memory || "—"}</strong></span>
+                            <span>Цвет: <strong className="text-foreground">{imeiDuplicate.device.color || "—"}</strong></span>
+                            <span>Статус: <strong className="text-foreground">{statusLabels[imeiDuplicate.device.status]?.label || imeiDuplicate.device.status}</strong></span>
+                            {imeiDuplicate.device.store_name && <span className="col-span-2">Магазин: <strong className="text-foreground">{imeiDuplicate.device.store_name}</strong></span>}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {imeiDuplicate && !imeiDuplicate.blocked && (
+                      <div className="mt-1.5 flex items-center gap-1.5 text-[12px] text-amber-600">
+                        <Info className="h-3.5 w-3.5" />
+                        {imeiDuplicate.message}
+                      </div>
+                    )}
+                  </div>
                   <div><Label>АКБ</Label><Input placeholder="94%" value={form.battery_health} onChange={(e) => setForm({ ...form, battery_health: e.target.value })} /></div>
                   <div>
                     <Label>SIM</Label>
