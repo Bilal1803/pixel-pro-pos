@@ -495,12 +495,14 @@ const NetworkPage = () => {
           </DialogHeader>
           {inviteLink ? (
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">Отправьте сотруднику эту ссылку. Она действует 24 часа.</p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 rounded bg-muted px-3 py-2 text-xs font-mono break-all">{inviteLink}</code>
-                <Button variant="outline" size="icon" onClick={() => copyLink(inviteLink)}>
-                  <Copy className="h-4 w-4" />
-                </Button>
+              <p className="text-sm text-muted-foreground">Сообщите сотруднику этот код. Он действует 24 часа. Сотрудник вводит его в Mini App.</p>
+              <div>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 rounded bg-muted px-4 py-3 text-2xl font-mono text-center tracking-[0.3em]">{inviteLink}</code>
+                  <Button variant="outline" size="icon" onClick={() => copyCode(inviteLink)}>
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
               <DialogFooter>
                 <Button onClick={handleInviteClose}>Закрыть</Button>
