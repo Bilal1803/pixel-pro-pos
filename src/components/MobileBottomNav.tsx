@@ -4,12 +4,15 @@ import {
   Users, DollarSign, UserCog, Wrench, Clock, FileBarChart,
   Settings, HelpCircle, CreditCard, Sparkles, Headphones,
   Store, BarChart3, ArrowRightLeft, Tag, TrendingUp, Megaphone,
-  MoreHorizontal,
+  MoreHorizontal, Shield, LogOut, Banknote,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useSubscription } from "@/hooks/useSubscription";
+import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
+import { useAuth } from "@/contexts/AuthContext";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
+import { Separator } from "@/components/ui/separator";
 
 const mainItems = [
   { to: "/dashboard", label: "Дашборд", icon: LayoutDashboard },
