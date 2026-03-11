@@ -347,7 +347,10 @@ const EmployeesPage = () => {
                     </Button>
                   </div>
                 </div>
-                <DialogFooter>
+                <DialogFooter className="flex-col sm:flex-row gap-2">
+                  <Button variant="outline" className="gap-2" onClick={() => sendCodeViaTelegram(inviteLink!, form.fullName)}>
+                    <Send className="h-4 w-4" />Отправить в Telegram
+                  </Button>
                   <Button onClick={handleCreateClose}>Закрыть</Button>
                 </DialogFooter>
               </div>
