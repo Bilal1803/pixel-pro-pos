@@ -131,7 +131,10 @@ const EmployeesPage = () => {
       await supabase.functions.invoke("send-telegram", {
         body: { company_id: companyId, message },
       });
-      toast({ title: "Код отправлен в Telegram" });
+      toast({ 
+        title: "Приглашение отправлено в Telegram-бот", 
+        description: "Зайдите в бот и перешлите сообщение сотруднику" 
+      });
     } catch {
       toast({ title: "Не удалось отправить", description: "Проверьте настройки Telegram", variant: "destructive" });
     }
