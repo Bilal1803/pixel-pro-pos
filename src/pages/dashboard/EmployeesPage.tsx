@@ -392,11 +392,11 @@ const EmployeesPage = () => {
                 <div>
                   <p className="font-medium text-sm">{inv.full_name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {roleLabels[inv.role] || inv.role} • до {format(new Date(inv.expires_at), "dd.MM HH:mm")}
+                    {roleLabels[inv.role] || inv.role} • код: <span className="font-mono font-bold">{inv.code}</span> • до {format(new Date(inv.expires_at), "dd.MM HH:mm")}
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyLink(getInviteUrl(inv.code))}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyCode(inv.code)}>
                     <Copy className="h-4 w-4" />
                   </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => regenerateLink.mutate(inv.id)}>
