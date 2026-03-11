@@ -381,7 +381,7 @@ const TmaSalesPage = () => {
             </div>
           </div>
           <Button
-            className="w-full h-12 text-base bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+            className="w-full h-12 text-base bg-white text-blue-600 hover:bg-blue-50"
             onClick={() => submitSale.mutate()}
             disabled={submitSale.isPending}
           >
