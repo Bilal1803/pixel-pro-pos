@@ -92,7 +92,53 @@ const InventoryPage = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({ id: "", model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing" as string, notes: "", sim_type: "", condition: "used" });
 
-  const { data: devices = [], isLoading } = useQuery({
+  // IMEI duplicate check
+  const [imeiDuplicate, setImeiDuplicate] = useState<{ blocked: boolean; message: string; device?: { model: string; memory: string | null; color: string | null; status: string; store_name?: string } } | null>(null);
+  const [imeiChecking, setImeiChecking] = useState(false);
+  const imeiCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const checkImeiDuplicate = useCallback(async (imei: string) => {
+    if (!imei || imei.length < 5 || !companyId) {
+      setImeiDuplicate(null);
+      return;
+    }
+    setImeiChecking(true);
+    try {
+      const { data, error } = await supabase
+        .from("devices")
+        .select("model, memory, color, status, stores:store_id(name)")
+        .eq("company_id", companyId)
+        .eq("imei", imei.trim());
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        setImeiDuplicate(null);
+        return;
+      }
+      const active = data.find((d: any) => d.status !== "sold");
+      if (active) {
+        const storeName = (active as any).stores?.name || undefined;
+        setImeiDuplicate({
+          blocked: true,
+          message: "Устройство с таким IMEI уже есть на складе.",
+          device: { model: active.model, memory: active.memory, color: active.color, status: active.status, store_name: storeName },
+        });
+        return;
+      }
+      setImeiDuplicate({ blocked: false, message: "Этот IMEI уже был продан ранее." });
+    } catch {
+      setImeiDuplicate(null);
+    } finally {
+      setImeiChecking(false);
+    }
+  }, [companyId]);
+
+  const handleImeiChange = (imei: string) => {
+    setForm(prev => ({ ...prev, imei }));
+    if (imeiCheckTimer.current) clearTimeout(imeiCheckTimer.current);
+    imeiCheckTimer.current = setTimeout(() => checkImeiDuplicate(imei), 400);
+  };
+
+
     queryKey: ["devices", companyId],
     queryFn: async () => {
       if (!companyId) return [];
