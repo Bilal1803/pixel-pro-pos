@@ -395,7 +395,7 @@ const TmaSalesPage = () => {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-bold">Новая продажа</h1>
+      <h1 className="text-lg font-bold text-gray-900">Новая продажа</h1>
 
       {cart.length > 0 && (
         <Button className="w-full h-12" onClick={() => setStep("cart")}>
