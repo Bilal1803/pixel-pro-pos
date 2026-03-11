@@ -107,13 +107,58 @@ const InventoryPage = () => {
     queryKey: ["price_monitoring", companyId],
     queryFn: async () => {
       if (!companyId) return [];
-      const { data, error } = await supabase.from("price_monitoring").select("model, avg_price, our_price").eq("company_id", companyId);
+      const { data, error } = await supabase.from("price_monitoring").select("model, avg_price, our_price, prices, margin_new, margin_used").eq("company_id", companyId);
       if (error) throw error;
       return data;
     },
     enabled: !!companyId,
   });
 
+  const { data: buybackSettings } = useQuery({
+    queryKey: ["buyback-settings", companyId],
+    queryFn: async () => {
+      if (!companyId) return null;
+      const { data, error } = await supabase.from("buyback_settings").select("*").eq("company_id", companyId).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!companyId,
+  });
+
+  const getMonitoringEntry = (model: string, memory: string) => {
+    const key = `${model} ${memory}`.trim();
+    return priceMonitoring.find(p => p.model === key) || null;
+  };
+
+  const getRecommendedSalePrice = (model: string, memory: string) => {
+    const entry = getMonitoringEntry(model, memory);
+    if (!entry) return null;
+    if (entry.our_price) return { price: entry.our_price, source: "our" as const };
+    if (entry.avg_price) return { price: Math.round(entry.avg_price), source: "avg" as const };
+    const prices = (entry.prices || []).filter((p: number | null) => p && p > 0) as number[];
+    if (prices.length > 0) {
+      const avg = Math.round(prices.reduce((a, b) => a + b, 0) / prices.length);
+      return { price: avg, source: "avg" as const };
+    }
+    return null;
+  };
+
+  const getRecommendedPurchasePrice = (model: string, memory: string, condition: string) => {
+    const saleRec = getRecommendedSalePrice(model, memory);
+    if (!saleRec) return null;
+    const entry = getMonitoringEntry(model, memory);
+    const isNew = condition === "new";
+    // Per-model margin override
+    const modelMargin = entry && (isNew ? entry.margin_new : entry.margin_used);
+    // Global margin
+    const globalMargin = buybackSettings ? (isNew ? buybackSettings.margin_new : buybackSettings.margin_used) : null;
+    const margin = modelMargin || globalMargin;
+    if (!margin) return null;
+    const price = Math.round(saleRec.price - margin);
+    return price > 0 ? price : null;
+  };
+
+  // Legacy wrapper for import/other uses
   const getRecommendedPrice = (model: string) => {
     const entry = priceMonitoring.find(p => p.model === model);
     if (!entry) return null;
@@ -121,21 +166,11 @@ const InventoryPage = () => {
   };
 
   const handleModelChange = (model: string) => {
-    const recommended = getRecommendedPrice(model);
-    setForm(prev => ({
-      ...prev,
-      model,
-      sale_price: recommended ? String(recommended) : prev.sale_price,
-    }));
+    setForm(prev => ({ ...prev, model }));
   };
 
   const handleEditModelChange = (model: string) => {
-    const recommended = getRecommendedPrice(model);
-    setEditForm(prev => ({
-      ...prev,
-      model,
-      sale_price: recommended ? String(recommended) : prev.sale_price,
-    }));
+    setEditForm(prev => ({ ...prev, model }));
   };
 
 
@@ -593,20 +628,31 @@ const InventoryPage = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div><Label>Цена закупки</Label><Input type="number" value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} /></div>
+                  <div>
+                    <Label>Цена закупки</Label>
+                    <Input type="number" value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} />
+                    {(() => {
+                      const rec = getRecommendedPurchasePrice(form.model, form.memory, form.condition);
+                      if (!rec && form.model && form.memory) return <p className="mt-1 text-[11px] text-muted-foreground">Нет данных скупки для данной модели</p>;
+                      return rec ? (
+                        <div className="mt-1 flex items-center gap-2">
+                          <span className="text-[11px] text-muted-foreground">Рекомендуемая цена закупки: <span className="font-medium text-foreground">{rec.toLocaleString()} ₽</span></span>
+                          <button type="button" className="text-[11px] text-primary hover:underline font-medium" onClick={() => setForm({ ...form, purchase_price: String(rec) })}>Использовать</button>
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
                   <div>
                     <Label>Цена продажи</Label>
                     <Input type="number" value={form.sale_price} onChange={(e) => setForm({ ...form, sale_price: e.target.value })} />
                     {(() => {
-                      const rec = getRecommendedPrice(form.model);
+                      const rec = getRecommendedSalePrice(form.model, form.memory);
+                      if (!rec && form.model && form.memory) return <p className="mt-1 text-[11px] text-muted-foreground">Нет данных мониторинга для данной модели</p>;
                       return rec ? (
-                        <button
-                          type="button"
-                          className="mt-1 text-xs text-primary hover:underline"
-                          onClick={() => setForm({ ...form, sale_price: String(rec) })}
-                        >
-                          Рекомендуемая: {rec.toLocaleString()} ₽
-                        </button>
+                        <div className="mt-1 flex items-center gap-2">
+                          <span className="text-[11px] text-muted-foreground">{rec.source === "our" ? "Наша цена" : "Средняя цена по рынку"}: <span className="font-medium text-foreground">{rec.price.toLocaleString()} ₽</span></span>
+                          <button type="button" className="text-[11px] text-primary hover:underline font-medium" onClick={() => setForm({ ...form, sale_price: String(rec.price) })}>Использовать</button>
+                        </div>
                       ) : null;
                     })()}
                   </div>
