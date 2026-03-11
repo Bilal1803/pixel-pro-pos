@@ -64,7 +64,7 @@ const DashboardHome = () => {
     queryKey: ["active-shift-dash", user?.id],
     queryFn: async () => {
       if (!user) return null;
-      const { data } = await supabase.from("shifts").select("id, cash_start").eq("employee_id", user.id).eq("status", "active").limit(1).single();
+      const { data } = await supabase.from("shifts").select("id, cash_start, start_time").eq("employee_id", user.id).eq("status", "active").limit(1).single();
       return data;
     },
     enabled: !!user,
@@ -78,6 +78,22 @@ const DashboardHome = () => {
       return data || [];
     },
     enabled: !!activeShift?.id,
+  });
+
+  // Cash sales during active shift
+  const { data: shiftCashSales = 0 } = useQuery({
+    queryKey: ["shift-cash-sales-dash", activeShift?.id, companyId],
+    queryFn: async () => {
+      if (!activeShift || !companyId || !user) return 0;
+      const { data } = await supabase.from("sales")
+        .select("total")
+        .eq("company_id", companyId)
+        .eq("payment_method", "cash")
+        .eq("employee_id", user.id)
+        .gte("created_at", activeShift.start_time);
+      return (data || []).reduce((s: number, sale: any) => s + (sale.total || 0), 0);
+    },
+    enabled: !!activeShift && !!companyId && !!user,
   });
 
   // Filter by active store if selected
@@ -97,10 +113,9 @@ const DashboardHome = () => {
   const inStock = filteredDevices.filter(d => d.status === "available").length;
   const avgCheck = todaySales.length > 0 ? Math.round(todaySalesRevenue / todaySales.length) : 0;
 
-  const currentCash = (activeShift?.cash_start || 0) +
-    cashOps.reduce((sum: number, op: any) => {
-      return sum + (op.type === "income" ? (op.amount || 0) : -(op.amount || 0));
-    }, 0);
+  const deposits = cashOps.filter((o: any) => o.type === "deposit").reduce((s: number, o: any) => s + (o.amount || 0), 0);
+  const withdrawals = cashOps.filter((o: any) => o.type === "withdraw").reduce((s: number, o: any) => s + (o.amount || 0), 0);
+  const currentCash = (activeShift?.cash_start || 0) + shiftCashSales + deposits - withdrawals;
 
   const stats = [
     { label: "Выручка сегодня", value: `${todayRevenue.toLocaleString("ru")} ₽`, icon: DollarSign },

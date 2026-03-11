@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Smartphone, ShoppingCart, ArrowDownUp, Users,
   Headphones, Wrench, Tag, TrendingUp, Megaphone, DollarSign,
   UserCog, Clock, FileBarChart, Settings, HelpCircle, LogOut, CreditCard, Shield, Lock, Sparkles,
-  Store, ArrowRightLeft, BarChart3,
+  Store, ArrowRightLeft, BarChart3, Banknote,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
@@ -22,6 +22,7 @@ const navItems = [
   { to: "/dashboard/monitoring", label: "Мониторинг цен", icon: TrendingUp, requiredPlan: ["business", "premier"] },
   { to: "/dashboard/listings", label: "Объявления", icon: Megaphone, requiredPlan: ["business", "premier"] },
   { to: "/dashboard/finances", label: "Финансы", icon: DollarSign },
+  { to: "/dashboard/cash", label: "Касса", icon: Banknote },
   { to: "/dashboard/employees", label: "Сотрудники", icon: UserCog },
   { to: "/dashboard/shifts", label: "Смены", icon: Clock },
   { to: "/dashboard/reports", label: "Отчёты", icon: FileBarChart },

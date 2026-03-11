@@ -22,6 +22,7 @@ import PriceTagsPage from "./pages/dashboard/PriceTagsPage";
 import MonitoringPage from "./pages/dashboard/MonitoringPage";
 import ListingsPage from "./pages/dashboard/ListingsPage";
 import FinancesPage from "./pages/dashboard/FinancesPage";
+import CashPage from "./pages/dashboard/CashPage";
 import EmployeesPage from "./pages/dashboard/EmployeesPage";
 import ShiftsPage from "./pages/dashboard/ShiftsPage";
 import ReportsPage from "./pages/dashboard/ReportsPage";
@@ -80,6 +81,7 @@ const App = () => (
               <Route path="monitoring" element={<PlanGate feature="monitoring"><MonitoringPage /></PlanGate>} />
               <Route path="listings" element={<PlanGate feature="listings"><ListingsPage /></PlanGate>} />
               <Route path="finances" element={<FinancesPage />} />
+              <Route path="cash" element={<CashPage />} />
               <Route path="employees" element={<EmployeesPage />} />
               <Route path="shifts" element={<ShiftsPage />} />
               <Route path="reports" element={<ReportsPage />} />

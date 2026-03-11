@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Square } from "lucide-react";
+import { Plus, Square, ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -20,6 +20,7 @@ const ShiftsPage = () => {
   const [openClose, setOpenClose] = useState<string | null>(null);
   const [cashStart, setCashStart] = useState("");
   const [cashEnd, setCashEnd] = useState("");
+  const [expandedShift, setExpandedShift] = useState<string | null>(null);
 
   const { data: shifts = [], isLoading } = useQuery({
     queryKey: ["shifts", companyId],
@@ -30,7 +31,6 @@ const ShiftsPage = () => {
         .select("*, profiles!shifts_employee_id_fkey(full_name)")
         .eq("company_id", companyId)
         .order("start_time", { ascending: false });
-      // If join fails, fallback without join
       if (error) {
         const { data: d2 } = await supabase.from("shifts").select("*").eq("company_id", companyId).order("start_time", { ascending: false });
         return d2 || [];
@@ -40,7 +40,6 @@ const ShiftsPage = () => {
     enabled: !!companyId,
   });
 
-  // Get profiles to map employee names
   const { data: profiles = [] } = useQuery({
     queryKey: ["shift-profiles", companyId],
     queryFn: async () => {
@@ -51,9 +50,47 @@ const ShiftsPage = () => {
     enabled: !!companyId,
   });
 
+  // Cash operations for all shifts
+  const { data: allCashOps = [] } = useQuery({
+    queryKey: ["shift-cash-ops", companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data } = await supabase.from("cash_operations").select("shift_id, type, amount").eq("company_id", companyId);
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+
+  // Cash sales grouped by shift
+  const { data: allSales = [] } = useQuery({
+    queryKey: ["shift-sales-data", companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data } = await supabase.from("sales").select("employee_id, total, payment_method, created_at").eq("company_id", companyId);
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+
   const getEmployeeName = (employeeId: string) => {
     const p = profiles.find((p: any) => p.user_id === employeeId);
     return p?.full_name || "—";
+  };
+
+  const getShiftCashBreakdown = (shift: any) => {
+    const shiftOps = allCashOps.filter((o: any) => o.shift_id === shift.id);
+    const deposits = shiftOps.filter((o: any) => o.type === "deposit").reduce((s: number, o: any) => s + o.amount, 0);
+    const withdrawals = shiftOps.filter((o: any) => o.type === "withdraw").reduce((s: number, o: any) => s + o.amount, 0);
+    
+    // Cash sales during this shift
+    const shiftCashSales = allSales
+      .filter((s: any) => s.employee_id === shift.employee_id && s.payment_method === "cash" && s.created_at >= shift.start_time && (!shift.end_time || s.created_at <= shift.end_time))
+      .reduce((sum: number, s: any) => sum + (s.total || 0), 0);
+    
+    const systemCash = (shift.cash_start || 0) + shiftCashSales + deposits - withdrawals;
+    const diff = shift.cash_end != null ? (shift.cash_end - systemCash) : null;
+
+    return { deposits, withdrawals, shiftCashSales, systemCash, diff };
   };
 
   const activeShift = shifts.find((s: any) => s.status === "active" && s.employee_id === user?.id);
@@ -108,7 +145,31 @@ const ShiftsPage = () => {
               <DialogContent>
                 <DialogHeader><DialogTitle>Закрыть смену</DialogTitle></DialogHeader>
                 <form onSubmit={(e) => { e.preventDefault(); closeShift.mutate(activeShift.id); }} className="space-y-3">
-                  <div><Label>Касса на конец смены</Label><Input type="number" value={cashEnd} onChange={(e) => setCashEnd(e.target.value)} placeholder="0" /></div>
+                  {(() => {
+                    const bd = getShiftCashBreakdown(activeShift);
+                    return (
+                      <Card className="p-3 space-y-1 text-sm">
+                        <div className="flex justify-between"><span className="text-muted-foreground">Касса на начало:</span><span className="font-medium">{(activeShift.cash_start || 0).toLocaleString("ru")} ₽</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Продажи наличными:</span><span className="font-medium text-emerald-600">+{bd.shiftCashSales.toLocaleString("ru")} ₽</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Внесения:</span><span className="font-medium text-emerald-600">+{bd.deposits.toLocaleString("ru")} ₽</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Изъятия:</span><span className="font-medium text-destructive">−{bd.withdrawals.toLocaleString("ru")} ₽</span></div>
+                        <div className="flex justify-between border-t pt-1"><span className="font-semibold">Касса по системе:</span><span className="font-bold">{bd.systemCash.toLocaleString("ru")} ₽</span></div>
+                      </Card>
+                    );
+                  })()}
+                  <div><Label>Фактическая касса</Label><Input type="number" value={cashEnd} onChange={(e) => setCashEnd(e.target.value)} placeholder="0" /></div>
+                  {cashEnd && (() => {
+                    const bd = getShiftCashBreakdown(activeShift);
+                    const diff = (Number(cashEnd) || 0) - bd.systemCash;
+                    return (
+                      <Card className={`p-3 ${diff === 0 ? "bg-emerald-500/10" : "bg-destructive/10"}`}>
+                        <p className="text-xs text-muted-foreground">Разница</p>
+                        <p className={`text-xl font-bold ${diff === 0 ? "text-emerald-600" : "text-destructive"}`}>
+                          {diff > 0 ? "+" : ""}{diff.toLocaleString("ru")} ₽
+                        </p>
+                      </Card>
+                    );
+                  })()}
                   <Button type="submit" className="w-full" variant="destructive" disabled={closeShift.isPending}>
                     {closeShift.isPending ? "Закрытие..." : "Закрыть смену"}
                   </Button>
@@ -143,37 +204,59 @@ const ShiftsPage = () => {
         ) : shifts.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">Нет смен. Откройте первую смену.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Сотрудник</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Начало</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Конец</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Касса (начало)</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Касса (конец)</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Статус</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {shifts.map((s: any) => (
-                  <tr key={s.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 font-medium">{s.profiles?.full_name || getEmployeeName(s.employee_id)}</td>
-                    <td className="px-4 py-3">{new Date(s.start_time).toLocaleString("ru")}</td>
-                    <td className="px-4 py-3">{s.end_time ? new Date(s.end_time).toLocaleString("ru") : "—"}</td>
-                    <td className="px-4 py-3">{s.cash_start != null ? `${s.cash_start} ₽` : "—"}</td>
-                    <td className="px-4 py-3">{s.cash_end != null ? `${s.cash_end} ₽` : "—"}</td>
-                    <td className="px-4 py-3">
+          <div className="divide-y">
+            {shifts.map((s: any) => {
+              const bd = getShiftCashBreakdown(s);
+              const isExpanded = expandedShift === s.id;
+              return (
+                <div key={s.id}>
+                  <div
+                    className="flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors cursor-pointer"
+                    onClick={() => setExpandedShift(isExpanded ? null : s.id)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div>
+                        <p className="font-medium">{s.profiles?.full_name || getEmployeeName(s.employee_id)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(s.start_time).toLocaleString("ru")}
+                          {s.end_time ? ` — ${new Date(s.end_time).toLocaleString("ru")}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
                       <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                         s.status === "active" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
                       }`}>
                         {s.status === "active" ? "Активна" : "Закрыта"}
                       </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                    </div>
+                  </div>
+                  {isExpanded && (
+                    <div className="px-4 pb-4 pt-1">
+                      <Card className="p-4 space-y-2 text-sm bg-muted/30">
+                        <div className="flex justify-between"><span className="text-muted-foreground">Касса на начало:</span><span className="font-medium">{(s.cash_start || 0).toLocaleString("ru")} ₽</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Продажи наличными:</span><span className="font-medium text-emerald-600">+{bd.shiftCashSales.toLocaleString("ru")} ₽</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Внесения:</span><span className="font-medium text-emerald-600">+{bd.deposits.toLocaleString("ru")} ₽</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Изъятия:</span><span className="font-medium text-destructive">−{bd.withdrawals.toLocaleString("ru")} ₽</span></div>
+                        <div className="flex justify-between border-t pt-2"><span className="font-semibold">Касса по системе:</span><span className="font-bold">{bd.systemCash.toLocaleString("ru")} ₽</span></div>
+                        {s.cash_end != null && (
+                          <>
+                            <div className="flex justify-between"><span className="text-muted-foreground">Факт. касса:</span><span className="font-medium">{s.cash_end.toLocaleString("ru")} ₽</span></div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Разница:</span>
+                              <span className={`font-semibold ${bd.diff === 0 ? "text-emerald-600" : "text-destructive"}`}>
+                                {(bd.diff || 0) > 0 ? "+" : ""}{(bd.diff || 0).toLocaleString("ru")} ₽
+                              </span>
+                            </div>
+                          </>
+                        )}
+                      </Card>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </Card>
