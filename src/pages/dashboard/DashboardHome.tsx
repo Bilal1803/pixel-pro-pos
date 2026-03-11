@@ -10,7 +10,7 @@ import StoriesCarousel from "@/components/StoriesCarousel";
 import SectionHelp from "@/components/SectionHelp";
 import { SECTION_TIPS } from "@/data/sectionTips";
 import { useStoreContext } from "@/contexts/StoreContext";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 const TIPS_DISMISSED_KEY = "dashboard_tips_dismissed";
 
