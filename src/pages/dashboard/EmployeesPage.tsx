@@ -123,7 +123,20 @@ const EmployeesPage = () => {
     return store?.name || "—";
   };
 
-  
+
+  const sendCodeViaTelegram = async (code: string, fullName: string) => {
+    if (!companyId) return;
+    try {
+      const message = `👤 <b>Приглашение для ${fullName}</b>\n\nКод для входа в Mini App: <code>${code}</code>\n\nОткройте @filtercrm_bot → Mini App и введите этот код.`;
+      await supabase.functions.invoke("send-telegram", {
+        body: { company_id: companyId, message },
+      });
+      toast({ title: "Код отправлен в Telegram" });
+    } catch {
+      toast({ title: "Не удалось отправить", description: "Проверьте настройки Telegram", variant: "destructive" });
+    }
+  };
+
 
   // Create invitation
   const createInvitation = useMutation({
