@@ -365,6 +365,10 @@ const EmployeesPage = () => {
                   <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="mt-1" />
                 </div>
                 <div>
+                  <Label>Telegram (необязательно)</Label>
+                  <Input value={form.telegram} onChange={(e) => setForm({ ...form, telegram: e.target.value })} placeholder="@username" className="mt-1" />
+                </div>
+                <div>
                   <Label>Роль</Label>
                   <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v })}>
                     <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
