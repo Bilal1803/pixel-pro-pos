@@ -246,13 +246,21 @@ const ReportsPage = () => {
       ) : r ? (
         <>
           {/* KPI Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <Card>
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-                  <DollarSign className="h-3.5 w-3.5" /> Выручка
+                  <DollarSign className="h-3.5 w-3.5" /> Выручка от товаров
                 </div>
-                <p className="text-xl font-bold">{r.totalRevenue.toLocaleString("ru")} ₽</p>
+                <p className="text-xl font-bold">{(r.salesProductRevenue || 0).toLocaleString("ru")} ₽</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
+                  <ArrowDownUp className="h-3.5 w-3.5" /> Комиссии оплаты
+                </div>
+                <p className="text-xl font-bold">{(r.totalPaymentFees || 0).toLocaleString("ru")} ₽</p>
               </CardContent>
             </Card>
             <Card>
