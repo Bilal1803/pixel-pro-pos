@@ -138,7 +138,7 @@ const InventoryPage = () => {
     imeiCheckTimer.current = setTimeout(() => checkImeiDuplicate(imei), 400);
   };
 
-
+  const { data: devices = [], isLoading } = useQuery({
     queryKey: ["devices", companyId],
     queryFn: async () => {
       if (!companyId) return [];
