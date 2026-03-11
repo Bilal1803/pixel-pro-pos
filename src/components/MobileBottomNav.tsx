@@ -4,12 +4,15 @@ import {
   Users, DollarSign, UserCog, Wrench, Clock, FileBarChart,
   Settings, HelpCircle, CreditCard, Sparkles, Headphones,
   Store, BarChart3, ArrowRightLeft, Tag, TrendingUp, Megaphone,
-  MoreHorizontal,
+  MoreHorizontal, Shield, LogOut, Banknote,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useSubscription } from "@/hooks/useSubscription";
+import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
+import { useAuth } from "@/contexts/AuthContext";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
+import { Separator } from "@/components/ui/separator";
 
 const mainItems = [
   { to: "/dashboard", label: "Дашборд", icon: LayoutDashboard },
@@ -25,6 +28,7 @@ const moreItems = [
   { to: "/dashboard/shifts", label: "Смены", icon: Clock },
   { to: "/dashboard/repairs", label: "Ремонт", icon: Wrench },
   { to: "/dashboard/accessories", label: "Аксессуары", icon: Headphones },
+  { to: "/dashboard/cash", label: "Касса", icon: Banknote },
   { to: "/dashboard/monitoring", label: "Мониторинг", icon: TrendingUp },
   { to: "/dashboard/price-tags", label: "Ценники", icon: Tag },
   { to: "/dashboard/listings", label: "Объявления", icon: Megaphone },
@@ -46,6 +50,8 @@ const MobileBottomNav = () => {
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { subscription } = useSubscription();
+  const { isAdmin } = usePlatformAdmin();
+  const { signOut } = useAuth();
   const isPremier = subscription.plan === "premier";
 
   const allMoreItems = isPremier ? [...premierMoreItems, ...moreItems] : moreItems;
@@ -91,6 +97,35 @@ const MobileBottomNav = () => {
                 );
               })}
             </div>
+
+            {isAdmin && (
+              <>
+                <Separator className="my-4" />
+                <button
+                  onClick={() => {
+                    navigate("/admin");
+                    setDrawerOpen(false);
+                  }}
+                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
+                >
+                  <Shield className="h-5 w-5" />
+                  Админ-панель
+                </button>
+              </>
+            )}
+
+            <Separator className="my-4" />
+            <button
+              onClick={async () => {
+                setDrawerOpen(false);
+                await signOut();
+                navigate("/");
+              }}
+              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-accent transition-colors"
+            >
+              <LogOut className="h-5 w-5" />
+              Выйти
+            </button>
           </div>
         </DrawerContent>
       </Drawer>
