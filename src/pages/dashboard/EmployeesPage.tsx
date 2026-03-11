@@ -196,6 +196,20 @@ const EmployeesPage = () => {
     },
   });
 
+  const cancelInvitation = useMutation({
+    mutationFn: async (invitationId: string) => {
+      const { error } = await supabase.from("invitations").update({ status: "expired" }).eq("id", invitationId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invitations"] });
+      toast({ title: "Приглашение удалено" });
+    },
+    onError: (e: any) => {
+      toast({ title: "Ошибка", description: e.message, variant: "destructive" });
+    },
+  });
+
   const updateEmployee = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke("manage-employee", {
