@@ -64,7 +64,7 @@ const DashboardHome = () => {
     queryKey: ["active-shift-dash", user?.id],
     queryFn: async () => {
       if (!user) return null;
-      const { data } = await supabase.from("shifts").select("id, cash_start").eq("employee_id", user.id).eq("status", "active").limit(1).single();
+      const { data } = await supabase.from("shifts").select("id, cash_start, start_time").eq("employee_id", user.id).eq("status", "active").limit(1).single();
       return data;
     },
     enabled: !!user,
