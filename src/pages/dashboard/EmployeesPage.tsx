@@ -292,7 +292,7 @@ const EmployeesPage = () => {
   const handleCreateClose = () => {
     setCreateOpen(false);
     setInviteLink(null);
-    setForm({ fullName: "", phone: "", role: "employee", storeId: "" });
+    setForm({ fullName: "", phone: "", role: "employee", storeId: "", telegram: "" });
   };
 
   const copyCode = (code: string) => {
