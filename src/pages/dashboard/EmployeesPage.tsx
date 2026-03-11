@@ -43,7 +43,7 @@ const EmployeesPage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
-  const [form, setForm] = useState({ fullName: "", phone: "", role: "employee", storeId: "" });
+  const [form, setForm] = useState({ fullName: "", phone: "", role: "employee", storeId: "", telegram: "" });
   const [inviteLink, setInviteLink] = useState<string | null>(null);
 
   // Edit state
@@ -131,7 +131,10 @@ const EmployeesPage = () => {
       await supabase.functions.invoke("send-telegram", {
         body: { company_id: companyId, message },
       });
-      toast({ title: "Код отправлен в Telegram" });
+      toast({ 
+        title: "Приглашение отправлено в Telegram-бот", 
+        description: "Зайдите в бот и перешлите сообщение сотруднику" 
+      });
     } catch {
       toast({ title: "Не удалось отправить", description: "Проверьте настройки Telegram", variant: "destructive" });
     }
@@ -292,7 +295,7 @@ const EmployeesPage = () => {
   const handleCreateClose = () => {
     setCreateOpen(false);
     setInviteLink(null);
-    setForm({ fullName: "", phone: "", role: "employee", storeId: "" });
+    setForm({ fullName: "", phone: "", role: "employee", storeId: "", telegram: "" });
   };
 
   const copyCode = (code: string) => {
@@ -338,6 +341,9 @@ const EmployeesPage = () => {
                 <p className="text-sm text-muted-foreground">
                   Сообщите сотруднику этот код. Он действует 24 часа и может быть использован один раз. Сотрудник вводит его в Mini App.
                 </p>
+                {form.telegram && (
+                  <p className="text-xs text-muted-foreground">Telegram: <span className="font-medium">{form.telegram}</span></p>
+                )}
                 <div>
                   <Label>Код приглашения</Label>
                   <div className="flex items-center gap-2 mt-1">
@@ -363,6 +369,10 @@ const EmployeesPage = () => {
                 <div>
                   <Label>Телефон</Label>
                   <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="mt-1" />
+                </div>
+                <div>
+                  <Label>Telegram (необязательно)</Label>
+                  <Input value={form.telegram} onChange={(e) => setForm({ ...form, telegram: e.target.value })} placeholder="@username" className="mt-1" />
                 </div>
                 <div>
                   <Label>Роль</Label>
@@ -417,6 +427,8 @@ const EmployeesPage = () => {
                   </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => sendCodeViaTelegram(inv.code, inv.full_name)} title="Отправить в Telegram">
                     <Send className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => regenerateLink.mutate(inv.id)} title="Обновить код">
                     <RefreshCw className="h-4 w-4" />
                   </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => cancelInvitation.mutate(inv.id)}>
