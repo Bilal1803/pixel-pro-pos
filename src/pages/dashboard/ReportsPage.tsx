@@ -113,13 +113,15 @@ const ReportsPage = () => {
     if (!reportData) return;
     setDownloading(true);
     try {
-      const { sales, devices, shifts, profiles, expenses, buybacks, profileMap, totalRevenue, totalCost, totalExpenses, netProfit, totalBuybacks } = reportData;
+      const { sales, devices, shifts, profiles, expenses, buybacks, profileMap, totalRevenue, totalCost, totalExpenses, netProfit, totalBuybacks, totalPaymentFees, salesProductRevenue } = reportData;
 
       const summaryRows = [
         ["Отчёт за период", periodLabel],
         ["Дата формирования", format(new Date(), "dd.MM.yyyy HH:mm")],
         [], ["Показатель", "Значение"],
-        ["Выручка", `${totalRevenue.toLocaleString("ru")} ₽`],
+        ["Выручка от товаров", `${(salesProductRevenue || 0).toLocaleString("ru")} ₽`],
+        ["Комиссии оплаты", `${(totalPaymentFees || 0).toLocaleString("ru")} ₽`],
+        ["Общий оборот", `${totalRevenue.toLocaleString("ru")} ₽`],
         ["Себестоимость", `${totalCost.toLocaleString("ru")} ₽`],
         ["Расходы", `${totalExpenses.toLocaleString("ru")} ₽`],
         ["Чистая прибыль", `${netProfit.toLocaleString("ru")} ₽`],
