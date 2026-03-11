@@ -203,7 +203,7 @@ const TmaLayout = () => {
         <div className="text-center space-y-4 max-w-sm">
           <p className="text-lg font-semibold">Требуется авторизация</p>
           <p className="text-muted-foreground text-sm">
-            Откройте приложение через Telegram или используйте ссылку приглашения.
+            Откройте приложение через Telegram-бот @filtercrm_bot.
           </p>
         </div>
       </div>
