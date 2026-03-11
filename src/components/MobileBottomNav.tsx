@@ -1,34 +1,35 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, Smartphone, ShoppingCart, ArrowDownUp, Users,
-  DollarSign, UserCog, MoreHorizontal, Wrench, Tag, TrendingUp,
-  Megaphone, Clock, FileBarChart, Settings, HelpCircle, CreditCard, Sparkles, Headphones,
-  Store, BarChart3, ArrowRightLeft,
+  LayoutDashboard, Smartphone, ShoppingCart, ArrowDownUp,
+  Users, DollarSign, UserCog, Wrench, Clock, FileBarChart,
+  Settings, HelpCircle, CreditCard, Sparkles, Headphones,
+  Store, BarChart3, ArrowRightLeft, Tag, TrendingUp, Megaphone,
+  MoreHorizontal,
 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useSubscription } from "@/hooks/useSubscription";
-import QuickActionButton from "./QuickActionButton";
+import { Drawer, DrawerContent } from "@/components/ui/drawer";
 
 const mainItems = [
   { to: "/dashboard", label: "Дашборд", icon: LayoutDashboard },
   { to: "/dashboard/inventory", label: "Склад", icon: Smartphone },
   { to: "/dashboard/sales", label: "Продажи", icon: ShoppingCart },
   { to: "/dashboard/buyback", label: "Скупка", icon: ArrowDownUp },
-  { to: "/dashboard/customers", label: "Клиенты", icon: Users },
-  { to: "/dashboard/finances", label: "Финансы", icon: DollarSign },
-  { to: "/dashboard/employees", label: "Сотрудники", icon: UserCog },
 ];
 
 const moreItems = [
-  { to: "/dashboard/accessories", label: "Аксессуары", icon: Headphones },
-  { to: "/dashboard/repairs", label: "Ремонт", icon: Wrench },
-  { to: "/dashboard/price-tags", label: "Ценники", icon: Tag },
-  { to: "/dashboard/monitoring", label: "Мониторинг", icon: TrendingUp },
-  { to: "/dashboard/listings", label: "Объявления", icon: Megaphone },
+  { to: "/dashboard/customers", label: "Клиенты", icon: Users },
+  { to: "/dashboard/finances", label: "Финансы", icon: DollarSign },
+  { to: "/dashboard/employees", label: "Сотрудники", icon: UserCog },
   { to: "/dashboard/shifts", label: "Смены", icon: Clock },
+  { to: "/dashboard/repairs", label: "Ремонт", icon: Wrench },
+  { to: "/dashboard/accessories", label: "Аксессуары", icon: Headphones },
+  { to: "/dashboard/monitoring", label: "Мониторинг", icon: TrendingUp },
+  { to: "/dashboard/price-tags", label: "Ценники", icon: Tag },
+  { to: "/dashboard/listings", label: "Объявления", icon: Megaphone },
   { to: "/dashboard/reports", label: "Отчёты", icon: FileBarChart },
-  { to: "/dashboard/ai", label: "AI", icon: Sparkles },
+  { to: "/dashboard/ai", label: "AI Ассистент", icon: Sparkles },
   { to: "/dashboard/settings", label: "Настройки", icon: Settings },
   { to: "/dashboard/pricing", label: "Тарифы", icon: CreditCard },
   { to: "/dashboard/support", label: "Поддержка", icon: HelpCircle },
@@ -43,8 +44,7 @@ const premierMoreItems = [
 const MobileBottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [moreOpen, setMoreOpen] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const { subscription } = useSubscription();
   const isPremier = subscription.plan === "premier";
 
@@ -58,19 +58,17 @@ const MobileBottomNav = () => {
   const isInMoreSection = allMoreItems.some((item) => isActive(item.to));
 
   useEffect(() => {
-    setMoreOpen(false);
+    setDrawerOpen(false);
   }, [location.pathname]);
 
   return (
     <>
-      {moreOpen && (
-        <div className="fixed inset-0 z-[90] flex flex-col justify-end">
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in"
-            onClick={() => setMoreOpen(false)}
-          />
-          <div className="relative z-10 mx-2 mb-[72px] rounded-2xl border bg-card p-3 shadow-2xl animate-scale-in">
-            <div className="grid grid-cols-4 gap-1">
+      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <DrawerContent className="max-h-[80vh]">
+          <div className="px-4 pt-2 pb-6 overflow-y-auto">
+            <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-muted mb-4" />
+            <h3 className="text-sm font-semibold text-muted-foreground mb-3 px-1">Все разделы</h3>
+            <div className="grid grid-cols-3 gap-2">
               {allMoreItems.map((item) => {
                 const active = isActive(item.to);
                 return (
@@ -78,73 +76,64 @@ const MobileBottomNav = () => {
                     key={item.to}
                     onClick={() => {
                       navigate(item.to);
-                      setMoreOpen(false);
+                      setDrawerOpen(false);
                     }}
                     className={cn(
-                      "flex flex-col items-center gap-1.5 rounded-xl p-3 min-h-[64px] transition-all duration-150 active:scale-95",
+                      "flex flex-col items-center gap-2 rounded-xl p-4 min-h-[72px] transition-all duration-150 active:scale-95",
                       active
                         ? "bg-primary/10 text-primary"
                         : "text-muted-foreground hover:bg-accent"
                     )}
                   >
                     <item.icon className="h-5 w-5" />
-                    <span className="text-[10px] font-medium leading-tight text-center">{item.label}</span>
+                    <span className="text-[11px] font-medium leading-tight text-center">{item.label}</span>
                   </button>
                 );
               })}
             </div>
           </div>
-        </div>
-      )}
+        </DrawerContent>
+      </Drawer>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-[80] border-t bg-card/95 backdrop-blur-md print:hidden safe-area-bottom">
-        <div
-          ref={scrollRef}
-          className="flex items-stretch overflow-x-auto scrollbar-none"
-          style={{ WebkitOverflowScrolling: "touch" }}
-        >
-          {mainItems.map((item, i) => {
+      <nav className="fixed bottom-0 left-0 right-0 z-[80] border-t bg-background shadow-[0_-2px_10px_rgba(0,0,0,0.08)] print:hidden"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)" }}
+      >
+        <div className="flex items-stretch justify-around">
+          {mainItems.map((item) => {
             const active = isActive(item.to);
-            const showQuickAction = i === 3;
             return (
-              <div key={item.to} className="contents">
-                {showQuickAction && (
-                  <div className="flex items-center justify-center px-1">
-                    <QuickActionButton />
-                  </div>
+              <button
+                key={item.to}
+                onClick={() => navigate(item.to)}
+                className={cn(
+                  "relative flex flex-col items-center justify-center gap-0.5 min-w-0 flex-1 min-h-[56px] py-2 transition-colors active:scale-95 transition-transform duration-150",
+                  active ? "text-primary" : "text-muted-foreground"
                 )}
-                <button
-                  onClick={() => navigate(item.to)}
-                  className={cn(
-                    "relative flex flex-col items-center justify-center gap-0.5 min-w-[64px] min-h-[56px] px-2 py-1.5 transition-colors flex-shrink-0 active:scale-95 transition-transform duration-150",
-                    active ? "text-primary" : "text-muted-foreground"
-                  )}
-                >
-                  <item.icon className={cn("h-5 w-5 transition-transform duration-200", active && "scale-110")} />
-                  <span className={cn(
-                    "text-[10px] leading-tight font-medium",
-                    active && "font-semibold"
-                  )}>
-                    {item.label}
-                  </span>
-                  {active && (
-                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-primary animate-scale-in" />
-                  )}
-                </button>
-              </div>
+              >
+                <item.icon className={cn("h-5 w-5 transition-transform duration-200", active && "scale-110")} />
+                <span className={cn(
+                  "text-[10px] leading-tight font-medium",
+                  active && "font-semibold"
+                )}>
+                  {item.label}
+                </span>
+                {active && (
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-primary animate-scale-in" />
+                )}
+              </button>
             );
           })}
 
           <button
-            onClick={() => setMoreOpen(!moreOpen)}
+            onClick={() => setDrawerOpen(!drawerOpen)}
             className={cn(
-              "relative flex flex-col items-center justify-center gap-0.5 min-w-[64px] min-h-[56px] px-2 py-1.5 transition-colors flex-shrink-0 active:scale-95 transition-transform duration-150",
-              isInMoreSection || moreOpen ? "text-primary" : "text-muted-foreground"
+              "relative flex flex-col items-center justify-center gap-0.5 min-w-0 flex-1 min-h-[56px] py-2 transition-colors active:scale-95 transition-transform duration-150",
+              isInMoreSection || drawerOpen ? "text-primary" : "text-muted-foreground"
             )}
           >
             <MoreHorizontal className="h-5 w-5" />
             <span className="text-[10px] leading-tight font-medium">Ещё</span>
-            {(isInMoreSection && !moreOpen) && (
+            {(isInMoreSection && !drawerOpen) && (
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-primary" />
             )}
           </button>

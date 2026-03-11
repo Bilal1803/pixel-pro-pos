@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, X, Smartphone, ShoppingBag, Wrench, Trash2, Undo2 } from "lucide-react";
+import { Plus, Search, Smartphone, ShoppingBag, Wrench, Trash2, Undo2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,18 +11,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import SectionHelp from "@/components/SectionHelp";
 import { SECTION_TIPS } from "@/data/sectionTips";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 type CartItem = {
   id: string;
@@ -53,6 +44,7 @@ const SalesPage = () => {
   // Return state
   const [returnOpen, setReturnOpen] = useState(false);
   const [returnTarget, setReturnTarget] = useState<any>(null);
+  const [selectedReturnItems, setSelectedReturnItems] = useState<Set<string>>(new Set());
 
   const { data: sales = [], isLoading } = useQuery({
     queryKey: ["sales", companyId],
@@ -233,16 +225,17 @@ const SalesPage = () => {
     onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
 
+  // Partial return
   const returnSale = useMutation({
-    mutationFn: async (sale: any) => {
-      const items = sale.sale_items || [];
+    mutationFn: async ({ sale, itemIds }: { sale: any; itemIds: string[] }) => {
+      const items = (sale.sale_items || []).filter((i: any) => itemIds.includes(i.id));
+      const isFullReturn = items.length === (sale.sale_items || []).length;
 
-      // Restore devices to "available"
+      // Restore devices and stock for selected items
       for (const item of items) {
         if (item.item_type === "device" && item.device_id) {
           await supabase.from("devices").update({ status: "available" as any }).eq("id", item.device_id);
         }
-        // Restore product stock
         if (item.item_type === "accessory" && item.product_id) {
           const { data: prod } = await supabase.from("products").select("stock").eq("id", item.product_id).single();
           if (prod) {
@@ -251,9 +244,19 @@ const SalesPage = () => {
         }
       }
 
-      // Delete sale items then sale
-      await supabase.from("sale_items").delete().eq("sale_id", sale.id);
-      await supabase.from("sales").delete().eq("id", sale.id);
+      if (isFullReturn) {
+        // Full return: delete all items and the sale
+        await supabase.from("sale_items").delete().eq("sale_id", sale.id);
+        await supabase.from("sales").delete().eq("id", sale.id);
+      } else {
+        // Partial return: delete selected items and update sale total
+        const returnAmount = items.reduce((s: number, i: any) => s + Number(i.price || 0), 0);
+        for (const item of items) {
+          await supabase.from("sale_items").delete().eq("id", item.id);
+        }
+        const newTotal = Math.max(0, Number(sale.total) - returnAmount);
+        await supabase.from("sales").update({ total: newTotal }).eq("id", sale.id);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sales"] });
@@ -264,10 +267,34 @@ const SalesPage = () => {
       queryClient.invalidateQueries({ queryKey: ["devices-dash"] });
       setReturnOpen(false);
       setReturnTarget(null);
-      toast({ title: "Продажа возвращена", description: "Товары возвращены на склад" });
+      setSelectedReturnItems(new Set());
+      toast({ title: "Возврат оформлен", description: "Товары возвращены на склад" });
     },
     onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
+
+  const openReturnDialog = (sale: any) => {
+    setReturnTarget(sale);
+    // Pre-select all items
+    const allIds = new Set<string>((sale.sale_items || []).map((i: any) => i.id));
+    setSelectedReturnItems(allIds);
+    setReturnOpen(true);
+  };
+
+  const toggleReturnItem = (itemId: string) => {
+    setSelectedReturnItems(prev => {
+      const next = new Set(prev);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
+  };
+
+  const returnTotal = returnTarget
+    ? (returnTarget.sale_items || [])
+        .filter((i: any) => selectedReturnItems.has(i.id))
+        .reduce((s: number, i: any) => s + Number(i.price || 0), 0)
+    : 0;
 
   const paymentLabels: Record<string, string> = { cash: "Наличные", card: "Карта", transfer: "Перевод", installments: "Рассрочка", mixed: "Смешанная" };
   const typeIcons: Record<string, React.ReactNode> = {
@@ -506,8 +533,8 @@ const SalesPage = () => {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={() => { setReturnTarget(s); setReturnOpen(true); }}
-                        title="Возврат продажи"
+                        onClick={() => openReturnDialog(s)}
+                        title="Возврат"
                       >
                         <Undo2 className="h-4 w-4" />
                       </Button>
@@ -520,36 +547,58 @@ const SalesPage = () => {
         )}
       </Card>
 
-      {/* Return confirmation */}
-      <AlertDialog open={returnOpen} onOpenChange={setReturnOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Возврат продажи</AlertDialogTitle>
-            <AlertDialogDescription>
-              Продажа на сумму <strong>{returnTarget?.total} ₽</strong> будет отменена. Устройства вернутся на склад, остатки аксессуаров будут восстановлены. Это действие нельзя отменить.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+      {/* Partial return dialog */}
+      <Dialog open={returnOpen} onOpenChange={(v) => { setReturnOpen(v); if (!v) { setReturnTarget(null); setSelectedReturnItems(new Set()); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Возврат товаров</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Выберите позиции для возврата. Устройства вернутся на склад, остатки аксессуаров будут восстановлены.
+          </p>
           {returnTarget && (
-            <div className="rounded-lg border divide-y text-sm max-h-40 overflow-y-auto">
-              {(returnTarget.sale_items || []).map((item: any, idx: number) => (
-                <div key={idx} className="px-3 py-2 flex justify-between">
-                  <span>{item.name}{item.quantity > 1 ? ` ×${item.quantity}` : ""}</span>
-                  <span className="text-muted-foreground">{item.price} ₽</span>
-                </div>
-              ))}
+            <div className="space-y-2 max-h-[300px] overflow-y-auto">
+              {(returnTarget.sale_items || []).map((item: any) => {
+                const isChecked = selectedReturnItems.has(item.id);
+                return (
+                  <label
+                    key={item.id}
+                    className="flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                  >
+                    <Checkbox
+                      checked={isChecked}
+                      onCheckedChange={() => toggleReturnItem(item.id)}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{item.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.item_type === "device" ? "Устройство" : item.item_type === "accessory" ? "Аксессуар" : "Услуга"}
+                        {item.quantity > 1 ? ` × ${item.quantity}` : ""}
+                      </p>
+                    </div>
+                    <span className="text-sm font-semibold shrink-0">{Number(item.price).toLocaleString("ru")} ₽</span>
+                  </label>
+                );
+              })}
             </div>
           )}
-          <AlertDialogFooter>
-            <AlertDialogCancel>Отмена</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => returnTarget && returnSale.mutate(returnTarget)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          <div className="flex items-center justify-between rounded-lg bg-muted/50 px-4 py-3">
+            <span className="text-sm font-medium">Сумма возврата</span>
+            <span className="text-lg font-bold text-destructive">{returnTotal.toLocaleString("ru")} ₽</span>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setReturnOpen(false)}>Отмена</Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              disabled={selectedReturnItems.size === 0 || returnSale.isPending}
+              onClick={() => returnTarget && returnSale.mutate({ sale: returnTarget, itemIds: Array.from(selectedReturnItems) })}
             >
               {returnSale.isPending ? "Возврат..." : "Оформить возврат"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

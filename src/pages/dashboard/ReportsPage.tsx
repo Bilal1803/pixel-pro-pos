@@ -56,13 +56,14 @@ const ReportsPage = () => {
     queryKey: ["report-data", companyId, fromISO, toISO],
     queryFn: async () => {
       if (!companyId) return null;
-      const [salesRes, devicesRes, shiftsRes, profilesRes, expensesRes, buybacksRes] = await Promise.all([
+      const [salesRes, devicesRes, shiftsRes, profilesRes, expensesRes, buybacksRes, repairsRes] = await Promise.all([
         supabase.from("sales").select("*, sale_items(name, price, cost_price, item_type, quantity, device_id, devices(*)), clients(name, phone)").eq("company_id", companyId).gte("created_at", fromISO).lte("created_at", toISO).order("created_at", { ascending: false }),
         supabase.from("devices").select("*").eq("company_id", companyId),
         supabase.from("shifts").select("*").eq("company_id", companyId).gte("start_time", fromISO).lte("start_time", toISO).order("start_time", { ascending: false }),
         supabase.from("profiles").select("user_id, full_name, phone, email").eq("company_id", companyId),
         supabase.from("expenses").select("*").eq("company_id", companyId).gte("date", format(dateRange.from, "yyyy-MM-dd")).lte("date", format(dateRange.to, "yyyy-MM-dd")),
         supabase.from("buybacks").select("*, clients(name, phone)").eq("company_id", companyId).gte("created_at", fromISO).lte("created_at", toISO),
+        supabase.from("repairs").select("price, status, created_at").eq("company_id", companyId).in("status", ["done", "ready"]).gte("created_at", fromISO).lte("created_at", toISO),
       ]);
 
       const sales = salesRes.data || [];
@@ -71,17 +72,20 @@ const ReportsPage = () => {
       const profiles = profilesRes.data || [];
       const expenses = expensesRes.data || [];
       const buybacks = buybacksRes.data || [];
+      const repairs = repairsRes.data || [];
 
       const profileMap = new Map(profiles.map((p: any) => [p.user_id, p]));
 
-      const totalRevenue = sales.reduce((s: number, sale: any) => s + Number(sale.total || 0), 0);
+      const salesRevenue = sales.reduce((s: number, sale: any) => s + Number(sale.total || 0), 0);
+      const repairRevenue = repairs.reduce((s: number, r: any) => s + Number(r.price || 0), 0);
+      const totalRevenue = salesRevenue + repairRevenue;
       const totalCost = sales.reduce((s: number, sale: any) => {
         return s + (sale.sale_items || []).reduce((is: number, i: any) => is + Number(i.cost_price || 0) * (i.quantity || 1), 0);
       }, 0);
       const totalExpenses = expenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
       const netProfit = totalRevenue - totalCost - totalExpenses;
       const totalBuybacks = buybacks.reduce((s: number, b: any) => s + Number(b.purchase_price || 0), 0);
-      const avgCheck = sales.length > 0 ? Math.round(totalRevenue / sales.length) : 0;
+      const avgCheck = sales.length > 0 ? Math.round(salesRevenue / sales.length) : 0;
 
       // Employee stats
       const employeeStats = new Map<string, { name: string; shifts: any[]; revenue: number; salesCount: number }>();

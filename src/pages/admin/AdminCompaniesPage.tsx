@@ -5,18 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Building2, Ban, CheckCircle, Trash2, Eye, Search, LogIn } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Ban, CheckCircle, Eye, Search, LogIn } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { useToast as useToast2 } from "@/hooks/use-toast";
+import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 
 const AdminCompaniesPage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { adminRole } = usePlatformAdmin();
+  const canBlock = adminRole === "full_admin";
+  const canChangePlan = adminRole === "full_admin" || adminRole === "manager";
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<any>(null);
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [impersonating, setImpersonating] = useState<string | null>(null);
 
   const handleImpersonate = async (userId: string) => {
@@ -149,16 +151,20 @@ const AdminCompaniesPage = () => {
                       </td>
                       <td className="px-4 py-3">{getEmployeeCount(c.id)}</td>
                       <td className="px-4 py-3">
-                        <Select value={plan} onValueChange={(v) => updatePlan.mutate({ companyId: c.id, plan: v })}>
-                          <SelectTrigger className="w-28 h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="start">Старт</SelectItem>
-                            <SelectItem value="business">Бизнес</SelectItem>
-                            <SelectItem value="premier">Премьер</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        {canChangePlan ? (
+                          <Select value={plan} onValueChange={(v) => updatePlan.mutate({ companyId: c.id, plan: v })}>
+                            <SelectTrigger className="w-28 h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="start">Старт</SelectItem>
+                              <SelectItem value="business">Бизнес</SelectItem>
+                              <SelectItem value="premier">Премьер</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Badge variant="secondary">{pl.label}</Badge>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         {isBlocked ? (
@@ -175,15 +181,17 @@ const AdminCompaniesPage = () => {
                           <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setSelected(c)} title="Подробнее">
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8"
-                            onClick={() => toggleBlock.mutate({ companyId: c.id, blocked: !isBlocked })}
-                            title={isBlocked ? "Разблокировать" : "Заблокировать"}
-                          >
-                            {isBlocked ? <CheckCircle className="h-4 w-4 text-success" /> : <Ban className="h-4 w-4 text-destructive" />}
-                          </Button>
+                          {canBlock && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              onClick={() => toggleBlock.mutate({ companyId: c.id, blocked: !isBlocked })}
+                              title={isBlocked ? "Разблокировать" : "Заблокировать"}
+                            >
+                              {isBlocked ? <CheckCircle className="h-4 w-4 text-success" /> : <Ban className="h-4 w-4 text-destructive" />}
+                            </Button>
+                          )}
                           {owner && (
                             <Button
                               size="icon"
