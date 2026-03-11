@@ -265,7 +265,7 @@ const TmaSalesPage = () => {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-lg font-bold">Корзина</h1>
+          <h1 className="text-lg font-bold text-gray-900">Корзина</h1>
           <Button variant="ghost" size="sm" onClick={() => setStep("search")}>
             <Plus className="h-4 w-4 mr-1" /> Добавить
           </Button>
@@ -273,7 +273,7 @@ const TmaSalesPage = () => {
 
         <div className="space-y-2">
           {cart.map((item) => (
-            <Card key={item.id} className="p-3">
+            <Card key={item.id} className="p-3 bg-white border-gray-100 shadow-sm">
               <div className="flex items-center justify-between">
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium truncate">{item.name}</p>
@@ -363,7 +363,7 @@ const TmaSalesPage = () => {
         )}
 
         {/* Total & Submit */}
-        <div className="rounded-2xl bg-primary p-4 text-primary-foreground">
+        <div className="rounded-2xl bg-blue-600 p-4 text-white">
           <div className="space-y-1 mb-3">
             <div className="flex items-center justify-between text-sm opacity-80">
               <span>Стоимость товаров</span>
@@ -381,7 +381,7 @@ const TmaSalesPage = () => {
             </div>
           </div>
           <Button
-            className="w-full h-12 text-base bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+            className="w-full h-12 text-base bg-white text-blue-600 hover:bg-blue-50"
             onClick={() => submitSale.mutate()}
             disabled={submitSale.isPending}
           >
@@ -395,7 +395,7 @@ const TmaSalesPage = () => {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-bold">Новая продажа</h1>
+      <h1 className="text-lg font-bold text-gray-900">Новая продажа</h1>
 
       {cart.length > 0 && (
         <Button className="w-full h-12" onClick={() => setStep("cart")}>
@@ -406,10 +406,10 @@ const TmaSalesPage = () => {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input
           placeholder="IMEI, модель, название..."
-          className="pl-10 h-12 rounded-xl text-base"
+          className="pl-10 h-12 rounded-xl text-sm bg-white border-gray-200 shadow-sm"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           autoFocus
@@ -418,9 +418,9 @@ const TmaSalesPage = () => {
 
       {/* Devices */}
       <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Устройства</p>
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Устройства</p>
         {filteredDevices.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4 text-center">Устройства не найдены</p>
+          <p className="text-sm text-gray-400 py-4 text-center">Устройства не найдены</p>
         ) : (
           <div className="space-y-2">
             {filteredDevices.map((d) => {
@@ -430,9 +430,9 @@ const TmaSalesPage = () => {
                   key={d.id}
                   onClick={() => addDevice(d)}
                   disabled={!!cart.find(c => c.device_id === d.id)}
-                  className="w-full text-left rounded-xl border bg-card p-3 transition-all active:scale-[0.98] disabled:opacity-50"
+                  className="w-full text-left rounded-xl bg-white border border-gray-100 p-3 shadow-sm active:scale-[0.98] transition-transform disabled:opacity-50"
                 >
-                  <p className="text-sm font-medium">{d.brand} {d.model}</p>
+                  <p className="text-sm font-semibold text-gray-900">{d.brand} {d.model}</p>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs text-muted-foreground">{d.memory} {d.color}</span>
                     <Badge variant="outline" className="text-[10px]">{d.imei.slice(-6)}</Badge>
@@ -461,13 +461,13 @@ const TmaSalesPage = () => {
       {/* Accessories */}
       {products.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Аксессуары</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Аксессуары</p>
           <div className="space-y-2">
             {products.slice(0, 10).map((p) => (
               <button
                 key={p.id}
                 onClick={() => addProduct(p)}
-                className="w-full text-left rounded-xl border bg-card p-3 transition-all active:scale-[0.98]"
+                className="w-full text-left rounded-xl bg-white border border-gray-100 p-3 shadow-sm active:scale-[0.98] transition-transform"
               >
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium">{p.name}</p>
