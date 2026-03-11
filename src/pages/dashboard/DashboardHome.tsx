@@ -54,7 +54,6 @@ const DashboardHome = () => {
     queryKey: ["repairs-dash", companyId],
     queryFn: async () => {
       if (!companyId) return [];
-      const today = new Date().toISOString().split("T")[0];
       const { data } = await supabase.from("repairs").select("price, status, created_at").eq("company_id", companyId).in("status", ["done", "ready"]);
       return data || [];
     },

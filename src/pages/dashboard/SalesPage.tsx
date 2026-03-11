@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, X, Smartphone, ShoppingBag, Wrench, Trash2, Undo2 } from "lucide-react";
+import { Plus, Search, Smartphone, ShoppingBag, Wrench, Trash2, Undo2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";

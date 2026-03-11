@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Building2, Ban, CheckCircle, Eye, Search, LogIn } from "lucide-react";
+import { Ban, CheckCircle, Eye, Search, LogIn } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
