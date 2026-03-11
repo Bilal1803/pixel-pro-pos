@@ -22,6 +22,7 @@ import PriceTagsPage from "./pages/dashboard/PriceTagsPage";
 import MonitoringPage from "./pages/dashboard/MonitoringPage";
 import ListingsPage from "./pages/dashboard/ListingsPage";
 import FinancesPage from "./pages/dashboard/FinancesPage";
+import CashPage from "./pages/dashboard/CashPage";
 import EmployeesPage from "./pages/dashboard/EmployeesPage";
 import ShiftsPage from "./pages/dashboard/ShiftsPage";
 import ReportsPage from "./pages/dashboard/ReportsPage";
