@@ -80,6 +80,22 @@ const DashboardHome = () => {
     enabled: !!activeShift?.id,
   });
 
+  // Cash sales during active shift
+  const { data: shiftCashSales = 0 } = useQuery({
+    queryKey: ["shift-cash-sales-dash", activeShift?.id, companyId],
+    queryFn: async () => {
+      if (!activeShift || !companyId || !user) return 0;
+      const { data } = await supabase.from("sales")
+        .select("total")
+        .eq("company_id", companyId)
+        .eq("payment_method", "cash")
+        .eq("employee_id", user.id)
+        .gte("created_at", activeShift.start_time);
+      return (data || []).reduce((s: number, sale: any) => s + (sale.total || 0), 0);
+    },
+    enabled: !!activeShift && !!companyId && !!user,
+  });
+
   // Filter by active store if selected
   const filteredDevices = activeStoreId ? devices.filter(d => d.store_id === activeStoreId) : devices;
   const filteredSales = activeStoreId ? sales.filter((s: any) => s.store_id === activeStoreId) : sales;
