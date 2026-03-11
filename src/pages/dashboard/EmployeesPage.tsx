@@ -29,7 +29,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Copy, MoreVertical, Pencil, Trash2, RefreshCw, UserX } from "lucide-react";
+import { Plus, Copy, MoreVertical, Pencil, Trash2, RefreshCw, UserX, Send } from "lucide-react";
 import { format } from "date-fns";
 
 const roleLabels: Record<string, string> = {
@@ -123,7 +123,20 @@ const EmployeesPage = () => {
     return store?.name || "—";
   };
 
-  
+
+  const sendCodeViaTelegram = async (code: string, fullName: string) => {
+    if (!companyId) return;
+    try {
+      const message = `👤 <b>Приглашение для ${fullName}</b>\n\nКод для входа в Mini App: <code>${code}</code>\n\nОткройте @filtercrm_bot → Mini App и введите этот код.`;
+      await supabase.functions.invoke("send-telegram", {
+        body: { company_id: companyId, message },
+      });
+      toast({ title: "Код отправлен в Telegram" });
+    } catch {
+      toast({ title: "Не удалось отправить", description: "Проверьте настройки Telegram", variant: "destructive" });
+    }
+  };
+
 
   // Create invitation
   const createInvitation = useMutation({
@@ -334,7 +347,10 @@ const EmployeesPage = () => {
                     </Button>
                   </div>
                 </div>
-                <DialogFooter>
+                <DialogFooter className="flex-col sm:flex-row gap-2">
+                  <Button variant="outline" className="gap-2" onClick={() => sendCodeViaTelegram(inviteLink!, form.fullName)}>
+                    <Send className="h-4 w-4" />Отправить в Telegram
+                  </Button>
                   <Button onClick={handleCreateClose}>Закрыть</Button>
                 </DialogFooter>
               </div>
@@ -399,7 +415,8 @@ const EmployeesPage = () => {
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyCode(inv.code)}>
                     <Copy className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => regenerateLink.mutate(inv.id)}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => sendCodeViaTelegram(inv.code, inv.full_name)} title="Отправить в Telegram">
+                    <Send className="h-4 w-4" />
                     <RefreshCw className="h-4 w-4" />
                   </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => cancelInvitation.mutate(inv.id)}>
