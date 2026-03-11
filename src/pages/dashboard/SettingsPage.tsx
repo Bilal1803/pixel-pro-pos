@@ -143,6 +143,8 @@ const SettingsPage = () => {
         </Card>
       )}
 
+      <PaymentSettingsCard companyId={companyId} />
+
       <TelegramSettingsCard companyId={companyId} />
 
       <Card className="p-6 card-shadow">
