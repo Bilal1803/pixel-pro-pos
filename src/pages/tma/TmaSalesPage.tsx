@@ -406,10 +406,10 @@ const TmaSalesPage = () => {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input
           placeholder="IMEI, модель, название..."
-          className="pl-10 h-12 rounded-xl text-base"
+          className="pl-10 h-12 rounded-xl text-sm bg-white border-gray-200 shadow-sm"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           autoFocus
