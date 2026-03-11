@@ -697,6 +697,53 @@ export type Database = {
           },
         ]
       }
+      payment_settings: {
+        Row: {
+          company_id: string
+          created_at: string
+          fixed_fee: number
+          id: string
+          is_active: boolean
+          label: string
+          method: string
+          percent_fee: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          fixed_fee?: number
+          id?: string
+          is_active?: boolean
+          label: string
+          method: string
+          percent_fee?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          fixed_fee?: number
+          id?: string
+          is_active?: boolean
+          label?: string
+          method?: string
+          percent_fee?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_admins: {
         Row: {
           created_at: string
@@ -991,6 +1038,7 @@ export type Database = {
           id: string
           item_type: Database["public"]["Enums"]["sale_item_type"]
           name: string
+          original_price: number | null
           price: number
           product_id: string | null
           quantity: number | null
@@ -1002,6 +1050,7 @@ export type Database = {
           id?: string
           item_type: Database["public"]["Enums"]["sale_item_type"]
           name: string
+          original_price?: number | null
           price: number
           product_id?: string | null
           quantity?: number | null
@@ -1013,6 +1062,7 @@ export type Database = {
           id?: string
           item_type?: Database["public"]["Enums"]["sale_item_type"]
           name?: string
+          original_price?: number | null
           price?: number
           product_id?: string | null
           quantity?: number | null
@@ -1051,7 +1101,9 @@ export type Database = {
           employee_id: string | null
           id: string
           notes: string | null
+          payment_fee: number | null
           payment_method: Database["public"]["Enums"]["payment_method"]
+          price_change_reason: string | null
           store_id: string | null
           total: number
         }
@@ -1063,7 +1115,9 @@ export type Database = {
           employee_id?: string | null
           id?: string
           notes?: string | null
+          payment_fee?: number | null
           payment_method?: Database["public"]["Enums"]["payment_method"]
+          price_change_reason?: string | null
           store_id?: string | null
           total?: number
         }
@@ -1075,7 +1129,9 @@ export type Database = {
           employee_id?: string | null
           id?: string
           notes?: string | null
+          payment_fee?: number | null
           payment_method?: Database["public"]["Enums"]["payment_method"]
+          price_change_reason?: string | null
           store_id?: string | null
           total?: number
         }
