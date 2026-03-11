@@ -97,6 +97,35 @@ const MobileBottomNav = () => {
                 );
               })}
             </div>
+
+            {isAdmin && (
+              <>
+                <Separator className="my-4" />
+                <button
+                  onClick={() => {
+                    navigate("/admin");
+                    setDrawerOpen(false);
+                  }}
+                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
+                >
+                  <Shield className="h-5 w-5" />
+                  Админ-панель
+                </button>
+              </>
+            )}
+
+            <Separator className="my-4" />
+            <button
+              onClick={async () => {
+                setDrawerOpen(false);
+                await signOut();
+                navigate("/");
+              }}
+              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-accent transition-colors"
+            >
+              <LogOut className="h-5 w-5" />
+              Выйти
+            </button>
           </div>
         </DrawerContent>
       </Drawer>
