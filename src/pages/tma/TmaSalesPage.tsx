@@ -432,7 +432,7 @@ const TmaSalesPage = () => {
                   disabled={!!cart.find(c => c.device_id === d.id)}
                   className="w-full text-left rounded-xl bg-white border border-gray-100 p-3 shadow-sm active:scale-[0.98] transition-transform disabled:opacity-50"
                 >
-                  <p className="text-sm font-medium">{d.brand} {d.model}</p>
+                  <p className="text-sm font-semibold text-gray-900">{d.brand} {d.model}</p>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs text-muted-foreground">{d.memory} {d.color}</span>
                     <Badge variant="outline" className="text-[10px]">{d.imei.slice(-6)}</Badge>
