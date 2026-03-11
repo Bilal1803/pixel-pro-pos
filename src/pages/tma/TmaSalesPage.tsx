@@ -430,7 +430,7 @@ const TmaSalesPage = () => {
                   key={d.id}
                   onClick={() => addDevice(d)}
                   disabled={!!cart.find(c => c.device_id === d.id)}
-                  className="w-full text-left rounded-xl border bg-card p-3 transition-all active:scale-[0.98] disabled:opacity-50"
+                  className="w-full text-left rounded-xl bg-white border border-gray-100 p-3 shadow-sm active:scale-[0.98] transition-transform disabled:opacity-50"
                 >
                   <p className="text-sm font-medium">{d.brand} {d.model}</p>
                   <div className="flex items-center gap-2 mt-1">
