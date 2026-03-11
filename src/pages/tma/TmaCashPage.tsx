@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Plus, Minus, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
+import { Plus, Minus, ArrowDownToLine, ArrowUpFromLine, Banknote } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { sendTelegramNotification } from "@/lib/telegram";
+
 const TmaCashPage = () => {
   const { companyId, user } = useAuth();
   const { toast } = useToast();
@@ -21,10 +21,11 @@ const TmaCashPage = () => {
     queryKey: ["tma-profile", user?.id],
     queryFn: async () => {
       if (!user) return null;
-      const { data } = await supabase.from("profiles").select("store_id").eq("user_id", user.id).single();
+      const { data } = await supabase.from("profiles").select("store_id").eq("user_id", user.id).maybeSingle();
       return data;
     },
     enabled: !!user,
+    staleTime: 5 * 60_000,
   });
 
   const { data: activeShift } = useQuery({
@@ -35,6 +36,7 @@ const TmaCashPage = () => {
       return data;
     },
     enabled: !!user && !!companyId,
+    staleTime: 30_000,
   });
 
   const { data: cashOps = [] } = useQuery({
@@ -45,24 +47,23 @@ const TmaCashPage = () => {
       return data || [];
     },
     enabled: !!activeShift,
+    staleTime: 15_000,
   });
 
-  // Today's cash sales
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
   const { data: cashSalesTotal = 0 } = useQuery({
-    queryKey: ["tma-cash-sales-total", companyId, profile?.store_id],
+    queryKey: ["tma-cash-sales-total", companyId, activeShift?.id],
     queryFn: async () => {
-      if (!companyId || !activeShift) return 0;
+      if (!companyId || !activeShift || !user) return 0;
       const { data } = await supabase.from("sales")
         .select("total")
         .eq("company_id", companyId)
         .eq("payment_method", "cash")
-        .eq("employee_id", user!.id)
+        .eq("employee_id", user.id)
         .gte("created_at", activeShift.start_time);
       return (data || []).reduce((s, sale) => s + (sale.total || 0), 0);
     },
-    enabled: !!companyId && !!activeShift,
+    enabled: !!companyId && !!activeShift && !!user,
+    staleTime: 30_000,
   });
 
   const deposits = cashOps.filter(o => o.type === "deposit").reduce((s, o) => s + o.amount, 0);
@@ -73,13 +74,9 @@ const TmaCashPage = () => {
     mutationFn: async () => {
       if (!companyId || !user || !activeShift) throw new Error("Откройте смену");
       const { error } = await supabase.from("cash_operations").insert({
-        company_id: companyId,
-        employee_id: user.id,
-        store_id: profile?.store_id || null,
-        shift_id: activeShift.id,
-        type: opType,
-        amount: Number(amount),
-        reason: reason.trim() || null,
+        company_id: companyId, employee_id: user.id,
+        store_id: profile?.store_id || null, shift_id: activeShift.id,
+        type: opType, amount: Number(amount), reason: reason.trim() || null,
       });
       if (error) throw error;
     },
@@ -87,18 +84,12 @@ const TmaCashPage = () => {
       const label = opType === "deposit" ? "Внесение" : "Изъятие";
       const emoji = opType === "deposit" ? "📥" : "📤";
       const amountNum = Number(amount);
-
-      setAmount("");
-      setReason("");
+      setAmount(""); setReason("");
       queryClient.invalidateQueries({ queryKey: ["tma-cash-ops"] });
-      toast({ title: opType === "deposit" ? "Внесение записано" : "Изъятие записано" });
-
+      toast({ title: `${label} записано` });
       if (companyId) {
-        sendTelegramNotification(
-          companyId,
-          "cash",
-          `${emoji} <b>${label}</b>\n\n💵 Сумма: <b>${amountNum.toLocaleString("ru")} ₽</b>${reason.trim() ? `\n📝 Причина: ${reason.trim()}` : ""}`
-        );
+        sendTelegramNotification(companyId, "cash",
+          `${emoji} <b>${label}</b>\n\n💵 Сумма: <b>${amountNum.toLocaleString("ru")} ₽</b>${reason.trim() ? `\n📝 ${reason.trim()}` : ""}`);
       }
     },
     onError: (e: any) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
@@ -106,28 +97,30 @@ const TmaCashPage = () => {
 
   if (!activeShift) {
     return (
-      <div className="py-20 text-center space-y-2">
-        <p className="text-lg font-bold">Смена не открыта</p>
-        <p className="text-sm text-muted-foreground">Откройте смену в разделе «Смена»</p>
+      <div className="py-16 text-center space-y-3">
+        <div className="mx-auto h-14 w-14 rounded-full bg-amber-50 flex items-center justify-center">
+          <Banknote className="h-7 w-7 text-amber-600" />
+        </div>
+        <p className="text-base font-bold text-gray-900">Смена не открыта</p>
+        <p className="text-sm text-gray-500">Откройте смену в разделе «Смена»</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-5">
-      <h1 className="text-lg font-bold">Касса</h1>
+      <h1 className="text-lg font-bold text-gray-900">Касса</h1>
 
-      <Card className="p-4 text-center">
-        <p className="text-xs text-muted-foreground">Наличные в кассе</p>
-        <p className="text-3xl font-bold mt-1">{currentCash.toLocaleString("ru")} ₽</p>
-      </Card>
+      <div className="bg-white rounded-xl border border-gray-100 p-5 text-center shadow-sm">
+        <p className="text-xs text-gray-500 mb-1">Наличные в кассе</p>
+        <p className="text-3xl font-bold text-gray-900">{currentCash.toLocaleString("ru")} ₽</p>
+      </div>
 
-      {/* Operation type */}
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={() => setOpType("deposit")}
           className={`flex items-center justify-center gap-2 rounded-xl border p-4 text-sm font-medium transition-all active:scale-95 ${
-            opType === "deposit" ? "border-emerald-500 bg-emerald-500/10 text-emerald-600" : "bg-card"
+            opType === "deposit" ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "bg-white border-gray-200 text-gray-600"
           }`}
         >
           <ArrowDownToLine className="h-5 w-5" /> Внести
@@ -135,7 +128,7 @@ const TmaCashPage = () => {
         <button
           onClick={() => setOpType("withdraw")}
           className={`flex items-center justify-center gap-2 rounded-xl border p-4 text-sm font-medium transition-all active:scale-95 ${
-            opType === "withdraw" ? "border-destructive bg-destructive/10 text-destructive" : "bg-card"
+            opType === "withdraw" ? "border-red-300 bg-red-50 text-red-700" : "bg-white border-gray-200 text-gray-600"
           }`}
         >
           <ArrowUpFromLine className="h-5 w-5" /> Изъять
@@ -144,45 +137,29 @@ const TmaCashPage = () => {
 
       <div className="space-y-3">
         <div>
-          <Label>Сумма</Label>
-          <Input
-            type="number"
-            placeholder="0"
-            className="mt-1 h-12 text-lg font-bold rounded-xl"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
+          <Label className="text-gray-700">Сумма</Label>
+          <Input type="number" placeholder="0" className="mt-1 h-12 text-lg font-bold rounded-xl bg-white border-gray-200" value={amount} onChange={(e) => setAmount(e.target.value)} />
         </div>
         <div>
-          <Label>Причина</Label>
-          <Input
-            placeholder="Необязательно"
-            className="mt-1 h-12 rounded-xl"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-          />
+          <Label className="text-gray-700">Причина</Label>
+          <Input placeholder="Необязательно" className="mt-1 h-12 rounded-xl bg-white border-gray-200" value={reason} onChange={(e) => setReason(e.target.value)} />
         </div>
-        <Button
-          className="w-full h-12 text-base rounded-xl"
-          onClick={() => submitOp.mutate()}
-          disabled={submitOp.isPending || !amount || Number(amount) <= 0}
-        >
+        <Button className="w-full h-12 text-base rounded-xl bg-blue-600 hover:bg-blue-700" onClick={() => submitOp.mutate()} disabled={submitOp.isPending || !amount || Number(amount) <= 0}>
           {submitOp.isPending ? "Сохранение..." : opType === "deposit" ? "Внести деньги" : "Изъять деньги"}
         </Button>
       </div>
 
-      {/* History */}
       {cashOps.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">История операций</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">История операций</p>
           <div className="space-y-1.5">
             {cashOps.map((op: any) => (
-              <div key={op.id} className="flex items-center justify-between rounded-xl border p-3">
+              <div key={op.id} className="flex items-center justify-between bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
                 <div className="flex items-center gap-2">
-                  {op.type === "deposit" ? <Plus className="h-4 w-4 text-emerald-500" /> : <Minus className="h-4 w-4 text-destructive" />}
-                  <span className="text-sm">{op.reason || (op.type === "deposit" ? "Внесение" : "Изъятие")}</span>
+                  {op.type === "deposit" ? <Plus className="h-4 w-4 text-emerald-500" /> : <Minus className="h-4 w-4 text-red-500" />}
+                  <span className="text-sm text-gray-700">{op.reason || (op.type === "deposit" ? "Внесение" : "Изъятие")}</span>
                 </div>
-                <span className={`text-sm font-semibold ${op.type === "deposit" ? "text-emerald-500" : "text-destructive"}`}>
+                <span className={`text-sm font-semibold ${op.type === "deposit" ? "text-emerald-600" : "text-red-600"}`}>
                   {op.type === "deposit" ? "+" : "−"}{op.amount.toLocaleString("ru")} ₽
                 </span>
               </div>

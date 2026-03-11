@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Play, Square, Plus, Minus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,10 +23,11 @@ const TmaShiftPage = () => {
     queryKey: ["tma-profile", user?.id],
     queryFn: async () => {
       if (!user) return null;
-      const { data } = await supabase.from("profiles").select("store_id").eq("user_id", user.id).single();
+      const { data } = await supabase.from("profiles").select("store_id").eq("user_id", user.id).maybeSingle();
       return data;
     },
     enabled: !!user,
+    staleTime: 5 * 60_000,
   });
 
   const { data: activeShift, isLoading } = useQuery({
@@ -38,24 +38,20 @@ const TmaShiftPage = () => {
       return data;
     },
     enabled: !!user && !!companyId,
+    staleTime: 30_000,
   });
 
-  // Shift sales
   const { data: shiftSales = [] } = useQuery({
     queryKey: ["tma-shift-sales", activeShift?.id],
     queryFn: async () => {
-      if (!activeShift || !companyId) return [];
-      const { data } = await supabase.from("sales")
-        .select("total, payment_method")
-        .eq("company_id", companyId)
-        .eq("employee_id", user!.id)
-        .gte("created_at", activeShift.start_time);
+      if (!activeShift || !companyId || !user) return [];
+      const { data } = await supabase.from("sales").select("total, payment_method").eq("company_id", companyId).eq("employee_id", user.id).gte("created_at", activeShift.start_time);
       return data || [];
     },
     enabled: !!activeShift,
+    staleTime: 30_000,
   });
 
-  // Cash operations
   const { data: cashOps = [] } = useQuery({
     queryKey: ["tma-cash-ops", activeShift?.id],
     queryFn: async () => {
@@ -64,6 +60,7 @@ const TmaShiftPage = () => {
       return data || [];
     },
     enabled: !!activeShift,
+    staleTime: 15_000,
   });
 
   const shiftRevenue = shiftSales.reduce((s, sale) => s + (sale.total || 0), 0);
@@ -77,11 +74,8 @@ const TmaShiftPage = () => {
     mutationFn: async () => {
       if (!companyId || !user) throw new Error("Не авторизован");
       const { error } = await supabase.from("shifts").insert({
-        company_id: companyId,
-        employee_id: user.id,
-        store_id: profile?.store_id || null,
-        cash_start: Number(cashStart) || 0,
-        status: "active",
+        company_id: companyId, employee_id: user.id,
+        store_id: profile?.store_id || null, cash_start: Number(cashStart) || 0, status: "active",
       });
       if (error) throw error;
     },
@@ -89,13 +83,9 @@ const TmaShiftPage = () => {
       setCashStart("");
       queryClient.invalidateQueries({ queryKey: ["tma-active-shift"] });
       toast({ title: "Смена открыта" });
-
       if (companyId) {
-        sendTelegramNotification(
-          companyId,
-          "shift_open",
-          `▶️ <b>Смена открыта</b>\n\n💵 Касса: <b>${Number(cashStart || 0).toLocaleString("ru")} ₽</b>\n🕐 ${format(new Date(), "HH:mm dd.MM.yyyy")}`
-        );
+        sendTelegramNotification(companyId, "shift_open",
+          `▶️ <b>Смена открыта</b>\n\n💵 Касса: <b>${Number(cashStart || 0).toLocaleString("ru")} ₽</b>\n🕐 ${format(new Date(), "HH:mm dd.MM.yyyy")}`);
       }
     },
     onError: (e: any) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
@@ -105,56 +95,45 @@ const TmaShiftPage = () => {
     mutationFn: async () => {
       if (!activeShift) throw new Error("Нет активной смены");
       const { error } = await supabase.from("shifts").update({
-        status: "closed",
-        end_time: new Date().toISOString(),
-        cash_end: Number(cashEnd) || 0,
+        status: "closed", end_time: new Date().toISOString(), cash_end: Number(cashEnd) || 0,
       }).eq("id", activeShift.id);
       if (error) throw error;
     },
     onSuccess: () => {
       const finalDiff = (Number(cashEnd) || 0) - systemCash;
       const diffText = finalDiff === 0 ? "✅ Без расхождений" : `⚠️ Разница: ${finalDiff > 0 ? "+" : ""}${finalDiff.toLocaleString("ru")} ₽`;
-
-      setCashEnd("");
-      setCloseOpen(false);
+      setCashEnd(""); setCloseOpen(false);
       queryClient.invalidateQueries({ queryKey: ["tma-active-shift"] });
       toast({ title: "Смена закрыта" });
-
       if (companyId) {
-        sendTelegramNotification(
-          companyId,
-          "shift_close",
-          `⏹ <b>Смена закрыта</b>\n\n📊 Продаж: <b>${shiftSales.length}</b>\n💰 Выручка: <b>${shiftRevenue.toLocaleString("ru")} ₽</b>\n💵 Наличные: ${cashSales.toLocaleString("ru")} ₽\n💳 Карта: ${cardSales.toLocaleString("ru")} ₽\n🏦 Касса по системе: ${systemCash.toLocaleString("ru")} ₽\n💰 Факт: ${(Number(cashEnd) || 0).toLocaleString("ru")} ₽\n${diffText}`
-        );
+        sendTelegramNotification(companyId, "shift_close",
+          `⏹ <b>Смена закрыта</b>\n\n📊 Продаж: <b>${shiftSales.length}</b>\n💰 Выручка: <b>${shiftRevenue.toLocaleString("ru")} ₽</b>\n💵 Наличные: ${cashSales.toLocaleString("ru")} ₽\n💳 Карта: ${cardSales.toLocaleString("ru")} ₽\n🏦 Система: ${systemCash.toLocaleString("ru")} ₽\n💰 Факт: ${(Number(cashEnd) || 0).toLocaleString("ru")} ₽\n${diffText}`);
       }
     },
     onError: (e: any) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
 
   if (isLoading) {
-    return <div className="py-20 text-center text-muted-foreground">Загрузка...</div>;
+    return <div className="py-20 text-center text-gray-400">Загрузка...</div>;
   }
 
-  // No active shift — show open form
   if (!activeShift) {
     return (
-      <div className="space-y-6 pt-4">
-        <div className="text-center space-y-2">
-          <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-            <Play className="h-8 w-8 text-primary" />
+      <div className="space-y-6 pt-6">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-16 w-16 rounded-full bg-blue-50 flex items-center justify-center">
+            <Play className="h-8 w-8 text-blue-600" />
           </div>
-          <h1 className="text-lg font-bold">Открыть смену</h1>
-          <p className="text-sm text-muted-foreground">Введите сумму наличных в кассе</p>
+          <h1 className="text-lg font-bold text-gray-900">Открыть смену</h1>
+          <p className="text-sm text-gray-500">Введите сумму наличных в кассе</p>
         </div>
         <div className="space-y-3">
           <Input
-            type="number"
-            placeholder="0"
-            className="h-14 text-center text-2xl font-bold rounded-xl"
-            value={cashStart}
-            onChange={(e) => setCashStart(e.target.value)}
+            type="number" placeholder="0"
+            className="h-14 text-center text-2xl font-bold rounded-xl bg-white border-gray-200"
+            value={cashStart} onChange={(e) => setCashStart(e.target.value)}
           />
-          <Button className="w-full h-14 text-base rounded-xl" onClick={() => openShift.mutate()} disabled={openShift.isPending}>
+          <Button className="w-full h-14 text-base rounded-xl bg-blue-600 hover:bg-blue-700" onClick={() => openShift.mutate()} disabled={openShift.isPending}>
             <Play className="h-5 w-5 mr-2" />
             {openShift.isPending ? "Открытие..." : "Начать смену"}
           </Button>
@@ -163,64 +142,50 @@ const TmaShiftPage = () => {
     );
   }
 
-  // Active shift — show stats
   const diff = (Number(cashEnd) || 0) - systemCash;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold">Смена</h1>
-          <p className="text-xs text-muted-foreground">
-            с {format(new Date(activeShift.start_time), "HH:mm")}
-          </p>
+          <h1 className="text-lg font-bold text-gray-900">Смена</h1>
+          <p className="text-xs text-gray-500">с {format(new Date(activeShift.start_time), "HH:mm")}</p>
         </div>
-        <Button variant="destructive" size="sm" className="rounded-xl" onClick={() => setCloseOpen(true)}>
+        <Button size="sm" className="rounded-xl bg-red-500 hover:bg-red-600 text-white" onClick={() => setCloseOpen(true)}>
           <Square className="h-4 w-4 mr-1" /> Закрыть
         </Button>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 gap-3">
-        <Card className="p-3.5">
-          <p className="text-xs text-muted-foreground">Продажи</p>
-          <p className="text-lg font-bold">{shiftSales.length}</p>
-        </Card>
-        <Card className="p-3.5">
-          <p className="text-xs text-muted-foreground">Выручка</p>
-          <p className="text-lg font-bold">{shiftRevenue.toLocaleString("ru")} ₽</p>
-        </Card>
-        <Card className="p-3.5">
-          <p className="text-xs text-muted-foreground">Наличные</p>
-          <p className="text-lg font-bold">{cashSales.toLocaleString("ru")} ₽</p>
-        </Card>
-        <Card className="p-3.5">
-          <p className="text-xs text-muted-foreground">Карта / перевод</p>
-          <p className="text-lg font-bold">{cardSales.toLocaleString("ru")} ₽</p>
-        </Card>
+        {[
+          { label: "Продажи", value: String(shiftSales.length) },
+          { label: "Выручка", value: `${shiftRevenue.toLocaleString("ru")} ₽` },
+          { label: "Наличные", value: `${cashSales.toLocaleString("ru")} ₽` },
+          { label: "Карта / перевод", value: `${cardSales.toLocaleString("ru")} ₽` },
+        ].map((s) => (
+          <div key={s.label} className="bg-white rounded-xl border border-gray-100 p-3.5 shadow-sm">
+            <p className="text-xs text-gray-500">{s.label}</p>
+            <p className="text-lg font-bold text-gray-900 mt-0.5">{s.value}</p>
+          </div>
+        ))}
       </div>
 
-      <Card className="p-4">
-        <p className="text-xs text-muted-foreground mb-1">Касса по системе</p>
-        <p className="text-2xl font-bold">{systemCash.toLocaleString("ru")} ₽</p>
-      </Card>
+      <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+        <p className="text-xs text-gray-500 mb-1">Касса по системе</p>
+        <p className="text-2xl font-bold text-gray-900">{systemCash.toLocaleString("ru")} ₽</p>
+      </div>
 
-      {/* Cash ops log */}
       {cashOps.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Операции</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Операции</p>
           <div className="space-y-1.5">
             {cashOps.map((op: any) => (
-              <div key={op.id} className="flex items-center justify-between rounded-xl border p-3">
+              <div key={op.id} className="flex items-center justify-between bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
                 <div className="flex items-center gap-2">
-                  {op.type === "deposit" ? (
-                    <Plus className="h-4 w-4 text-emerald-500" />
-                  ) : (
-                    <Minus className="h-4 w-4 text-destructive" />
-                  )}
-                  <span className="text-sm">{op.reason || (op.type === "deposit" ? "Внесение" : "Изъятие")}</span>
+                  {op.type === "deposit" ? <Plus className="h-4 w-4 text-emerald-500" /> : <Minus className="h-4 w-4 text-red-500" />}
+                  <span className="text-sm text-gray-700">{op.reason || (op.type === "deposit" ? "Внесение" : "Изъятие")}</span>
                 </div>
-                <span className={`text-sm font-semibold ${op.type === "deposit" ? "text-emerald-500" : "text-destructive"}`}>
+                <span className={`text-sm font-semibold ${op.type === "deposit" ? "text-emerald-600" : "text-red-600"}`}>
                   {op.type === "deposit" ? "+" : "−"}{op.amount.toLocaleString("ru")} ₽
                 </span>
               </div>
@@ -229,43 +194,36 @@ const TmaShiftPage = () => {
         </div>
       )}
 
-      {/* Close shift dialog */}
       <Dialog open={closeOpen} onOpenChange={setCloseOpen}>
-        <DialogContent>
+        <DialogContent className="bg-white">
           <DialogHeader>
-            <DialogTitle>Закрытие смены</DialogTitle>
+            <DialogTitle className="text-gray-900">Закрытие смены</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><span className="text-muted-foreground">Продажи:</span> <strong>{shiftSales.length}</strong></div>
-              <div><span className="text-muted-foreground">Выручка:</span> <strong>{shiftRevenue.toLocaleString("ru")} ₽</strong></div>
-              <div><span className="text-muted-foreground">Наличные:</span> <strong>{cashSales.toLocaleString("ru")} ₽</strong></div>
-              <div><span className="text-muted-foreground">Карта:</span> <strong>{cardSales.toLocaleString("ru")} ₽</strong></div>
+              <div className="text-gray-500">Продажи: <strong className="text-gray-900">{shiftSales.length}</strong></div>
+              <div className="text-gray-500">Выручка: <strong className="text-gray-900">{shiftRevenue.toLocaleString("ru")} ₽</strong></div>
+              <div className="text-gray-500">Наличные: <strong className="text-gray-900">{cashSales.toLocaleString("ru")} ₽</strong></div>
+              <div className="text-gray-500">Карта: <strong className="text-gray-900">{cardSales.toLocaleString("ru")} ₽</strong></div>
             </div>
-            <Card className="p-3">
-              <p className="text-xs text-muted-foreground">Касса по системе</p>
-              <p className="text-xl font-bold">{systemCash.toLocaleString("ru")} ₽</p>
-            </Card>
+            <div className="bg-gray-50 rounded-xl p-3">
+              <p className="text-xs text-gray-500">Касса по системе</p>
+              <p className="text-xl font-bold text-gray-900">{systemCash.toLocaleString("ru")} ₽</p>
+            </div>
             <div>
-              <Label>Фактическая касса</Label>
-              <Input
-                type="number"
-                placeholder="0"
-                className="mt-1 h-12 text-lg font-bold"
-                value={cashEnd}
-                onChange={(e) => setCashEnd(e.target.value)}
-              />
+              <Label className="text-gray-700">Фактическая касса</Label>
+              <Input type="number" placeholder="0" className="mt-1 h-12 text-lg font-bold bg-white border-gray-200" value={cashEnd} onChange={(e) => setCashEnd(e.target.value)} />
             </div>
             {cashEnd && (
-              <Card className={`p-3 ${diff === 0 ? "bg-emerald-500/10" : "bg-destructive/10"}`}>
-                <p className="text-xs text-muted-foreground">Разница</p>
-                <p className={`text-xl font-bold ${diff === 0 ? "text-emerald-500" : "text-destructive"}`}>
+              <div className={`rounded-xl p-3 ${diff === 0 ? "bg-emerald-50" : "bg-red-50"}`}>
+                <p className="text-xs text-gray-500">Разница</p>
+                <p className={`text-xl font-bold ${diff === 0 ? "text-emerald-600" : "text-red-600"}`}>
                   {diff > 0 ? "+" : ""}{diff.toLocaleString("ru")} ₽
                 </p>
-              </Card>
+              </div>
             )}
             <DialogFooter>
-              <Button className="w-full" variant="destructive" onClick={() => closeShift.mutate()} disabled={closeShift.isPending}>
+              <Button className="w-full bg-red-500 hover:bg-red-600 text-white" onClick={() => closeShift.mutate()} disabled={closeShift.isPending}>
                 {closeShift.isPending ? "Закрытие..." : "Закрыть смену"}
               </Button>
             </DialogFooter>
