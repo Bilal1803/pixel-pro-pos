@@ -743,7 +743,7 @@ const InventoryPage = () => {
                   </Select>
                 </div>
                 <div><Label>Заметки</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-                <Button type="submit" className="w-full" disabled={addDevice.isPending}>
+                <Button type="submit" className="w-full" disabled={addDevice.isPending || !!imeiDuplicate?.blocked}>
                   {addDevice.isPending ? "Сохранение..." : "Добавить"}
                 </Button>
               </form>
