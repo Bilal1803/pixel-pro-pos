@@ -544,10 +544,10 @@ const EmployeesPage = () => {
             <DialogTitle>Новая ссылка-приглашение</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">Старая ссылка больше не действует. Отправьте новую:</p>
+            <p className="text-sm text-muted-foreground">Старый код больше не действует. Новый код:</p>
             <div className="flex items-center gap-2">
-              <code className="flex-1 rounded bg-muted px-3 py-2 text-xs font-mono break-all">{linkDialogUrl}</code>
-              <Button variant="outline" size="icon" onClick={() => copyLink(linkDialogUrl)}>
+              <code className="flex-1 rounded bg-muted px-4 py-3 text-2xl font-mono text-center tracking-[0.3em]">{linkDialogUrl}</code>
+              <Button variant="outline" size="icon" onClick={() => copyCode(linkDialogUrl)}>
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
