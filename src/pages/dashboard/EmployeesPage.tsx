@@ -146,8 +146,7 @@ const EmployeesPage = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["invitations"] });
-      const url = getInviteUrl(data.code);
-      setInviteLink(url);
+      setInviteLink(data.code);
       toast({ title: "Приглашение создано" });
     },
     onError: (e: any) => {
