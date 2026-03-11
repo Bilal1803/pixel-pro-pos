@@ -277,6 +277,7 @@ const InventoryPage = () => {
       toast({ title: "Устройство добавлено" });
       setOpen(false);
       setForm({ model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing", notes: "", sim_type: "", condition: "used" });
+      setImeiDuplicate(null);
     },
     onError: (e: Error) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
