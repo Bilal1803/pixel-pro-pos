@@ -323,13 +323,13 @@ const EmployeesPage = () => {
             {inviteLink ? (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Отправьте сотруднику эту ссылку. Она действует 24 часа и может быть использована один раз.
+                  Сообщите сотруднику этот код. Он действует 24 часа и может быть использован один раз. Сотрудник вводит его в Mini App.
                 </p>
                 <div>
-                  <Label>Ссылка-приглашение</Label>
+                  <Label>Код приглашения</Label>
                   <div className="flex items-center gap-2 mt-1">
-                    <code className="flex-1 rounded bg-muted px-3 py-2 text-xs font-mono break-all">{inviteLink}</code>
-                    <Button variant="outline" size="icon" onClick={() => copyLink(inviteLink)}>
+                    <code className="flex-1 rounded bg-muted px-4 py-3 text-2xl font-mono text-center tracking-[0.3em]">{inviteLink}</code>
+                    <Button variant="outline" size="icon" onClick={() => copyCode(inviteLink!)}>
                       <Copy className="h-4 w-4" />
                     </Button>
                   </div>
