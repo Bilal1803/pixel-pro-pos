@@ -196,6 +196,20 @@ const EmployeesPage = () => {
     },
   });
 
+  const cancelInvitation = useMutation({
+    mutationFn: async (invitationId: string) => {
+      const { error } = await supabase.from("invitations").update({ status: "expired" }).eq("id", invitationId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invitations"] });
+      toast({ title: "Приглашение удалено" });
+    },
+    onError: (e: any) => {
+      toast({ title: "Ошибка", description: e.message, variant: "destructive" });
+    },
+  });
+
   const updateEmployee = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke("manage-employee", {
@@ -391,6 +405,9 @@ const EmployeesPage = () => {
                   </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => regenerateLink.mutate(inv.id)}>
                     <RefreshCw className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => cancelInvitation.mutate(inv.id)}>
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
