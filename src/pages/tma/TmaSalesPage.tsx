@@ -265,7 +265,7 @@ const TmaSalesPage = () => {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-lg font-bold">Корзина</h1>
+          <h1 className="text-lg font-bold text-gray-900">Корзина</h1>
           <Button variant="ghost" size="sm" onClick={() => setStep("search")}>
             <Plus className="h-4 w-4 mr-1" /> Добавить
           </Button>
