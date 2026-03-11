@@ -420,7 +420,7 @@ const TmaSalesPage = () => {
       <div>
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Устройства</p>
         {filteredDevices.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4 text-center">Устройства не найдены</p>
+          <p className="text-sm text-gray-400 py-4 text-center">Устройства не найдены</p>
         ) : (
           <div className="space-y-2">
             {filteredDevices.map((d) => {
