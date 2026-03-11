@@ -77,13 +77,16 @@ const ReportsPage = () => {
       const profileMap = new Map(profiles.map((p: any) => [p.user_id, p]));
 
       const salesRevenue = sales.reduce((s: number, sale: any) => s + Number(sale.total || 0), 0);
+      const totalPaymentFees = sales.reduce((s: number, sale: any) => s + Number(sale.payment_fee || 0), 0);
+      const salesProductRevenue = salesRevenue - totalPaymentFees;
       const repairRevenue = repairs.reduce((s: number, r: any) => s + Number(r.price || 0), 0);
       const totalRevenue = salesRevenue + repairRevenue;
       const totalCost = sales.reduce((s: number, sale: any) => {
         return s + (sale.sale_items || []).reduce((is: number, i: any) => is + Number(i.cost_price || 0) * (i.quantity || 1), 0);
       }, 0);
       const totalExpenses = expenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-      const netProfit = totalRevenue - totalCost - totalExpenses;
+      // Profit excludes payment fees
+      const netProfit = salesProductRevenue + repairRevenue - totalCost - totalExpenses;
       const totalBuybacks = buybacks.reduce((s: number, b: any) => s + Number(b.purchase_price || 0), 0);
       const avgCheck = sales.length > 0 ? Math.round(salesRevenue / sales.length) : 0;
 
@@ -96,6 +99,7 @@ const ReportsPage = () => {
       return {
         sales, devices, shifts, profiles, expenses, buybacks, profileMap,
         totalRevenue, totalCost, totalExpenses, netProfit, totalBuybacks, avgCheck,
+        totalPaymentFees, salesProductRevenue,
         employeeStats,
       };
     },
@@ -109,13 +113,15 @@ const ReportsPage = () => {
     if (!reportData) return;
     setDownloading(true);
     try {
-      const { sales, devices, shifts, profiles, expenses, buybacks, profileMap, totalRevenue, totalCost, totalExpenses, netProfit, totalBuybacks } = reportData;
+      const { sales, devices, shifts, profiles, expenses, buybacks, profileMap, totalRevenue, totalCost, totalExpenses, netProfit, totalBuybacks, totalPaymentFees, salesProductRevenue } = reportData;
 
       const summaryRows = [
         ["Отчёт за период", periodLabel],
         ["Дата формирования", format(new Date(), "dd.MM.yyyy HH:mm")],
         [], ["Показатель", "Значение"],
-        ["Выручка", `${totalRevenue.toLocaleString("ru")} ₽`],
+        ["Выручка от товаров", `${(salesProductRevenue || 0).toLocaleString("ru")} ₽`],
+        ["Комиссии оплаты", `${(totalPaymentFees || 0).toLocaleString("ru")} ₽`],
+        ["Общий оборот", `${totalRevenue.toLocaleString("ru")} ₽`],
         ["Себестоимость", `${totalCost.toLocaleString("ru")} ₽`],
         ["Расходы", `${totalExpenses.toLocaleString("ru")} ₽`],
         ["Чистая прибыль", `${netProfit.toLocaleString("ru")} ₽`],
@@ -242,13 +248,21 @@ const ReportsPage = () => {
       ) : r ? (
         <>
           {/* KPI Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <Card>
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-                  <DollarSign className="h-3.5 w-3.5" /> Выручка
+                  <DollarSign className="h-3.5 w-3.5" /> Выручка от товаров
                 </div>
-                <p className="text-xl font-bold">{r.totalRevenue.toLocaleString("ru")} ₽</p>
+                <p className="text-xl font-bold">{(r.salesProductRevenue || 0).toLocaleString("ru")} ₽</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
+                  <ArrowDownUp className="h-3.5 w-3.5" /> Комиссии оплаты
+                </div>
+                <p className="text-xl font-bold">{(r.totalPaymentFees || 0).toLocaleString("ru")} ₽</p>
               </CardContent>
             </Card>
             <Card>

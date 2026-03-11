@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DollarSign, TrendingDown, TrendingUp, Plus, Wrench } from "lucide-react";
+import { DollarSign, TrendingDown, TrendingUp, Plus, Wrench, CreditCard } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -28,7 +28,7 @@ const FinancesPage = () => {
       if (!companyId) return [];
       const { data } = await supabase
         .from("sales")
-        .select("total, created_at, sale_items(price, cost_price)")
+        .select("total, payment_fee, created_at, sale_items(price, cost_price)")
         .eq("company_id", companyId)
         .gte("created_at", monthStart);
       return data || [];
@@ -94,22 +94,26 @@ const FinancesPage = () => {
 
   const monthExpenses = expenses.filter((e: any) => new Date(e.date) >= new Date(monthStart));
 
-  const salesRevenue = sales.reduce((s: number, sale: any) => s + (sale.total || 0), 0);
+  const totalRevenue = sales.reduce((s: number, sale: any) => s + (sale.total || 0), 0);
+  const totalPaymentFees = sales.reduce((s: number, sale: any) => s + (sale.payment_fee || 0), 0);
+  const salesProductRevenue = totalRevenue - totalPaymentFees;
   const repairRevenue = repairs.reduce((s: number, r: any) => s + (r.price || 0), 0);
-  const revenue = salesRevenue + repairRevenue;
 
   const costOfGoods = sales.reduce((s: number, sale: any) => {
     return s + (sale.sale_items || []).reduce((a: number, i: any) => a + (i.cost_price || 0), 0);
   }, 0);
   const totalExpenses = monthExpenses.reduce((s: number, e: any) => s + (e.amount || 0), 0);
-  const netProfit = revenue - costOfGoods - totalExpenses;
+  // Profit = product revenue + repair revenue - cost of goods - expenses (fees excluded from profit)
+  const netProfit = salesProductRevenue + repairRevenue - costOfGoods - totalExpenses;
 
   const totalInventoryCost = 
     devices.reduce((s: number, d: any) => s + (d.purchase_price || 0), 0) +
     products.reduce((s: number, p: any) => s + ((p.cost_price || 0) * (p.stock || 0)), 0);
 
   const stats = [
-    { label: "Выручка за месяц", value: `${revenue.toLocaleString("ru")} ₽`, icon: DollarSign },
+    { label: "Выручка от товаров", value: `${salesProductRevenue.toLocaleString("ru")} ₽`, icon: DollarSign },
+    { label: "Комиссии оплаты", value: `${totalPaymentFees.toLocaleString("ru")} ₽`, icon: CreditCard },
+    { label: "Общий оборот", value: `${(totalRevenue + repairRevenue).toLocaleString("ru")} ₽`, icon: TrendingUp },
     { label: "Доход от ремонта", value: `${repairRevenue.toLocaleString("ru")} ₽`, icon: Wrench },
     { label: "Товары по себестоимости", value: `${totalInventoryCost.toLocaleString("ru")} ₽`, icon: DollarSign },
     { label: "Расходы за месяц", value: `${totalExpenses.toLocaleString("ru")} ₽`, icon: TrendingDown },
@@ -160,7 +164,7 @@ const FinancesPage = () => {
 
       <SectionHelp tips={SECTION_TIPS.finances} />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
           <Card key={s.label} className="p-5 card-shadow">
             <div className="flex items-center justify-between">

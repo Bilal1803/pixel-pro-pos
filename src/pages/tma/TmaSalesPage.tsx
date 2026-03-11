@@ -3,47 +3,65 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Trash2, ShoppingCart } from "lucide-react";
+import { Search, Plus, Trash2, ShoppingCart, Pencil, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { sendTelegramNotification } from "@/lib/telegram";
+import { usePaymentSettings, calcFee } from "@/hooks/usePaymentSettings";
+
 type CartItem = {
   id: string;
   type: "device" | "accessory" | "service";
   name: string;
   price: number;
+  originalPrice: number;
   cost_price: number;
   device_id?: string;
   product_id?: string;
   quantity: number;
 };
 
-const paymentMethods = [
-  { value: "cash", label: "Наличные" },
-  { value: "card", label: "Карта / QR" },
-  { value: "transfer", label: "Перевод" },
-  { value: "installments", label: "Рассрочка" },
-];
+const ROLE_DISCOUNT_LIMITS: Record<string, number> = {
+  employee: 5,
+  manager: 20,
+  owner: 100,
+};
 
 const TmaSalesPage = () => {
   const { companyId, user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { paymentSettings, getSettingByMethod } = usePaymentSettings();
 
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [payment, setPayment] = useState("cash");
   const [step, setStep] = useState<"search" | "cart">("search");
 
-  // Get employee profile for store_id
+  // Price editing
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editPrice, setEditPrice] = useState("");
+  const [priceChangeReason, setPriceChangeReason] = useState("");
+  const [priceWarning, setPriceWarning] = useState("");
+
   const { data: profile } = useQuery({
     queryKey: ["tma-profile", user?.id],
     queryFn: async () => {
       if (!user) return null;
       const { data } = await supabase.from("profiles").select("store_id").eq("user_id", user.id).single();
       return data;
+    },
+    enabled: !!user,
+  });
+
+  const { data: userRole } = useQuery({
+    queryKey: ["user-role", user?.id],
+    queryFn: async () => {
+      if (!user) return "employee";
+      const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id).maybeSingle();
+      return data?.role || "employee";
     },
     enabled: !!user,
   });
@@ -84,11 +102,13 @@ const TmaSalesPage = () => {
 
   const addDevice = (device: any) => {
     if (cart.find(c => c.device_id === device.id)) return;
+    const price = device.sale_price || 0;
     setCart(prev => [...prev, {
       id: crypto.randomUUID(),
       type: "device",
       name: `${device.brand || ""} ${device.model} ${device.memory || ""} ${device.color || ""}`.trim(),
-      price: device.sale_price || 0,
+      price,
+      originalPrice: price,
       cost_price: device.purchase_price || 0,
       device_id: device.id,
       quantity: 1,
@@ -101,11 +121,13 @@ const TmaSalesPage = () => {
     if (existing) {
       setCart(prev => prev.map(c => c.product_id === product.id ? { ...c, quantity: c.quantity + 1 } : c));
     } else {
+      const price = product.sale_price || 0;
       setCart(prev => [...prev, {
         id: crypto.randomUUID(),
         type: "accessory",
         name: product.name,
-        price: product.sale_price || 0,
+        price,
+        originalPrice: price,
         cost_price: product.cost_price || 0,
         product_id: product.id,
         quantity: 1,
@@ -116,11 +138,62 @@ const TmaSalesPage = () => {
 
   const removeFromCart = (id: string) => setCart(prev => prev.filter(c => c.id !== id));
 
-  const total = cart.reduce((s, c) => s + c.price * c.quantity, 0);
+  // Price editing
+  const startEditPrice = (item: CartItem) => {
+    setEditingItemId(item.id);
+    setEditPrice(String(item.price));
+    setPriceWarning("");
+    setPriceChangeReason("");
+  };
+
+  const confirmPriceChange = () => {
+    if (!editingItemId) return;
+    const item = cart.find(i => i.id === editingItemId);
+    if (!item) return;
+    const newPrice = Number(editPrice);
+    if (newPrice < 0) return;
+
+    const discountPercent = item.originalPrice > 0
+      ? ((item.originalPrice - newPrice) / item.originalPrice) * 100
+      : 0;
+
+    const limit = ROLE_DISCOUNT_LIMITS[userRole || "employee"] || 5;
+    if (discountPercent > limit) {
+      setPriceWarning(`Скидка ${discountPercent.toFixed(1)}% превышает лимит ${limit}%`);
+      return;
+    }
+
+    if (newPrice !== item.originalPrice && !priceChangeReason.trim()) {
+      setPriceWarning("Укажите причину изменения цены");
+      return;
+    }
+
+    setCart(prev => prev.map(i => i.id === editingItemId ? { ...i, price: newPrice } : i));
+    setEditingItemId(null);
+  };
+
+  const cartProductTotal = cart.reduce((s, c) => s + c.price * c.quantity, 0);
+  const currentPaymentSetting = getSettingByMethod(payment);
+  const { fee: paymentFee, total } = calcFee(cartProductTotal, currentPaymentSetting);
+  const hasPriceChanges = cart.some(i => i.price !== i.originalPrice);
+
+  const activePaymentMethods = paymentSettings.length > 0
+    ? paymentSettings
+    : [
+        { method: "cash", label: "Наличные", percent_fee: 0, fixed_fee: 0 },
+        { method: "card", label: "Карта / QR", percent_fee: 0, fixed_fee: 0 },
+        { method: "transfer", label: "Перевод", percent_fee: 0, fixed_fee: 0 },
+        { method: "installments", label: "Рассрочка", percent_fee: 0, fixed_fee: 0 },
+      ];
 
   const submitSale = useMutation({
     mutationFn: async () => {
       if (!companyId || !user || cart.length === 0) throw new Error("Корзина пуста");
+
+      const reasons = cart
+        .filter(i => i.price !== i.originalPrice)
+        .map(i => `${i.name}: ${i.originalPrice} → ${i.price} ₽`)
+        .join("; ");
 
       const { data: sale, error } = await supabase.from("sales").insert({
         company_id: companyId,
@@ -128,17 +201,19 @@ const TmaSalesPage = () => {
         store_id: profile?.store_id || null,
         total,
         payment_method: payment as any,
+        payment_fee: paymentFee,
+        price_change_reason: hasPriceChanges && priceChangeReason ? `${priceChangeReason}${reasons ? ` (${reasons})` : ""}` : null,
       }).select().single();
 
       if (error) throw error;
 
-      // Insert sale items
       const items = cart.map(c => ({
         sale_id: sale.id,
         item_type: c.type === "device" ? "device" : c.type === "accessory" ? "accessory" : "service" as any,
         name: c.name,
         price: c.price,
         cost_price: c.cost_price,
+        original_price: c.originalPrice !== c.price ? c.originalPrice : null,
         device_id: c.device_id || null,
         product_id: c.product_id || null,
         quantity: c.quantity,
@@ -146,38 +221,38 @@ const TmaSalesPage = () => {
 
       await supabase.from("sale_items").insert(items);
 
-      // Update device statuses to sold
       const deviceIds = cart.filter(c => c.device_id).map(c => c.device_id!);
       if (deviceIds.length > 0) {
         await supabase.from("devices").update({ status: "sold" as any }).in("id", deviceIds);
       }
 
-      // Decrease product stock
       for (const item of cart.filter(c => c.product_id)) {
-        await supabase.rpc("get_user_company_id"); // dummy to avoid direct SQL
         await supabase.from("products").update({
           stock: Math.max(0, (products.find(p => p.id === item.product_id)?.stock || 0) - item.quantity),
         }).eq("id", item.product_id!);
       }
 
-      return { sale, cartItems: cart, totalAmount: total, paymentLabel: paymentMethods.find(p => p.value === payment)?.label || payment };
+      const pmLabel = activePaymentMethods.find(p => p.method === payment)?.label || payment;
+      return { sale, cartItems: cart, totalAmount: total, paymentLabel: pmLabel, paymentFee };
     },
     onSuccess: (result) => {
       setCart([]);
       setStep("search");
       setSearch("");
+      setPriceChangeReason("");
       queryClient.invalidateQueries({ queryKey: ["tma-available-devices"] });
       queryClient.invalidateQueries({ queryKey: ["tma-products"] });
       queryClient.invalidateQueries({ queryKey: ["tma-today-sales"] });
       toast({ title: "Продажа оформлена ✓" });
 
-      // Fire-and-forget Telegram notification
       if (companyId) {
         const items = result.cartItems.map((c: CartItem) => `  • ${c.name} — ${(c.price * c.quantity).toLocaleString("ru")} ₽`).join("\n");
+        let feeText = "";
+        if (result.paymentFee > 0) feeText = `\n📊 Комиссия: ${result.paymentFee.toLocaleString("ru")} ₽`;
         sendTelegramNotification(
           companyId,
           "sale",
-          `🛒 <b>Новая продажа</b>\n\n${items}\n\n💰 Итого: <b>${result.totalAmount.toLocaleString("ru")} ₽</b>\n💳 ${result.paymentLabel}`
+          `🛒 <b>Новая продажа</b>\n\n${items}\n\n💰 Итого: <b>${result.totalAmount.toLocaleString("ru")} ₽</b>${feeText}\n💳 ${result.paymentLabel}`
         );
       }
     },
@@ -198,43 +273,112 @@ const TmaSalesPage = () => {
 
         <div className="space-y-2">
           {cart.map((item) => (
-            <Card key={item.id} className="p-3 flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{item.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {item.quantity > 1 && `${item.quantity} × `}{item.price.toLocaleString("ru")} ₽
-                </p>
+            <Card key={item.id} className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate">{item.name}</p>
+                  <div className="flex items-center gap-2">
+                    {item.price !== item.originalPrice && (
+                      <span className="text-xs text-muted-foreground line-through">{item.originalPrice.toLocaleString("ru")} ₽</span>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {item.quantity > 1 && `${item.quantity} × `}{item.price.toLocaleString("ru")} ₽
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEditPrice(item)}>
+                    <Pencil className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeFromCart(item.id)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
               </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => removeFromCart(item.id)}>
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
+
+              {editingItemId === item.id && (
+                <div className="mt-2 space-y-2 rounded-lg bg-muted/30 p-2">
+                  <Input
+                    type="number"
+                    value={editPrice}
+                    onChange={e => { setEditPrice(e.target.value); setPriceWarning(""); }}
+                    className="h-9"
+                    min="0"
+                    autoFocus
+                  />
+                  {Number(editPrice) !== item.originalPrice && (
+                    <Input
+                      placeholder="Причина изменения цены..."
+                      value={priceChangeReason}
+                      onChange={e => { setPriceChangeReason(e.target.value); setPriceWarning(""); }}
+                      className="h-9 text-sm"
+                    />
+                  )}
+                  {priceWarning && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" /> {priceWarning}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" className="flex-1" onClick={() => setEditingItemId(null)}>Отмена</Button>
+                    <Button size="sm" className="flex-1" onClick={confirmPriceChange}>Применить</Button>
+                  </div>
+                </div>
+              )}
             </Card>
           ))}
         </div>
 
-        {/* Payment */}
+        {/* Payment methods */}
         <div>
           <p className="text-sm font-medium mb-2">Способ оплаты</p>
           <div className="grid grid-cols-2 gap-2">
-            {paymentMethods.map((pm) => (
-              <button
-                key={pm.value}
-                onClick={() => setPayment(pm.value)}
-                className={`rounded-xl border p-3 text-sm font-medium transition-all active:scale-95 ${
-                  payment === pm.value ? "border-primary bg-primary/10 text-primary" : "bg-card"
-                }`}
-              >
-                {pm.label}
-              </button>
-            ))}
+            {activePaymentMethods.map((pm: any) => {
+              const { fee, total: methodTotal } = calcFee(cartProductTotal, pm);
+              return (
+                <button
+                  key={pm.method}
+                  onClick={() => setPayment(pm.method)}
+                  className={`rounded-xl border p-3 text-left transition-all active:scale-95 ${
+                    payment === pm.method ? "border-primary bg-primary/10" : "bg-card"
+                  }`}
+                >
+                  <p className={`text-sm font-medium ${payment === pm.method ? "text-primary" : ""}`}>{pm.label}</p>
+                  <p className="text-xs font-bold mt-0.5">{methodTotal.toLocaleString("ru")} ₽</p>
+                  {fee > 0 && <p className="text-[10px] text-muted-foreground">комиссия: {fee.toLocaleString("ru")} ₽</p>}
+                </button>
+              );
+            })}
           </div>
         </div>
 
+        {/* Price change reason */}
+        {hasPriceChanges && (
+          <Input
+            placeholder="Причина изменения цены..."
+            value={priceChangeReason}
+            onChange={e => setPriceChangeReason(e.target.value)}
+            className="h-10"
+          />
+        )}
+
         {/* Total & Submit */}
         <div className="rounded-2xl bg-primary p-4 text-primary-foreground">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm">Итого</span>
-            <span className="text-xl font-bold">{total.toLocaleString("ru")} ₽</span>
+          <div className="space-y-1 mb-3">
+            <div className="flex items-center justify-between text-sm opacity-80">
+              <span>Стоимость товаров</span>
+              <span>{cartProductTotal.toLocaleString("ru")} ₽</span>
+            </div>
+            {paymentFee > 0 && (
+              <div className="flex items-center justify-between text-sm opacity-80">
+                <span>Комиссия оплаты</span>
+                <span>+{paymentFee.toLocaleString("ru")} ₽</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Итого</span>
+              <span className="text-xl font-bold">{total.toLocaleString("ru")} ₽</span>
+            </div>
           </div>
           <Button
             className="w-full h-12 text-base bg-primary-foreground text-primary hover:bg-primary-foreground/90"
@@ -279,21 +423,37 @@ const TmaSalesPage = () => {
           <p className="text-sm text-muted-foreground py-4 text-center">Устройства не найдены</p>
         ) : (
           <div className="space-y-2">
-            {filteredDevices.map((d) => (
-              <button
-                key={d.id}
-                onClick={() => addDevice(d)}
-                disabled={!!cart.find(c => c.device_id === d.id)}
-                className="w-full text-left rounded-xl border bg-card p-3 transition-all active:scale-[0.98] disabled:opacity-50"
-              >
-                <p className="text-sm font-medium">{d.brand} {d.model}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-xs text-muted-foreground">{d.memory} {d.color}</span>
-                  <Badge variant="outline" className="text-[10px]">{d.imei.slice(-6)}</Badge>
-                </div>
-                <p className="text-sm font-bold mt-1">{(d.sale_price || 0).toLocaleString("ru")} ₽</p>
-              </button>
-            ))}
+            {filteredDevices.map((d) => {
+              const basePrice = d.sale_price || 0;
+              return (
+                <button
+                  key={d.id}
+                  onClick={() => addDevice(d)}
+                  disabled={!!cart.find(c => c.device_id === d.id)}
+                  className="w-full text-left rounded-xl border bg-card p-3 transition-all active:scale-[0.98] disabled:opacity-50"
+                >
+                  <p className="text-sm font-medium">{d.brand} {d.model}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-muted-foreground">{d.memory} {d.color}</span>
+                    <Badge variant="outline" className="text-[10px]">{d.imei.slice(-6)}</Badge>
+                  </div>
+                  <p className="text-sm font-bold mt-1">{basePrice.toLocaleString("ru")} ₽</p>
+                  {/* Payment variant prices */}
+                  {paymentSettings.length > 0 && basePrice > 0 && (
+                    <div className="flex flex-wrap gap-x-3 mt-1">
+                      {paymentSettings.filter(ps => ps.percent_fee > 0 || ps.fixed_fee > 0).map(ps => {
+                        const { total: methodTotal } = calcFee(basePrice, ps);
+                        return (
+                          <span key={ps.method} className="text-[10px] text-muted-foreground">
+                            {ps.label}: {methodTotal.toLocaleString("ru")} ₽
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

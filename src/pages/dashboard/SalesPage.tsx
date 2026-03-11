@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Smartphone, ShoppingBag, Wrench, Trash2, Undo2 } from "lucide-react";
+import { Plus, Search, Smartphone, ShoppingBag, Wrench, Trash2, Undo2, Pencil, AlertTriangle } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,24 +12,34 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+
 import SectionHelp from "@/components/SectionHelp";
 import { SECTION_TIPS } from "@/data/sectionTips";
+import { usePaymentSettings, calcFee } from "@/hooks/usePaymentSettings";
 
 type CartItem = {
   id: string;
   type: "device" | "accessory" | "service";
   name: string;
   price: number;
+  originalPrice: number;
   cost_price: number;
   device_id?: string;
   product_id?: string;
   quantity: number;
 };
 
+const ROLE_DISCOUNT_LIMITS: Record<string, number> = {
+  employee: 5,
+  manager: 20,
+  owner: 100,
+};
+
 const SalesPage = () => {
   const { companyId, user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { paymentSettings, getSettingByMethod } = usePaymentSettings();
   const [open, setOpen] = useState(false);
   const [deviceSearch, setDeviceSearch] = useState("");
   const [productSearch, setProductSearch] = useState("");
@@ -41,10 +51,27 @@ const SalesPage = () => {
   const [discountType, setDiscountType] = useState<"percent" | "fixed">("percent");
   const [discountValue, setDiscountValue] = useState("");
 
+  // Price editing
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editPrice, setEditPrice] = useState("");
+  const [priceChangeReason, setPriceChangeReason] = useState("");
+  const [priceWarning, setPriceWarning] = useState("");
+
   // Return state
   const [returnOpen, setReturnOpen] = useState(false);
   const [returnTarget, setReturnTarget] = useState<any>(null);
   const [selectedReturnItems, setSelectedReturnItems] = useState<Set<string>>(new Set());
+
+  // User role
+  const { data: userRole } = useQuery({
+    queryKey: ["user-role", user?.id],
+    queryFn: async () => {
+      if (!user) return "employee";
+      const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id).maybeSingle();
+      return data?.role || "employee";
+    },
+    enabled: !!user,
+  });
 
   const { data: sales = [], isLoading } = useQuery({
     queryKey: ["sales", companyId],
@@ -112,11 +139,13 @@ const SalesPage = () => {
   }, [products, productSearch]);
 
   const addDevice = (d: any) => {
+    const price = d.sale_price || 0;
     setCart(prev => [...prev, {
       id: crypto.randomUUID(),
       type: "device",
       name: `${d.model} ${d.memory || ""} ${d.color || ""}`.trim(),
-      price: d.sale_price || 0,
+      price,
+      originalPrice: price,
       cost_price: d.purchase_price || 0,
       device_id: d.id,
       quantity: 1,
@@ -128,11 +157,13 @@ const SalesPage = () => {
     if (existing) {
       setCart(prev => prev.map(i => i.id === existing.id ? { ...i, quantity: i.quantity + 1 } : i));
     } else {
+      const price = p.sale_price || 0;
       setCart(prev => [...prev, {
         id: crypto.randomUUID(),
         type: "accessory",
         name: p.name,
-        price: p.sale_price || 0,
+        price,
+        originalPrice: price,
         cost_price: p.cost_price || 0,
         product_id: p.id,
         quantity: 1,
@@ -142,11 +173,13 @@ const SalesPage = () => {
 
   const addService = () => {
     if (!serviceName.trim() || !servicePrice) return;
+    const price = parseFloat(servicePrice);
     setCart(prev => [...prev, {
       id: crypto.randomUUID(),
       type: "service",
       name: serviceName.trim(),
-      price: parseFloat(servicePrice),
+      price,
+      originalPrice: price,
       cost_price: 0,
       quantity: 1,
     }]);
@@ -156,9 +189,53 @@ const SalesPage = () => {
 
   const removeFromCart = (id: string) => setCart(prev => prev.filter(i => i.id !== id));
 
+  // Price editing logic
+  const startEditPrice = (item: CartItem) => {
+    setEditingItemId(item.id);
+    setEditPrice(String(item.price));
+    setPriceWarning("");
+    setPriceChangeReason("");
+  };
+
+  const confirmPriceChange = () => {
+    if (!editingItemId) return;
+    const item = cart.find(i => i.id === editingItemId);
+    if (!item) return;
+    const newPrice = Number(editPrice);
+    if (newPrice < 0) return;
+
+    // Check role limit
+    const discountPercent = item.originalPrice > 0
+      ? ((item.originalPrice - newPrice) / item.originalPrice) * 100
+      : 0;
+
+    const limit = ROLE_DISCOUNT_LIMITS[userRole || "employee"] || 5;
+    if (discountPercent > limit) {
+      setPriceWarning(`Скидка ${discountPercent.toFixed(1)}% превышает лимит ${limit}% для вашей роли`);
+      return;
+    }
+
+    if (newPrice !== item.originalPrice && !priceChangeReason.trim()) {
+      setPriceWarning("Укажите причину изменения цены");
+      return;
+    }
+
+    setCart(prev => prev.map(i => i.id === editingItemId ? { ...i, price: newPrice } : i));
+    setEditingItemId(null);
+    setEditPrice("");
+    setPriceWarning("");
+    setPriceChangeReason("");
+  };
+
   const cartTotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const discountAmount = discountValue ? (discountType === "percent" ? Math.round(cartTotal * parseFloat(discountValue) / 100) : parseFloat(discountValue)) : 0;
-  const finalTotal = Math.max(0, cartTotal - discountAmount);
+  const productTotal = Math.max(0, cartTotal - discountAmount);
+
+  // Payment fee calculation
+  const currentPaymentSetting = getSettingByMethod(paymentMethod);
+  const { fee: paymentFee, total: finalTotal } = calcFee(productTotal, currentPaymentSetting);
+
+  const hasPriceChanges = cart.some(i => i.price !== i.originalPrice);
 
   const resetForm = () => {
     setCart([]);
@@ -170,12 +247,20 @@ const SalesPage = () => {
     setServicePrice("");
     setDiscountType("percent");
     setDiscountValue("");
+    setEditingItemId(null);
+    setPriceChangeReason("");
   };
 
   const createSale = useMutation({
     mutationFn: async () => {
       if (!companyId || !user) throw new Error("No company");
       if (cart.length === 0) throw new Error("Добавьте хотя бы один товар");
+
+      // Collect price change reasons
+      const reasons = cart
+        .filter(i => i.price !== i.originalPrice)
+        .map(i => `${i.name}: ${i.originalPrice} → ${i.price} ₽`)
+        .join("; ");
 
       const { data: sale, error: saleError } = await supabase.from("sales").insert({
         company_id: companyId,
@@ -184,6 +269,8 @@ const SalesPage = () => {
         total: finalTotal,
         discount: discountAmount || null,
         payment_method: paymentMethod as any,
+        payment_fee: paymentFee,
+        price_change_reason: (hasPriceChanges && priceChangeReason) ? `${priceChangeReason}${reasons ? ` (${reasons})` : ""}` : null,
       }).select().single();
       if (saleError) throw saleError;
 
@@ -195,6 +282,7 @@ const SalesPage = () => {
         name: i.name,
         price: i.price * i.quantity,
         cost_price: i.cost_price * i.quantity,
+        original_price: i.originalPrice !== i.price ? i.originalPrice * i.quantity : null,
         quantity: i.quantity,
       }));
 
@@ -231,7 +319,6 @@ const SalesPage = () => {
       const items = (sale.sale_items || []).filter((i: any) => itemIds.includes(i.id));
       const isFullReturn = items.length === (sale.sale_items || []).length;
 
-      // Restore devices and stock for selected items
       for (const item of items) {
         if (item.item_type === "device" && item.device_id) {
           await supabase.from("devices").update({ status: "available" as any }).eq("id", item.device_id);
@@ -245,11 +332,9 @@ const SalesPage = () => {
       }
 
       if (isFullReturn) {
-        // Full return: delete all items and the sale
         await supabase.from("sale_items").delete().eq("sale_id", sale.id);
         await supabase.from("sales").delete().eq("id", sale.id);
       } else {
-        // Partial return: delete selected items and update sale total
         const returnAmount = items.reduce((s: number, i: any) => s + Number(i.price || 0), 0);
         for (const item of items) {
           await supabase.from("sale_items").delete().eq("id", item.id);
@@ -275,7 +360,6 @@ const SalesPage = () => {
 
   const openReturnDialog = (sale: any) => {
     setReturnTarget(sale);
-    // Pre-select all items
     const allIds = new Set<string>((sale.sale_items || []).map((i: any) => i.id));
     setSelectedReturnItems(allIds);
     setReturnOpen(true);
@@ -303,6 +387,11 @@ const SalesPage = () => {
     service: <Wrench className="h-3.5 w-3.5" />,
   };
   const typeLabels: Record<string, string> = { device: "Устройство", accessory: "Аксессуар", service: "Услуга" };
+
+  // Build payment labels from settings
+  const activePaymentLabels = paymentSettings.length > 0
+    ? Object.fromEntries(paymentSettings.map(s => [s.method, s.label]))
+    : paymentLabels;
 
   return (
     <div className="space-y-6">
@@ -334,21 +423,38 @@ const SalesPage = () => {
                         {availableDevices.length === 0 ? "Нет устройств в наличии" : "Ничего не найдено"}
                       </div>
                     ) : (
-                      filteredDevices.map(d => (
-                        <button type="button" key={d.id} onClick={() => addDevice(d)}
-                          className="w-full text-left px-3 py-2 hover:bg-muted/50 transition-colors">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium text-sm">{d.model}</span>
-                            <span className="font-semibold text-sm">{d.sale_price ? `${d.sale_price} ₽` : "—"}</span>
-                          </div>
-                          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs text-muted-foreground">
-                            <span className="font-mono">IMEI: {d.imei}</span>
-                            {d.memory && <span>{d.memory}</span>}
-                            {d.color && <span>{d.color}</span>}
-                            {d.battery_health && <span>АКБ: {d.battery_health}</span>}
-                          </div>
-                        </button>
-                      ))
+                      filteredDevices.map(d => {
+                        // Show prices for all payment methods
+                        const basePrice = d.sale_price || 0;
+                        return (
+                          <button type="button" key={d.id} onClick={() => addDevice(d)}
+                            className="w-full text-left px-3 py-2 hover:bg-muted/50 transition-colors">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-sm">{d.model}</span>
+                              <span className="font-semibold text-sm">{basePrice ? `${basePrice.toLocaleString("ru")} ₽` : "—"}</span>
+                            </div>
+                            <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs text-muted-foreground">
+                              <span className="font-mono">IMEI: {d.imei}</span>
+                              {d.memory && <span>{d.memory}</span>}
+                              {d.color && <span>{d.color}</span>}
+                              {d.battery_health && <span>АКБ: {d.battery_health}</span>}
+                            </div>
+                            {/* Payment method price variants */}
+                            {paymentSettings.length > 0 && basePrice > 0 && (
+                              <div className="flex flex-wrap gap-x-3 mt-1 text-xs">
+                                {paymentSettings.map(ps => {
+                                  const { total } = calcFee(basePrice, ps);
+                                  return (
+                                    <span key={ps.method} className="text-muted-foreground">
+                                      {ps.label}: <span className="font-medium text-foreground">{total.toLocaleString("ru")} ₽</span>
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })
                     )}
                   </div>
                 </TabsContent>
@@ -393,35 +499,83 @@ const SalesPage = () => {
                   <Label className="text-sm font-semibold">Корзина ({cart.length})</Label>
                   <div className="rounded-lg border divide-y">
                     {cart.map(item => (
-                      <div key={item.id} className="flex items-center justify-between px-3 py-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-muted-foreground">{typeIcons[item.type]}</span>
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium truncate">{item.name}</p>
-                            <p className="text-xs text-muted-foreground">{typeLabels[item.type]}{item.quantity > 1 ? ` × ${item.quantity}` : ""}</p>
+                      <div key={item.id} className="px-3 py-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-muted-foreground">{typeIcons[item.type]}</span>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">{item.name}</p>
+                              <p className="text-xs text-muted-foreground">{typeLabels[item.type]}{item.quantity > 1 ? ` × ${item.quantity}` : ""}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {item.price !== item.originalPrice && (
+                              <span className="text-xs text-muted-foreground line-through">{(item.originalPrice * item.quantity).toLocaleString("ru")} ₽</span>
+                            )}
+                            <span className="font-semibold text-sm">{(item.price * item.quantity).toLocaleString("ru")} ₽</span>
+                            <button type="button" onClick={() => startEditPrice(item)} className="text-muted-foreground hover:text-primary" title="Изменить цену">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button type="button" onClick={() => removeFromCart(item.id)} className="text-muted-foreground hover:text-destructive">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="font-semibold text-sm">{item.price * item.quantity} ₽</span>
-                          <button type="button" onClick={() => removeFromCart(item.id)} className="text-muted-foreground hover:text-destructive">
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
+
+                        {/* Inline price editor */}
+                        {editingItemId === item.id && (
+                          <div className="mt-2 space-y-2 rounded-lg bg-muted/30 p-2">
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                value={editPrice}
+                                onChange={e => { setEditPrice(e.target.value); setPriceWarning(""); }}
+                                className="h-8 w-32"
+                                min="0"
+                                autoFocus
+                              />
+                              <span className="text-xs text-muted-foreground">₽</span>
+                            </div>
+                            {Number(editPrice) !== item.originalPrice && (
+                              <Input
+                                placeholder="Причина изменения цены..."
+                                value={priceChangeReason}
+                                onChange={e => { setPriceChangeReason(e.target.value); setPriceWarning(""); }}
+                                className="h-8 text-sm"
+                              />
+                            )}
+                            {priceWarning && (
+                              <p className="text-xs text-destructive flex items-center gap-1">
+                                <AlertTriangle className="h-3 w-3" /> {priceWarning}
+                              </p>
+                            )}
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditingItemId(null)}>Отмена</Button>
+                              <Button size="sm" className="h-7 text-xs" onClick={confirmPriceChange}>Применить</Button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                     <div className="flex items-center justify-between px-3 py-2 bg-muted/30">
-                      <span className="text-sm">Подытог</span>
-                      <span className="text-sm">{cartTotal} ₽</span>
+                      <span className="text-sm">Стоимость товаров</span>
+                      <span className="text-sm">{cartTotal.toLocaleString("ru")} ₽</span>
                     </div>
                     {discountAmount > 0 && (
                       <div className="flex items-center justify-between px-3 py-1.5 text-sm text-destructive">
                         <span>Скидка {discountType === "percent" ? `${discountValue}%` : ""}</span>
-                        <span>−{discountAmount} ₽</span>
+                        <span>−{discountAmount.toLocaleString("ru")} ₽</span>
+                      </div>
+                    )}
+                    {paymentFee > 0 && (
+                      <div className="flex items-center justify-between px-3 py-1.5 text-sm text-muted-foreground">
+                        <span>Комиссия оплаты ({currentPaymentSetting?.label})</span>
+                        <span>+{paymentFee.toLocaleString("ru")} ₽</span>
                       </div>
                     )}
                     <div className="flex items-center justify-between px-3 py-2 bg-muted/50">
-                      <span className="font-semibold text-sm">Итого</span>
-                      <span className="font-bold">{finalTotal} ₽</span>
+                      <span className="font-semibold text-sm">Итого к оплате</span>
+                      <span className="font-bold">{finalTotal.toLocaleString("ru")} ₽</span>
                     </div>
                   </div>
 
@@ -447,6 +601,32 @@ const SalesPage = () => {
                 </div>
               )}
 
+              {/* Payment method prices overview */}
+              {cart.length > 0 && paymentSettings.length > 0 && (
+                <div className="rounded-lg border p-3 space-y-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Цены по способу оплаты</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {paymentSettings.map(ps => {
+                      const { fee, total } = calcFee(productTotal, ps);
+                      return (
+                        <button
+                          key={ps.method}
+                          type="button"
+                          onClick={() => setPaymentMethod(ps.method)}
+                          className={`rounded-lg border p-2 text-left transition-all ${
+                            paymentMethod === ps.method ? "border-primary bg-primary/5 ring-1 ring-primary" : "hover:bg-muted/50"
+                          }`}
+                        >
+                          <p className="text-xs text-muted-foreground">{ps.label}</p>
+                          <p className="text-sm font-bold">{total.toLocaleString("ru")} ₽</p>
+                          {fee > 0 && <p className="text-[10px] text-muted-foreground">комиссия: {fee.toLocaleString("ru")} ₽</p>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Клиент</Label>
@@ -464,19 +644,39 @@ const SalesPage = () => {
                   <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="cash">Наличные</SelectItem>
-                      <SelectItem value="card">Карта / QR</SelectItem>
-                      <SelectItem value="transfer">Перевод</SelectItem>
-                      <SelectItem value="installments">Рассрочка</SelectItem>
-                      <SelectItem value="mixed">Смешанная</SelectItem>
+                      {paymentSettings.length > 0 ? (
+                        paymentSettings.map(ps => (
+                          <SelectItem key={ps.method} value={ps.method}>{ps.label}</SelectItem>
+                        ))
+                      ) : (
+                        <>
+                          <SelectItem value="cash">Наличные</SelectItem>
+                          <SelectItem value="card">Карта / QR</SelectItem>
+                          <SelectItem value="transfer">Перевод</SelectItem>
+                          <SelectItem value="installments">Рассрочка</SelectItem>
+                          <SelectItem value="mixed">Смешанная</SelectItem>
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
+
+              {/* Price change reason (global) */}
+              {hasPriceChanges && (
+                <div>
+                  <Label className="text-xs text-amber-600">Причина изменения цены</Label>
+                  <Input
+                    placeholder="Скидка клиенту, дефект упаковки, договорённость..."
+                    value={priceChangeReason}
+                    onChange={e => setPriceChangeReason(e.target.value)}
+                  />
+                </div>
+              )}
             </div>
 
             <Button onClick={() => createSale.mutate()} className="w-full mt-4" disabled={createSale.isPending || cart.length === 0}>
-              {createSale.isPending ? "Оформление..." : `Оформить продажу — ${finalTotal} ₽`}
+              {createSale.isPending ? "Оформление..." : `Оформить продажу — ${finalTotal.toLocaleString("ru")} ₽`}
             </Button>
           </DialogContent>
         </Dialog>
@@ -519,13 +719,21 @@ const SalesPage = () => {
                                 </p>
                               )}
                               {item.quantity > 1 && <span className="text-xs text-muted-foreground"> ×{item.quantity}</span>}
+                              {item.original_price != null && item.original_price !== item.price && (
+                                <span className="text-xs text-amber-600 ml-2">(было: {Number(item.original_price).toLocaleString("ru")} ₽)</span>
+                              )}
                             </div>
                           );
                         })}
                       </div>
                     </td>
-                    <td className="px-4 py-3 font-semibold">{s.total} ₽</td>
-                    <td className="px-4 py-3">{paymentLabels[s.payment_method] || s.payment_method}</td>
+                    <td className="px-4 py-3">
+                      <span className="font-semibold">{Number(s.total).toLocaleString("ru")} ₽</span>
+                      {Number(s.payment_fee) > 0 && (
+                        <p className="text-xs text-muted-foreground">комиссия: {Number(s.payment_fee).toLocaleString("ru")} ₽</p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">{activePaymentLabels[s.payment_method] || paymentLabels[s.payment_method] || s.payment_method}</td>
                     <td className="px-4 py-3">{s.clients?.name || "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground">{new Date(s.created_at).toLocaleString("ru")}</td>
                     <td className="px-4 py-3">
