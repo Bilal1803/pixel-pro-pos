@@ -183,10 +183,9 @@ const EmployeesPage = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["invitations"] });
-      const url = getInviteUrl(data.code);
-      setLinkDialogUrl(url);
+      setLinkDialogUrl(data.code);
       setLinkDialogOpen(true);
-      toast({ title: "Новая ссылка создана" });
+      toast({ title: "Новый код создан" });
     },
     onError: (e: any) => {
       toast({ title: "Ошибка", description: e.message, variant: "destructive" });
