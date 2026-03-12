@@ -137,6 +137,7 @@ const App = () => (
                 <Route path="more" element={<TmaMorePage />} />
                 <Route path="support" element={<TmaSupportPage />} />
                 <Route path="analytics" element={<TmaAnalyticsPage />} />
+                <Route path="tasks" element={<TmaTasksPage />} />
               </Route>
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboardPage />} />

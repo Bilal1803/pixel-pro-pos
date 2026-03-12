@@ -23,6 +23,7 @@ const mainItems = [
 
 const moreItems = [
   { to: "/dashboard/customers", label: "Клиенты", icon: Users },
+  { to: "/dashboard/tasks", label: "Задачи", icon: ClipboardList },
   { to: "/dashboard/finances", label: "Финансы", icon: DollarSign },
   { to: "/dashboard/employees", label: "Сотрудники", icon: UserCog },
   { to: "/dashboard/shifts", label: "Смены", icon: Clock },
