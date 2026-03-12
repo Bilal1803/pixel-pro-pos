@@ -58,6 +58,12 @@ const RegisterPage = () => {
             <Label htmlFor="password">Пароль</Label>
             <Input id="password" type="password" placeholder="Минимум 6 символов" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="mt-1" />
           </div>
+          <p className="text-xs text-muted-foreground text-center">
+            Нажимая «Создать аккаунт», вы соглашаетесь с{" "}
+            <Link to="/terms" className="text-primary hover:underline">политикой использования</Link>
+            {" "}и{" "}
+            <Link to="/privacy" className="text-primary hover:underline">политикой обработки персональных данных</Link>.
+          </p>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Создание..." : "Создать аккаунт"}
           </Button>
