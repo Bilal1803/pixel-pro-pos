@@ -840,6 +840,7 @@ const InventoryPage = () => {
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Закупка</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Продажа</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Статус</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Объявление</th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
