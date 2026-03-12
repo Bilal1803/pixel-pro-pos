@@ -872,6 +872,31 @@ const InventoryPage = () => {
                       </Select>
                     </td>
                     <td className="px-4 py-3">
+                      {(() => {
+                        const ls = (d as any).listing_status || "not_listed";
+                        const cfg = listingLabels[ls] || listingLabels.not_listed;
+                        const Icon = cfg.icon;
+                        return (
+                          <button
+                            onClick={() => {
+                              if (ls === "listed" && (d as any).listing_url) {
+                                window.open((d as any).listing_url, "_blank");
+                              } else {
+                                setListingDevice(d);
+                                setListingUrl((d as any).listing_url || "");
+                                setListingDialogOpen(true);
+                              }
+                            }}
+                            className={`flex items-center gap-1 text-xs font-medium ${cfg.className} hover:opacity-70 transition-opacity`}
+                            title={ls === "listed" ? "Открыть объявление" : "Отметить как опубликованное"}
+                          >
+                            <Icon className="h-3.5 w-3.5" />
+                            {ls === "listed" && (d as any).listing_url && <ExternalLink className="h-3 w-3" />}
+                          </button>
+                        );
+                      })()}
+                    </td>
+                    <td className="px-4 py-3">
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(d)}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
