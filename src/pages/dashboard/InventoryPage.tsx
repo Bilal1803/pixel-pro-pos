@@ -28,6 +28,12 @@ const statusLabels: Record<string, { label: string; className: string }> = {
   rental: { label: "Аренда", className: "bg-primary/10 text-primary" },
 };
 
+const listingLabels: Record<string, { label: string; icon: typeof Megaphone; className: string }> = {
+  not_listed: { label: "Не опубликовано", icon: Megaphone, className: "text-muted-foreground" },
+  listed: { label: "Опубликовано", icon: CheckCircle2, className: "text-green-600" },
+  needs_relist: { label: "Перевыложить", icon: RefreshCw, className: "text-amber-600" },
+};
+
 const STATUS_TABS = [
   { value: "all", label: "Все" },
   { value: "available", label: "В наличии" },
