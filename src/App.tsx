@@ -114,6 +114,16 @@ const App = () => (
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/invite/:code" element={<InvitePage />} />
+              <Route path="/demo" element={<DemoLayout />}>
+                <Route index element={<DemoDashboard />} />
+                <Route path="inventory" element={<DemoInventory />} />
+                <Route path="sales" element={<DemoSales />} />
+                <Route path="cash" element={<DemoCash />} />
+                <Route path="finances" element={<DemoFinances />} />
+                <Route path="tasks" element={<DemoTasks />} />
+                <Route path="price-tags" element={<DemoPriceTags />} />
+                <Route path="listings" element={<DemoListings />} />
+              </Route>
               <Route path="/dashboard" element={<DashboardLayout />}>
                 <Route index element={<DashboardHome />} />
                 <Route path="inventory" element={<InventoryPage />} />
