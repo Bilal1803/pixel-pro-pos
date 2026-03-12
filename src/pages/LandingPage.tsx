@@ -272,7 +272,7 @@ const LandingPage = () => {
                 <div className="h-3 w-3 rounded-full bg-destructive/60" />
                 <div className="h-3 w-3 rounded-full bg-warning/60" />
                 <div className="h-3 w-3 rounded-full bg-green-500/60" />
-                <span className="ml-2 text-xs text-muted-foreground">PhoneCRM — Дашборд</span>
+                <span className="ml-2 text-xs text-muted-foreground">FILTER CRM — Дашборд</span>
               </div>
               <div className="grid grid-cols-3 gap-3 mb-4">
                 {[
