@@ -126,6 +126,7 @@ const App = () => (
                 <Route path="network" element={<PlanGate feature="network"><NetworkPage /></PlanGate>} />
                 <Route path="comparison" element={<PlanGate feature="comparison"><ComparisonPage /></PlanGate>} />
                 <Route path="transfers" element={<PlanGate feature="transfers"><TransfersPage /></PlanGate>} />
+                <Route path="tasks" element={<TasksPage />} />
               </Route>
               <Route path="/tma" element={<TmaLayout />}>
                 <Route index element={<TmaHomePage />} />
