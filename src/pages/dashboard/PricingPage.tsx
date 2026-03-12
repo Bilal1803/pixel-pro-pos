@@ -1,12 +1,17 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, X } from "lucide-react";
+import { Check, X, MessageCircle } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 const plans = [
   {
@@ -61,37 +66,19 @@ const plans = [
 ];
 
 const PricingPage = () => {
-  const { subscription, PLAN_DEFAULTS } = useSubscription();
-  const { companyId } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const { subscription } = useSubscription();
+  const { user } = useAuth();
+  const [selectedPlan, setSelectedPlan] = useState<typeof plans[0] | null>(null);
 
-  const changePlan = useMutation({
-    mutationFn: async (planId: string) => {
-      if (!companyId) throw new Error("No company");
-      const limits = PLAN_DEFAULTS[planId];
-      if (!limits) throw new Error("Unknown plan");
-      const { error } = await supabase
-        .from("subscriptions")
-        .update({
-          plan: limits.plan,
-          max_stores: limits.max_stores,
-          max_employees: limits.max_employees,
-          max_devices: limits.max_devices,
-          repairs_enabled: limits.repairs_enabled,
-          ai_enabled: limits.ai_enabled,
-        })
-        .eq("company_id", companyId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["subscription"] });
-      toast({ title: "Тариф обновлён" });
-    },
-    onError: () => {
-      toast({ title: "Ошибка при смене тарифа", variant: "destructive" });
-    },
-  });
+  const userEmail = user?.email || "не указана";
+
+  const handlePayClick = () => {
+    if (!selectedPlan) return;
+    const message = encodeURIComponent(
+      `Здравствуйте, хочу оплатить тариф ${selectedPlan.name}\nМоя почта: ${userEmail}`
+    );
+    window.open(`https://t.me/pzlllv?text=${message}`, "_blank");
+  };
 
   return (
     <div className="space-y-6">
@@ -124,8 +111,8 @@ const PricingPage = () => {
                 <h3 className="text-xl font-bold">{plan.name}</h3>
                 <p className="text-sm text-muted-foreground">{plan.description}</p>
                 <p className="text-3xl font-extrabold">{plan.price}</p>
-                {(plan as any).trial && (
-                  <p className="text-xs font-medium text-success">{(plan as any).trial}</p>
+                {plan.trial && (
+                  <p className="text-xs font-medium text-success">{plan.trial}</p>
                 )}
               </div>
 
@@ -145,15 +132,40 @@ const PricingPage = () => {
               <Button
                 className="mt-6 w-full"
                 variant={isPopular ? "default" : "outline"}
-                disabled={isCurrent || changePlan.isPending}
-                onClick={() => changePlan.mutate(plan.id)}
+                disabled={isCurrent}
+                onClick={() => setSelectedPlan(plan)}
               >
-                {isCurrent ? "Текущий план" : changePlan.isPending ? "Обновление..." : "Выбрать"}
+                {isCurrent ? "Текущий план" : "Выбрать"}
               </Button>
             </Card>
           );
         })}
       </div>
+
+      <Dialog open={!!selectedPlan} onOpenChange={() => setSelectedPlan(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Подключение тарифа «{selectedPlan?.name}»</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              В данный момент оплата тарифа доступна через администратора в Telegram. Мы активно работаем над подключением платёжной системы для вашего удобства.
+            </p>
+            <p className="text-sm font-medium">Спасибо за понимание! 🙏</p>
+          </div>
+
+          <DialogFooter className="flex-col gap-2 sm:flex-col">
+            <Button onClick={handlePayClick} className="w-full gap-2">
+              <MessageCircle className="h-4 w-4" />
+              Оплатить тариф
+            </Button>
+            <Button variant="outline" onClick={() => setSelectedPlan(null)} className="w-full">
+              Закрыть
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
