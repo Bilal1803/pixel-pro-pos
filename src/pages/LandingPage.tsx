@@ -222,7 +222,7 @@ const LandingPage = () => {
       {/* ─── Header ─── */}
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
         <div className="container flex h-16 items-center justify-between">
-          <span className="text-xl font-bold tracking-tight text-foreground">PhoneCRM</span>
+          <span className="text-xl font-bold tracking-tight text-foreground">FILTER CRM</span>
           <nav className="hidden md:flex items-center gap-6">
             <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Возможности</a>
             <a href="#modules" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Функции</a>
