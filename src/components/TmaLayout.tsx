@@ -1,6 +1,6 @@
 import { useEffect, useState, memo, useCallback } from "react";
 import { useLocation, useNavigate, Outlet } from "react-router-dom";
-import { Home, Smartphone, ShoppingCart, Banknote, Clock, MoreHorizontal, Loader2, LogOut, HelpCircle, Settings } from "lucide-react";
+import { Home, Smartphone, ShoppingCart, Banknote, Clock, MoreHorizontal, Loader2, HelpCircle, HeadphonesIcon, Package, ArrowDownLeft, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,6 +11,14 @@ import { Drawer, DrawerContent } from "@/components/ui/drawer";
 
 const tmaNavItems = [
   { to: "/tma", label: "Главная", icon: Home, exact: true },
+  { to: "/tma/inventory", label: "Склад", icon: Smartphone },
+  { to: "/tma/sales", label: "Продажи", icon: ShoppingCart },
+  { to: "/tma/cash", label: "Касса", icon: Banknote },
+  { to: "/tma/shift", label: "Смена", icon: Clock },
+];
+
+const moreMenuItems = [
+  { to: "/tma", label: "Главная", icon: Home },
   { to: "/tma/inventory", label: "Склад", icon: Smartphone },
   { to: "/tma/sales", label: "Продажи", icon: ShoppingCart },
   { to: "/tma/cash", label: "Касса", icon: Banknote },
@@ -30,7 +38,7 @@ const TmaNavBar = memo(({ pathname, onNavigate, onMore, moreActive }: {
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100"
       style={{
-        paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)",
+        paddingBottom: "max(env(safe-area-inset-bottom, 0px), 8px)",
         boxShadow: "0 -1px 12px rgba(0,0,0,0.06)",
       }}
     >
@@ -42,7 +50,7 @@ const TmaNavBar = memo(({ pathname, onNavigate, onMore, moreActive }: {
               key={item.to}
               onClick={() => onNavigate(item.to)}
               className={cn(
-                "relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 min-h-[52px] transition-colors",
+                "relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2 min-h-[50px] transition-colors",
                 active ? "text-blue-600" : "text-gray-400"
               )}
             >
@@ -60,7 +68,7 @@ const TmaNavBar = memo(({ pathname, onNavigate, onMore, moreActive }: {
         <button
           onClick={onMore}
           className={cn(
-            "relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 min-h-[52px] transition-colors",
+            "relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2 min-h-[50px] transition-colors",
             moreActive ? "text-blue-600" : "text-gray-400"
           )}
         >
@@ -77,7 +85,7 @@ TmaNavBar.displayName = "TmaNavBar";
 const TmaLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [tmaAuthLoading, setTmaAuthLoading] = useState(false);
   const [tmaAuthError, setTmaAuthError] = useState("");
@@ -92,9 +100,8 @@ const TmaLayout = () => {
     if (tg) {
       tg.ready();
       tg.expand();
-      // Force light theme for TMA
       tg.setHeaderColor?.("#ffffff");
-      tg.setBackgroundColor?.("#f8f9fa");
+      tg.setBackgroundColor?.("#ffffff");
     }
   }, []);
 
@@ -190,9 +197,9 @@ const TmaLayout = () => {
   // Not found — invite code
   if (!user && showNotFound) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-5">
+      <div className="flex min-h-screen items-center justify-center bg-white p-5">
         <div className="w-full max-w-sm">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-5">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 space-y-5">
             <div className="text-center space-y-2">
               <div className="mx-auto h-14 w-14 rounded-full bg-blue-50 flex items-center justify-center">
                 <Smartphone className="h-7 w-7 text-blue-600" />
@@ -230,7 +237,7 @@ const TmaLayout = () => {
   if (!user && tmaAuthError) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white p-5">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center space-y-4 max-w-sm w-full">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 text-center space-y-4 max-w-sm w-full">
           <div className="mx-auto h-14 w-14 rounded-full bg-red-50 flex items-center justify-center">
             <span className="text-2xl">⚠️</span>
           </div>
@@ -248,7 +255,7 @@ const TmaLayout = () => {
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white p-5">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center space-y-4 max-w-sm w-full">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 text-center space-y-4 max-w-sm w-full">
           <div className="mx-auto h-14 w-14 rounded-full bg-blue-50 flex items-center justify-center">
             <Smartphone className="h-7 w-7 text-blue-600" />
           </div>
@@ -262,10 +269,10 @@ const TmaLayout = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-white">
       <main
         className="flex-1 overflow-y-auto"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 72px)" }}
+        style={{ paddingBottom: "calc(max(env(safe-area-inset-bottom, 0px), 8px) + 58px)" }}
       >
         <div className="p-4">
           <Outlet />
@@ -292,33 +299,25 @@ const TmaLayout = () => {
             )}
 
             <div className="space-y-1">
-              <button
-                onClick={() => handleNavigate("/tma")}
-                className="w-full flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors"
-              >
-                <Home className="h-5 w-5 text-gray-400" />
-                Главная
-              </button>
-              <button
-                onClick={() => handleNavigate("/tma")}
-                className="w-full flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors"
-              >
-                <HelpCircle className="h-5 w-5 text-gray-400" />
-                Помощь
-              </button>
+              {moreMenuItems.map((item) => (
+                <button
+                  key={item.to + item.label}
+                  onClick={() => handleNavigate(item.to)}
+                  className="w-full flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                >
+                  <item.icon className="h-5 w-5 text-gray-400" />
+                  {item.label}
+                </button>
+              ))}
             </div>
 
             <div className="border-t border-gray-100 mt-3 pt-3">
               <button
-                onClick={async () => {
-                  setMoreOpen(false);
-                  await signOut();
-                  navigate("/");
-                }}
-                className="w-full flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-medium text-red-500 hover:bg-red-50 active:bg-red-100 transition-colors"
+                onClick={() => handleNavigate("/tma/support")}
+                className="w-full flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-medium text-blue-600 hover:bg-blue-50 active:bg-blue-100 transition-colors"
               >
-                <LogOut className="h-5 w-5" />
-                Выйти
+                <HeadphonesIcon className="h-5 w-5" />
+                Поддержка
               </button>
             </div>
           </div>
