@@ -44,6 +44,7 @@ const AIPage = lazy(() => import("./pages/dashboard/AIPage"));
 const NetworkPage = lazy(() => import("./pages/dashboard/NetworkPage"));
 const ComparisonPage = lazy(() => import("./pages/dashboard/ComparisonPage"));
 const TransfersPage = lazy(() => import("./pages/dashboard/TransfersPage"));
+const TasksPage = lazy(() => import("./pages/dashboard/TasksPage"));
 
 // Lazy-loaded admin pages
 const AdminDashboardPage = lazy(() => import("./pages/admin/AdminDashboardPage"));
