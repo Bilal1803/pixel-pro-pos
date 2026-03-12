@@ -97,6 +97,10 @@ const InventoryPage = () => {
   const [form, setForm] = useState({ model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing" as string, notes: "", sim_type: "", condition: "used" });
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({ id: "", model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing" as string, notes: "", sim_type: "", condition: "used" });
+  const [listingDialogOpen, setListingDialogOpen] = useState(false);
+  const [listingDevice, setListingDevice] = useState<any>(null);
+  const [listingUrl, setListingUrl] = useState("");
+  const [analyzingListings, setAnalyzingListings] = useState(false);
 
   // IMEI duplicate check
   const [imeiDuplicate, setImeiDuplicate] = useState<{ blocked: boolean; message: string; device?: { model: string; memory: string | null; color: string | null; status: string; store_name?: string } } | null>(null);
