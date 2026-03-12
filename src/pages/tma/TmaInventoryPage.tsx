@@ -113,7 +113,7 @@ const TmaInventoryPage = () => {
         <div className="py-10 text-center text-gray-400">Устройства не найдены</div>
       ) : (
         <div className="space-y-2">
-          {filtered.map((d) => {
+          {visibleDevices.map((d) => {
             const st = statusLabels[d.status] || { label: d.status, color: "bg-gray-50 text-gray-500 border-gray-200" };
             return (
               <div key={d.id} className="bg-white rounded-xl border border-gray-100 p-3.5 shadow-sm">
@@ -133,6 +133,11 @@ const TmaInventoryPage = () => {
               </div>
             );
           })}
+          {hasMore && (
+            <Button variant="outline" className="w-full rounded-xl" onClick={loadMore}>
+              Показать ещё ({filtered.length - visibleCount})
+            </Button>
+          )}
         </div>
       )}
     </div>
