@@ -4,7 +4,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard, Package, ShoppingCart, DollarSign, ClipboardList,
-  BarChart3, Tag, Megaphone, ArrowRight, X,
+  BarChart3, Tag, Megaphone, ArrowRight, X, ArrowDownUp, Users,
+  Headphones, Wrench, TrendingUp, Banknote, UserCog, Clock,
+  FileBarChart, Sparkles, Settings,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -12,11 +14,21 @@ const demoNav = [
   { to: "/demo", label: "Дашборд", icon: LayoutDashboard },
   { to: "/demo/inventory", label: "Склад", icon: Package },
   { to: "/demo/sales", label: "Продажи", icon: ShoppingCart },
-  { to: "/demo/cash", label: "Касса", icon: DollarSign },
-  { to: "/demo/finances", label: "Финансы", icon: BarChart3 },
-  { to: "/demo/tasks", label: "Задачи", icon: ClipboardList },
+  { to: "/demo/buyback", label: "Скупка", icon: ArrowDownUp },
+  { to: "/demo/customers", label: "Клиенты", icon: Users },
+  { to: "/demo/accessories", label: "Аксессуары", icon: Headphones },
+  { to: "/demo/repairs", label: "Ремонт", icon: Wrench },
   { to: "/demo/price-tags", label: "Ценники", icon: Tag },
+  { to: "/demo/monitoring", label: "Мониторинг цен", icon: TrendingUp },
   { to: "/demo/listings", label: "Объявления", icon: Megaphone },
+  { to: "/demo/finances", label: "Финансы", icon: BarChart3 },
+  { to: "/demo/cash", label: "Касса", icon: Banknote },
+  { to: "/demo/employees", label: "Сотрудники", icon: UserCog },
+  { to: "/demo/shifts", label: "Смены", icon: Clock },
+  { to: "/demo/tasks", label: "Задачи", icon: ClipboardList },
+  { to: "/demo/reports", label: "Отчёты", icon: FileBarChart },
+  { to: "/demo/ai", label: "AI Ассистент", icon: Sparkles },
+  { to: "/demo/settings", label: "Настройки", icon: Settings },
 ];
 
 const DemoLayout = () => {
