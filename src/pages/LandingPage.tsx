@@ -1,4 +1,5 @@
 import { Link, Navigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -154,6 +155,59 @@ const plans = [
   },
 ];
 
+/* ── Animated Solutions Grid ── */
+
+const SolutionsGrid = () => {
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const idx = Number((entry.target as HTMLElement).dataset.idx);
+            setVisible((prev) => new Set(prev).add(idx));
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
+    );
+
+    el.querySelectorAll("[data-idx]").forEach((child) => observer.observe(child));
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={gridRef} className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {solutions.map((s, i) => (
+        <div
+          key={s.text}
+          data-idx={i}
+          className="flex items-start gap-4 rounded-xl border bg-card p-6 hover:shadow-md transition-all duration-500"
+          style={{
+            opacity: visible.has(i) ? 1 : 0,
+            transform: visible.has(i) ? "translateY(0)" : "translateY(24px)",
+            transitionDelay: `${(i % 3) * 100}ms`,
+          }}
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <s.icon className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="font-medium text-foreground">{s.text}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{s.desc}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 /* ── Component ── */
 
 const LandingPage = () => {
@@ -270,19 +324,7 @@ const LandingPage = () => {
           <h2 className="text-3xl font-bold text-center sm:text-4xl">
             FILTER CRM — система, созданная специально для магазинов техники
           </h2>
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {solutions.map((s) => (
-              <div key={s.text} className="flex items-start gap-4 rounded-xl border bg-card p-6 hover:shadow-md transition-shadow">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <s.icon className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">{s.text}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{s.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <SolutionsGrid />
         </div>
       </section>
 
