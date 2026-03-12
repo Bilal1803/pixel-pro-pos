@@ -4,7 +4,7 @@ import {
   Users, DollarSign, UserCog, Wrench, Clock, FileBarChart,
   Settings, HelpCircle, CreditCard, Sparkles, Headphones,
   Store, BarChart3, ArrowRightLeft, Tag, TrendingUp, Megaphone,
-  MoreHorizontal, Shield, LogOut, Banknote,
+  MoreHorizontal, Shield, LogOut, Banknote, ClipboardList,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
