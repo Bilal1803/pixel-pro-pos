@@ -436,7 +436,7 @@ const TmaSalesPage = () => {
               <span>Стоимость товаров</span>
               <span>{cartProductTotal.toLocaleString("ru")} ₽</span>
             </div>
-            {paymentFee > 0 && (
+            {payment !== "mixed" && paymentFee > 0 && (
               <div className="flex items-center justify-between text-sm opacity-80">
                 <span>Комиссия оплаты</span>
                 <span>+{paymentFee.toLocaleString("ru")} ₽</span>
@@ -444,7 +444,7 @@ const TmaSalesPage = () => {
             )}
             <div className="flex items-center justify-between">
               <span className="text-sm">Итого</span>
-              <span className="text-xl font-bold">{total.toLocaleString("ru")} ₽</span>
+              <span className="text-xl font-bold">{(payment === "mixed" ? mixedTotal : total).toLocaleString("ru")} ₽</span>
             </div>
           </div>
           <Button

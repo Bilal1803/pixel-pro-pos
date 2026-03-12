@@ -92,9 +92,9 @@ const CashPage = () => {
     enabled: !!companyId,
   });
 
-  const deposits = cashOps.filter(o => o.type === "deposit").reduce((s, o) => s + o.amount, 0);
+  const deposits = cashOps.filter(o => o.type === "deposit" || o.type === "sale_cash").reduce((s, o) => s + o.amount, 0);
   const withdrawals = cashOps.filter(o => o.type === "withdraw").reduce((s, o) => s + o.amount, 0);
-  const currentCash = (activeShift?.cash_start || 0) + cashSalesTotal + deposits - withdrawals;
+  const currentCash = (activeShift?.cash_start || 0) + deposits - withdrawals;
 
   const getEmployeeName = (id: string | null) => {
     if (!id) return "—";
