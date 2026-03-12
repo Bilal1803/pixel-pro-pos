@@ -51,7 +51,7 @@ const MobileBottomNav = () => {
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { subscription } = useSubscription();
-  const { isAdmin } = usePlatformAdmin();
+  const { isAdmin, isLoading: isAdminLoading } = usePlatformAdmin();
   const { signOut } = useAuth();
   const isPremier = subscription.plan === "premier";
 
@@ -99,7 +99,15 @@ const MobileBottomNav = () => {
               })}
             </div>
 
-            {isAdmin && (
+            {isAdminLoading ? (
+              <>
+                <Separator className="my-4" />
+                <div className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground/60">
+                  <Shield className="h-5 w-5" />
+                  Проверка прав...
+                </div>
+              </>
+            ) : isAdmin ? (
               <>
                 <Separator className="my-4" />
                 <button
@@ -113,7 +121,7 @@ const MobileBottomNav = () => {
                   Админ-панель
                 </button>
               </>
-            )}
+            ) : null}
 
             <Separator className="my-4" />
             <button
