@@ -1,6 +1,6 @@
 import { useEffect, useState, memo, useCallback } from "react";
 import { useLocation, useNavigate, Outlet } from "react-router-dom";
-import { Home, Smartphone, ShoppingCart, Banknote, Clock, MoreHorizontal, Loader2, HelpCircle, HeadphonesIcon, Package, ArrowDownLeft, Settings } from "lucide-react";
+import { Home, Smartphone, ShoppingCart, Banknote, Clock, MoreHorizontal, Loader2, HeadphonesIcon, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
