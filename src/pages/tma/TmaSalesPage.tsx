@@ -184,13 +184,18 @@ const TmaSalesPage = () => {
   const { fee: paymentFee, total } = calcFee(cartProductTotal, currentPaymentSetting);
   const hasPriceChanges = cart.some(i => i.price !== i.originalPrice);
 
+  const mixedCash = payment === "mixed" ? Number(mixedCashAmount) || 0 : 0;
+  const mixedCard = payment === "mixed" ? Number(mixedCardAmount) || 0 : 0;
+  const mixedTotal = mixedCash + mixedCard;
+
   const activePaymentMethods = paymentSettings.length > 0
-    ? paymentSettings
+    ? [...paymentSettings, { method: "mixed", label: "Смешанная", percent_fee: 0, fixed_fee: 0 }]
     : [
         { method: "cash", label: "Наличные", percent_fee: 0, fixed_fee: 0 },
         { method: "card", label: "Карта / QR", percent_fee: 0, fixed_fee: 0 },
         { method: "transfer", label: "Перевод", percent_fee: 0, fixed_fee: 0 },
         { method: "installments", label: "Рассрочка", percent_fee: 0, fixed_fee: 0 },
+        { method: "mixed", label: "Смешанная", percent_fee: 0, fixed_fee: 0 },
       ];
 
   const submitSale = useMutation({
