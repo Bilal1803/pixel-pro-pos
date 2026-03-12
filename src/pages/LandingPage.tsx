@@ -750,7 +750,7 @@ const LandingPage = () => {
       {/* ─── Footer ─── */}
       <footer className="border-t py-12">
         <div className="container flex flex-col items-center justify-between gap-6 sm:flex-row">
-          <span className="font-bold text-foreground">PhoneCRM</span>
+          <span className="font-bold text-foreground">FILTER CRM</span>
           <div className="flex gap-6 text-sm text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">Возможности</a>
             <a href="#pricing" className="hover:text-foreground transition-colors">Тарифы</a>
