@@ -48,9 +48,13 @@ const LoginPage = () => {
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1" />
           </div>
-          <div>
+          <div className="relative">
             <Label htmlFor="password">Пароль</Label>
-            <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required className="mt-1" />
+            <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required className="mt-1 pr-10" />
+            <button type="button" tabIndex={-1} onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[38px] text-muted-foreground hover:text-foreground transition-colors">
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
           </div>
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting ? "Вход..." : "Войти"}
