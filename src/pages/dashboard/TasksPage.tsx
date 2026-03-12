@@ -133,6 +133,7 @@ const TasksPage = () => {
 
   const filtered = tasks.filter((t) => {
     if (tab === "today") return t.due_date && isToday(parseISO(t.due_date)) && t.status !== "done";
+    if (tab === "listings") return (t.title.includes("Опубликовать") || t.title.includes("Перевыложить")) && t.status !== "done";
     if (tab === "management") return t.is_management_task;
     if (tab === "overdue") return t.due_date && isPast(parseISO(t.due_date)) && t.status !== "done";
     if (tab === "done") return t.status === "done";

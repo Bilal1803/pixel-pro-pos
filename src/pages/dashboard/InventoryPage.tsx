@@ -998,6 +998,32 @@ const InventoryPage = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Listing publish dialog */}
+      <Dialog open={listingDialogOpen} onOpenChange={setListingDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Публикация объявления</DialogTitle></DialogHeader>
+          {listingDevice && (
+            <div className="space-y-4">
+              <div className="rounded-lg bg-muted/50 p-3 text-sm">
+                <p className="font-medium">{listingDevice.model}</p>
+                <p className="text-xs text-muted-foreground">{[listingDevice.memory, listingDevice.color].filter(Boolean).join(" · ")}</p>
+              </div>
+              <div>
+                <Label>Ссылка на объявление (Авито и т.д.)</Label>
+                <Input placeholder="https://avito.ru/..." value={listingUrl} onChange={(e) => setListingUrl(e.target.value)} />
+              </div>
+              <Button
+                className="w-full"
+                disabled={markAsListed.isPending}
+                onClick={() => markAsListed.mutate({ deviceId: listingDevice.id, url: listingUrl })}
+              >
+                {markAsListed.isPending ? "Сохранение..." : "Опубликовано"}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
