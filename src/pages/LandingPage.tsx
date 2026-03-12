@@ -20,24 +20,24 @@ const problems = [
 ];
 
 const solutions = [
-  { icon: Smartphone, text: "Учёт устройств по IMEI" },
-  { icon: Package, text: "Полный контроль склада" },
-  { icon: ShoppingCart, text: "Продажи и оформление сделок" },
-  { icon: ArrowDownUp, text: "Система скупки телефонов" },
-  { icon: Tag, text: "Учёт аксессуаров и товаров" },
-  { icon: BarChart3, text: "Финансовая аналитика" },
-  { icon: ClipboardList, text: "Система задач для сотрудников" },
-  { icon: Megaphone, text: "AI-контроль объявлений на Авито" },
-  { icon: MessageSquare, text: "Telegram Mini App для продавцов" },
-  { icon: DollarSign, text: "Управление кассой" },
-  { icon: Users, text: "Управление сотрудниками" },
-  { icon: Wrench, text: "Ремонт устройств" },
-  { icon: TrendingUp, text: "Мониторинг цен конкурентов" },
-  { icon: Printer, text: "Автоматические ценники" },
-  { icon: Sparkles, text: "AI ассистент для бизнеса" },
-  { icon: Shield, text: "Контроль смен и доступов" },
-  { icon: Send, text: "Telegram уведомления" },
-  { icon: Headphones, text: "Поддержка клиентов" },
+  { icon: Smartphone, text: "Учёт устройств по IMEI", desc: "Каждое устройство с уникальным IMEI, историей и статусом" },
+  { icon: Package, text: "Полный контроль склада", desc: "Остатки, перемещения между точками и статусы в реальном времени" },
+  { icon: ShoppingCart, text: "Продажи и оформление сделок", desc: "Быстрое оформление с выбором способа оплаты и скидками" },
+  { icon: ArrowDownUp, text: "Система скупки телефонов", desc: "Оценка, выкуп и автоматическое добавление на склад" },
+  { icon: Tag, text: "Учёт аксессуаров и товаров", desc: "Чехлы, стёкла и другие товары с остатками и ценами" },
+  { icon: BarChart3, text: "Финансовая аналитика", desc: "Выручка, прибыль, расходы и динамика по периодам" },
+  { icon: ClipboardList, text: "Система задач для сотрудников", desc: "Назначение, контроль сроков и отслеживание выполнения" },
+  { icon: Megaphone, text: "AI-контроль объявлений на Авито", desc: "Анализ цен и рекомендации по улучшению объявлений" },
+  { icon: MessageSquare, text: "Telegram Mini App для продавцов", desc: "Продажи, склад и касса прямо в Telegram без отдельного приложения" },
+  { icon: DollarSign, text: "Управление кассой", desc: "Приход, расход, инкассация и баланс по каждой точке" },
+  { icon: Users, text: "Управление сотрудниками", desc: "Роли, доступы и привязка сотрудников к точкам продаж" },
+  { icon: Wrench, text: "Ремонт устройств", desc: "Приём заявок, статусы ремонта и уведомления клиентов" },
+  { icon: TrendingUp, text: "Мониторинг цен конкурентов", desc: "Отслеживание рыночных цен и расчёт маржинальности" },
+  { icon: Printer, text: "Автоматические ценники", desc: "Генерация и печать ценников с логотипом и QR-кодом" },
+  { icon: Sparkles, text: "AI ассистент для бизнеса", desc: "Умные подсказки по ценам, спросу и оптимизации продаж" },
+  { icon: Shield, text: "Контроль смен и доступов", desc: "Открытие и закрытие смен с контролем кассы" },
+  { icon: Send, text: "Telegram уведомления", desc: "Мгновенные оповещения о продажах, задачах и событиях" },
+  { icon: Headphones, text: "Поддержка клиентов", desc: "Быстрая помощь через встроенный чат и тикеты" },
 ];
 
 const miniAppFeatures = [
@@ -276,7 +276,10 @@ const LandingPage = () => {
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <s.icon className="h-5 w-5" />
                 </div>
-                <p className="font-medium text-foreground">{s.text}</p>
+                <div>
+                  <p className="font-medium text-foreground">{s.text}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{s.desc}</p>
+                </div>
               </div>
             ))}
           </div>
