@@ -54,6 +54,7 @@ const TmaSalesPage = () => {
       return data;
     },
     enabled: !!user,
+    staleTime: 5 * 60_000,
   });
 
   const { data: userRole } = useQuery({
