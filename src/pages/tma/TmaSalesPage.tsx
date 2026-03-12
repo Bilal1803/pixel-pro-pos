@@ -364,11 +364,13 @@ const TmaSalesPage = () => {
           <p className="text-sm font-medium mb-2">Способ оплаты</p>
           <div className="grid grid-cols-2 gap-2">
             {activePaymentMethods.map((pm: any) => {
-              const { fee, total: methodTotal } = calcFee(cartProductTotal, pm);
+              const { fee, total: methodTotal } = pm.method === "mixed" 
+                ? { fee: 0, total: cartProductTotal }
+                : calcFee(cartProductTotal, pm);
               return (
                 <button
                   key={pm.method}
-                  onClick={() => setPayment(pm.method)}
+                  onClick={() => { setPayment(pm.method); setMixedCashAmount(""); setMixedCardAmount(""); }}
                   className={`rounded-xl border p-3 text-left transition-all active:scale-95 ${
                     payment === pm.method ? "border-primary bg-primary/10" : "bg-card"
                   }`}
@@ -381,6 +383,41 @@ const TmaSalesPage = () => {
             })}
           </div>
         </div>
+
+        {/* Mixed payment split */}
+        {payment === "mixed" && (
+          <div className="rounded-xl border p-3 space-y-3 bg-muted/30">
+            <p className="text-sm font-semibold">Смешанная оплата</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Наличные</p>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={mixedCashAmount}
+                  onChange={e => setMixedCashAmount(e.target.value)}
+                  className="h-10"
+                  min="0"
+                />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Карта / Безнал</p>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={mixedCardAmount}
+                  onChange={e => setMixedCardAmount(e.target.value)}
+                  className="h-10"
+                  min="0"
+                />
+              </div>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Итого</span>
+              <span className="font-bold">{mixedTotal.toLocaleString("ru")} ₽</span>
+            </div>
+          </div>
+        )}
 
         {/* Price change reason */}
         {hasPriceChanges && (
