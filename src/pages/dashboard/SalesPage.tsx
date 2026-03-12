@@ -47,6 +47,8 @@ const SalesPage = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [clientId, setClientId] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [mixedCashAmount, setMixedCashAmount] = useState("");
+  const [mixedCardAmount, setMixedCardAmount] = useState("");
   const [serviceName, setServiceName] = useState("");
   const [servicePrice, setServicePrice] = useState("");
   const [discountType, setDiscountType] = useState<"percent" | "fixed">("percent");
