@@ -277,6 +277,9 @@ const SalesPage = () => {
     mutationFn: async () => {
       if (!companyId || !user) throw new Error("No company");
       if (cart.length === 0) throw new Error("Добавьте хотя бы один товар");
+      if (paymentMethod === "mixed" && mixedTotal <= 0) throw new Error("Укажите суммы для смешанной оплаты");
+
+      const saleTotal = paymentMethod === "mixed" ? mixedTotal : finalTotal;
 
       // Collect price change reasons
       const reasons = cart
@@ -288,10 +291,11 @@ const SalesPage = () => {
         company_id: companyId,
         client_id: clientId || null,
         employee_id: user.id,
-        total: finalTotal,
+        store_id: saleProfile?.store_id || null,
+        total: saleTotal,
         discount: discountAmount || null,
         payment_method: paymentMethod as any,
-        payment_fee: paymentFee,
+        payment_fee: paymentMethod === "mixed" ? 0 : paymentFee,
         price_change_reason: (hasPriceChanges && priceChangeReason) ? `${priceChangeReason}${reasons ? ` (${reasons})` : ""}` : null,
       }).select().single();
       if (saleError) throw saleError;
@@ -322,12 +326,26 @@ const SalesPage = () => {
           await supabase.from("products").update({ stock: (prod.stock ?? 0) - item.quantity }).eq("id", prod.id);
         }
       }
+
+      // Auto-create cash operation for cash register sync
+      await createSaleCashOperations({
+        companyId,
+        employeeId: user.id,
+        storeId: saleProfile?.store_id || null,
+        paymentMethod,
+        totalAmount: saleTotal,
+        cashAmount: paymentMethod === "mixed" ? mixedCash : undefined,
+        saleId: sale.id,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sales"] });
       queryClient.invalidateQueries({ queryKey: ["devices"] });
       queryClient.invalidateQueries({ queryKey: ["available-devices"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["cash-ops"] });
+      queryClient.invalidateQueries({ queryKey: ["all-cash-ops"] });
+      queryClient.invalidateQueries({ queryKey: ["cash-sales-total"] });
       toast({ title: "Продажа оформлена!" });
       setOpen(false);
       resetForm();
