@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Home, Smartphone, ShoppingCart, Banknote, Clock, HeadphonesIcon } from "lucide-react";
+import { Home, Smartphone, ShoppingCart, Banknote, Clock, HeadphonesIcon, BarChart3 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const menuItems = [
@@ -8,6 +8,7 @@ const menuItems = [
   { to: "/tma/sales", label: "Продажи", icon: ShoppingCart },
   { to: "/tma/cash", label: "Касса", icon: Banknote },
   { to: "/tma/shift", label: "Смена", icon: Clock },
+  { to: "/tma/analytics", label: "Аналитика", icon: BarChart3 },
 ];
 
 const TmaMorePage = () => {

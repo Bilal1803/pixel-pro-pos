@@ -64,6 +64,7 @@ const TmaCashPage = lazy(() => import("./pages/tma/TmaCashPage"));
 const TmaShiftPage = lazy(() => import("./pages/tma/TmaShiftPage"));
 const TmaMorePage = lazy(() => import("./pages/tma/TmaMorePage"));
 const TmaSupportPage = lazy(() => import("./pages/tma/TmaSupportPage"));
+const TmaAnalyticsPage = lazy(() => import("./pages/tma/TmaAnalyticsPage"));
 
 // Lazy-loaded misc pages
 const InvitePage = lazy(() => import("./pages/InvitePage"));
@@ -132,6 +133,7 @@ const App = () => (
                 <Route path="shift" element={<TmaShiftPage />} />
                 <Route path="more" element={<TmaMorePage />} />
                 <Route path="support" element={<TmaSupportPage />} />
+                <Route path="analytics" element={<TmaAnalyticsPage />} />
               </Route>
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboardPage />} />

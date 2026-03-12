@@ -54,6 +54,7 @@ const TmaSalesPage = () => {
       return data;
     },
     enabled: !!user,
+    staleTime: 5 * 60_000,
   });
 
   const { data: userRole } = useQuery({
@@ -64,6 +65,7 @@ const TmaSalesPage = () => {
       return data?.role || "employee";
     },
     enabled: !!user,
+    staleTime: 5 * 60_000,
   });
 
   const { data: devices = [] } = useQuery({
@@ -76,6 +78,7 @@ const TmaSalesPage = () => {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 30_000,
   });
 
   const { data: products = [] } = useQuery({
@@ -88,6 +91,7 @@ const TmaSalesPage = () => {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 30_000,
   });
 
   const filteredDevices = useMemo(() => {

@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,6 +51,8 @@ const TmaInventoryPage = () => {
     staleTime: 30_000,
   });
 
+  const [visibleCount, setVisibleCount] = useState(30);
+
   const filtered = useMemo(() => {
     let result = devices;
     if (statusFilter !== "all") result = result.filter(d => d.status === statusFilter);
@@ -62,6 +65,11 @@ const TmaInventoryPage = () => {
     }
     return result;
   }, [devices, search, statusFilter]);
+
+  const visibleDevices = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  const hasMore = visibleCount < filtered.length;
+
+  const loadMore = useCallback(() => setVisibleCount(v => v + 30), []);
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = { all: devices.length };
@@ -105,7 +113,7 @@ const TmaInventoryPage = () => {
         <div className="py-10 text-center text-gray-400">Устройства не найдены</div>
       ) : (
         <div className="space-y-2">
-          {filtered.map((d) => {
+          {visibleDevices.map((d) => {
             const st = statusLabels[d.status] || { label: d.status, color: "bg-gray-50 text-gray-500 border-gray-200" };
             return (
               <div key={d.id} className="bg-white rounded-xl border border-gray-100 p-3.5 shadow-sm">
@@ -125,6 +133,11 @@ const TmaInventoryPage = () => {
               </div>
             );
           })}
+          {hasMore && (
+            <Button variant="outline" className="w-full rounded-xl" onClick={loadMore}>
+              Показать ещё ({filtered.length - visibleCount})
+            </Button>
+          )}
         </div>
       )}
     </div>

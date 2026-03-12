@@ -1,6 +1,6 @@
 import { useEffect, useState, memo, useCallback } from "react";
 import { useLocation, useNavigate, Outlet } from "react-router-dom";
-import { Home, Smartphone, ShoppingCart, Banknote, Clock, MoreHorizontal, Loader2, HelpCircle, HeadphonesIcon, Package, ArrowDownLeft, Settings } from "lucide-react";
+import { Home, Smartphone, ShoppingCart, Banknote, Clock, MoreHorizontal, Loader2, HeadphonesIcon, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,6 +23,7 @@ const moreMenuItems = [
   { to: "/tma/sales", label: "Продажи", icon: ShoppingCart },
   { to: "/tma/cash", label: "Касса", icon: Banknote },
   { to: "/tma/shift", label: "Смена", icon: Clock },
+  { to: "/tma/analytics", label: "Аналитика", icon: BarChart3 },
 ];
 
 const TmaNavBar = memo(({ pathname, onNavigate, onMore, moreActive }: {
