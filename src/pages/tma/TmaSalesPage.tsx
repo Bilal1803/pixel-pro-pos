@@ -65,6 +65,7 @@ const TmaSalesPage = () => {
       return data?.role || "employee";
     },
     enabled: !!user,
+    staleTime: 5 * 60_000,
   });
 
   const { data: devices = [] } = useQuery({
