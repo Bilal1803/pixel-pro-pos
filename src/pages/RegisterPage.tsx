@@ -35,7 +35,7 @@ const RegisterPage = () => {
       <div className="w-full max-w-md rounded-xl border bg-card p-8 card-shadow">
         <div className="mb-8 text-center">
           <Link to="/" className="inline-flex items-center gap-2">
-            <Smartphone className="h-6 w-6 text-primary" />
+            <img src="/pwa-icon-512.png" alt="FILTER CRM" className="h-10 w-10 rounded-lg" />
             <span className="text-xl font-bold">FILTER CRM</span>
           </Link>
           <h1 className="mt-4 text-2xl font-bold">Регистрация</h1>
