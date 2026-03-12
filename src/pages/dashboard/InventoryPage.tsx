@@ -541,7 +541,11 @@ const InventoryPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Склад устройств</h1>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={analyzeListings} disabled={analyzingListings}>
+            {analyzingListings ? <Spinner className="mr-2 h-4 w-4 animate-spin" /> : <Megaphone className="mr-2 h-4 w-4" />}
+            Анализ объявлений
+          </Button>
           <Dialog open={importOpen} onOpenChange={(v) => { setImportOpen(v); if (!v) { setParsedRows([]); setFileName(""); } }}>
             <DialogTrigger asChild>
               <Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Импорт</Button>
