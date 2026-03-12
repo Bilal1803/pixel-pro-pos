@@ -51,6 +51,8 @@ const TmaInventoryPage = () => {
     staleTime: 30_000,
   });
 
+  const [visibleCount, setVisibleCount] = useState(30);
+
   const filtered = useMemo(() => {
     let result = devices;
     if (statusFilter !== "all") result = result.filter(d => d.status === statusFilter);
@@ -63,6 +65,11 @@ const TmaInventoryPage = () => {
     }
     return result;
   }, [devices, search, statusFilter]);
+
+  const visibleDevices = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  const hasMore = visibleCount < filtered.length;
+
+  const loadMore = useCallback(() => setVisibleCount(v => v + 30), []);
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = { all: devices.length };
