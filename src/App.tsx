@@ -128,11 +128,21 @@ const App = () => (
                 <Route index element={<DemoDashboard />} />
                 <Route path="inventory" element={<DemoInventory />} />
                 <Route path="sales" element={<DemoSales />} />
+                <Route path="buyback" element={<DemoBuyback />} />
+                <Route path="customers" element={<DemoCustomers />} />
+                <Route path="accessories" element={<DemoAccessories />} />
+                <Route path="repairs" element={<DemoRepairs />} />
                 <Route path="cash" element={<DemoCash />} />
                 <Route path="finances" element={<DemoFinances />} />
                 <Route path="tasks" element={<DemoTasks />} />
                 <Route path="price-tags" element={<DemoPriceTags />} />
                 <Route path="listings" element={<DemoListings />} />
+                <Route path="monitoring" element={<DemoMonitoring />} />
+                <Route path="employees" element={<DemoEmployees />} />
+                <Route path="shifts" element={<DemoShifts />} />
+                <Route path="reports" element={<DemoReports />} />
+                <Route path="ai" element={<DemoAI />} />
+                <Route path="settings" element={<DemoSettings />} />
               </Route>
               <Route path="/dashboard" element={<DashboardLayout />}>
                 <Route index element={<DashboardHome />} />
