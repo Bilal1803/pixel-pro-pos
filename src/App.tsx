@@ -71,6 +71,17 @@ const TmaTasksPage = lazy(() => import("./pages/tma/TmaTasksPage"));
 // Lazy-loaded misc pages
 const InvitePage = lazy(() => import("./pages/InvitePage"));
 
+// Lazy-loaded demo pages
+const DemoLayout = lazy(() => import("./components/DemoLayout"));
+const DemoDashboard = lazy(() => import("./pages/demo/DemoDashboard"));
+const DemoInventory = lazy(() => import("./pages/demo/DemoInventory"));
+const DemoSales = lazy(() => import("./pages/demo/DemoSales"));
+const DemoCash = lazy(() => import("./pages/demo/DemoCash"));
+const DemoFinances = lazy(() => import("./pages/demo/DemoFinances"));
+const DemoTasks = lazy(() => import("./pages/demo/DemoTasks"));
+const DemoPriceTags = lazy(() => import("./pages/demo/DemoPriceTags"));
+const DemoListings = lazy(() => import("./pages/demo/DemoListings"));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -103,6 +114,16 @@ const App = () => (
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/invite/:code" element={<InvitePage />} />
+              <Route path="/demo" element={<DemoLayout />}>
+                <Route index element={<DemoDashboard />} />
+                <Route path="inventory" element={<DemoInventory />} />
+                <Route path="sales" element={<DemoSales />} />
+                <Route path="cash" element={<DemoCash />} />
+                <Route path="finances" element={<DemoFinances />} />
+                <Route path="tasks" element={<DemoTasks />} />
+                <Route path="price-tags" element={<DemoPriceTags />} />
+                <Route path="listings" element={<DemoListings />} />
+              </Route>
               <Route path="/dashboard" element={<DashboardLayout />}>
                 <Route index element={<DashboardHome />} />
                 <Route path="inventory" element={<InventoryPage />} />

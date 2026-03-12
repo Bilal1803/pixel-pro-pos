@@ -207,7 +207,7 @@ const LandingPage = () => {
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <a href="#modules">Посмотреть демо</a>
+                <Link to="/demo">Посмотреть демо</Link>
               </Button>
             </div>
           </div>
