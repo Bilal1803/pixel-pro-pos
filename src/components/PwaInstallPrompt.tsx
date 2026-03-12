@@ -59,7 +59,7 @@ const PwaInstallPrompt = () => {
   }, [deferredPrompt]);
 
   const handleDismiss = useCallback(() => {
-    localStorage.setItem(DISMISS_KEY, String(Date.now()));
+    sessionStorage.setItem(SESSION_SHOWN_KEY, "true");
     setShowBanner(false);
     setShowIosGuide(false);
   }, []);
