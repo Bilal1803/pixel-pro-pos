@@ -370,7 +370,38 @@ const InventoryPage = () => {
     setEditOpen(true);
   };
 
-  // --- Import logic ---
+  const markAsListed = useMutation({
+    mutationFn: async ({ deviceId, url }: { deviceId: string; url: string }) => {
+      const { error } = await supabase.from("devices").update({
+        listing_status: "listed",
+        listing_url: url || null,
+        listing_published_at: new Date().toISOString(),
+      }).eq("id", deviceId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["devices"] });
+      toast({ title: "Объявление отмечено как опубликованное" });
+      setListingDialogOpen(false);
+      setListingDevice(null);
+      setListingUrl("");
+    },
+  });
+
+  const analyzeListings = async () => {
+    setAnalyzingListings(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("analyze-listings");
+      if (error) throw error;
+      toast({ title: "Анализ завершён", description: `Создано задач: ${data.tasks_created}, обновлено устройств: ${data.devices_updated}` });
+      queryClient.invalidateQueries({ queryKey: ["devices"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    } catch {
+      toast({ title: "Ошибка анализа", variant: "destructive" });
+    } finally {
+      setAnalyzingListings(false);
+    }
+  };
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
