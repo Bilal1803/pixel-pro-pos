@@ -222,7 +222,7 @@ const LandingPage = () => {
       {/* ─── Header ─── */}
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
         <div className="container flex h-16 items-center justify-between">
-          <span className="text-xl font-bold tracking-tight text-foreground">PhoneCRM</span>
+          <span className="text-xl font-bold tracking-tight text-foreground">FILTER CRM</span>
           <nav className="hidden md:flex items-center gap-6">
             <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Возможности</a>
             <a href="#modules" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Функции</a>
@@ -252,7 +252,7 @@ const LandingPage = () => {
               Управляйте складом, продажами, задачами сотрудников и объявлениями в одной системе.
             </p>
             <p className="mt-3 text-muted-foreground">
-              PhoneCRM объединяет склад, продажи, кассу, скупку, систему задач, AI-контроль объявлений и аналитику бизнеса.
+              FILTER CRM объединяет склад, продажи, кассу, скупку, систему задач, AI-контроль объявлений и аналитику бизнеса.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
               <Button size="lg" asChild>
@@ -272,7 +272,7 @@ const LandingPage = () => {
                 <div className="h-3 w-3 rounded-full bg-destructive/60" />
                 <div className="h-3 w-3 rounded-full bg-warning/60" />
                 <div className="h-3 w-3 rounded-full bg-green-500/60" />
-                <span className="ml-2 text-xs text-muted-foreground">PhoneCRM — Дашборд</span>
+                <span className="ml-2 text-xs text-muted-foreground">FILTER CRM — Дашборд</span>
               </div>
               <div className="grid grid-cols-3 gap-3 mb-4">
                 {[
@@ -322,7 +322,7 @@ const LandingPage = () => {
       <section id="features" className="py-20">
         <div className="container">
           <h2 className="text-3xl font-bold text-center sm:text-4xl">
-            PhoneCRM — система, созданная специально для магазинов техники
+            FILTER CRM — система, созданная специально для магазинов техники
           </h2>
           <SolutionsGrid />
         </div>
@@ -454,7 +454,7 @@ const LandingPage = () => {
           <div className="flex justify-center">
             <div className="w-[280px] rounded-[2rem] border-4 border-foreground/10 bg-card p-4 shadow-xl">
               <div className="rounded-2xl bg-muted/50 p-4">
-                <p className="text-xs font-semibold text-center text-foreground mb-3">PhoneCRM</p>
+                <p className="text-xs font-semibold text-center text-foreground mb-3">FILTER CRM</p>
                 <div className="space-y-2">
                   {["📱 Продажа", "📦 Склад", "💰 Касса", "📋 Задачи", "🔄 Скупка", "📊 Смена"].map((item) => (
                     <div key={item} className="flex items-center justify-between rounded-lg bg-card px-3 py-2.5 text-sm border">
@@ -750,13 +750,13 @@ const LandingPage = () => {
       {/* ─── Footer ─── */}
       <footer className="border-t py-12">
         <div className="container flex flex-col items-center justify-between gap-6 sm:flex-row">
-          <span className="font-bold text-foreground">PhoneCRM</span>
+          <span className="font-bold text-foreground">FILTER CRM</span>
           <div className="flex gap-6 text-sm text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">Возможности</a>
             <a href="#pricing" className="hover:text-foreground transition-colors">Тарифы</a>
             <Link to="/login" className="hover:text-foreground transition-colors">Войти</Link>
           </div>
-          <p className="text-sm text-muted-foreground">© 2026 PhoneCRM</p>
+          <p className="text-sm text-muted-foreground">© 2026 FILTER CRM</p>
         </div>
       </footer>
     </div>
