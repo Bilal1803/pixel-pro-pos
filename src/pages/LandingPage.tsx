@@ -276,7 +276,10 @@ const LandingPage = () => {
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <s.icon className="h-5 w-5" />
                 </div>
-                <p className="font-medium text-foreground">{s.text}</p>
+                <div>
+                  <p className="font-medium text-foreground">{s.text}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{s.desc}</p>
+                </div>
               </div>
             ))}
           </div>
