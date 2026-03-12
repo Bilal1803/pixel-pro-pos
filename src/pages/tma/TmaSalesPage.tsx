@@ -201,6 +201,9 @@ const TmaSalesPage = () => {
   const submitSale = useMutation({
     mutationFn: async () => {
       if (!companyId || !user || cart.length === 0) throw new Error("Корзина пуста");
+      if (payment === "mixed" && mixedTotal <= 0) throw new Error("Укажите суммы для смешанной оплаты");
+
+      const saleTotal = payment === "mixed" ? mixedTotal : total;
 
       const reasons = cart
         .filter(i => i.price !== i.originalPrice)
@@ -211,9 +214,9 @@ const TmaSalesPage = () => {
         company_id: companyId,
         employee_id: user.id,
         store_id: profile?.store_id || null,
-        total,
+        total: saleTotal,
         payment_method: payment as any,
-        payment_fee: paymentFee,
+        payment_fee: payment === "mixed" ? 0 : paymentFee,
         price_change_reason: hasPriceChanges && priceChangeReason ? `${priceChangeReason}${reasons ? ` (${reasons})` : ""}` : null,
       }).select().single();
 
@@ -244,17 +247,32 @@ const TmaSalesPage = () => {
         }).eq("id", item.product_id!);
       }
 
+      // Auto-create cash operation for cash register sync
+      await createSaleCashOperations({
+        companyId,
+        employeeId: user.id,
+        storeId: profile?.store_id || null,
+        paymentMethod: payment,
+        totalAmount: saleTotal,
+        cashAmount: payment === "mixed" ? mixedCash : undefined,
+        saleId: sale.id,
+      });
+
       const pmLabel = activePaymentMethods.find(p => p.method === payment)?.label || payment;
-      return { sale, cartItems: cart, totalAmount: total, paymentLabel: pmLabel, paymentFee };
+      return { sale, cartItems: cart, totalAmount: saleTotal, paymentLabel: pmLabel, paymentFee: payment === "mixed" ? 0 : paymentFee };
     },
     onSuccess: (result) => {
       setCart([]);
       setStep("search");
       setSearch("");
       setPriceChangeReason("");
+      setMixedCashAmount("");
+      setMixedCardAmount("");
       queryClient.invalidateQueries({ queryKey: ["tma-available-devices"] });
       queryClient.invalidateQueries({ queryKey: ["tma-products"] });
       queryClient.invalidateQueries({ queryKey: ["tma-today-sales"] });
+      queryClient.invalidateQueries({ queryKey: ["tma-cash-ops"] });
+      queryClient.invalidateQueries({ queryKey: ["tma-cash-sales-total"] });
       toast({ title: "Продажа оформлена ✓" });
 
       if (companyId) {

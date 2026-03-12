@@ -681,13 +681,16 @@ const SalesPage = () => {
                 </div>
                 <div>
                   <Label>Способ оплаты</Label>
-                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <Select value={paymentMethod} onValueChange={(v) => { setPaymentMethod(v); setMixedCashAmount(""); setMixedCardAmount(""); }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {paymentSettings.length > 0 ? (
-                        paymentSettings.map(ps => (
-                          <SelectItem key={ps.method} value={ps.method}>{ps.label}</SelectItem>
-                        ))
+                        <>
+                          {paymentSettings.map(ps => (
+                            <SelectItem key={ps.method} value={ps.method}>{ps.label}</SelectItem>
+                          ))}
+                          <SelectItem value="mixed">Смешанная</SelectItem>
+                        </>
                       ) : (
                         <>
                           <SelectItem value="cash">Наличные</SelectItem>
@@ -701,6 +704,42 @@ const SalesPage = () => {
                   </Select>
                 </div>
               </div>
+
+              {/* Mixed payment split */}
+              {paymentMethod === "mixed" && cart.length > 0 && (
+                <div className="rounded-lg border p-3 space-y-3 bg-muted/30">
+                  <p className="text-sm font-semibold">Смешанная оплата</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Наличные</Label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={mixedCashAmount}
+                        onChange={e => setMixedCashAmount(e.target.value)}
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Карта / Безнал</Label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={mixedCardAmount}
+                        onChange={e => setMixedCardAmount(e.target.value)}
+                        min="0"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Итого</span>
+                    <span className="font-bold">{mixedTotal.toLocaleString("ru")} ₽</span>
+                  </div>
+                  {mixedTotal > 0 && mixedTotal !== productTotal && (
+                    <p className="text-xs text-amber-600">⚠ Сумма ({mixedTotal.toLocaleString("ru")} ₽) отличается от стоимости товаров ({productTotal.toLocaleString("ru")} ₽)</p>
+                  )}
+                </div>
+              )}
 
               {/* Price change reason (global) */}
               {hasPriceChanges && (
