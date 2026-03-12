@@ -44,6 +44,7 @@ const AIPage = lazy(() => import("./pages/dashboard/AIPage"));
 const NetworkPage = lazy(() => import("./pages/dashboard/NetworkPage"));
 const ComparisonPage = lazy(() => import("./pages/dashboard/ComparisonPage"));
 const TransfersPage = lazy(() => import("./pages/dashboard/TransfersPage"));
+const TasksPage = lazy(() => import("./pages/dashboard/TasksPage"));
 
 // Lazy-loaded admin pages
 const AdminDashboardPage = lazy(() => import("./pages/admin/AdminDashboardPage"));
@@ -65,6 +66,7 @@ const TmaShiftPage = lazy(() => import("./pages/tma/TmaShiftPage"));
 const TmaMorePage = lazy(() => import("./pages/tma/TmaMorePage"));
 const TmaSupportPage = lazy(() => import("./pages/tma/TmaSupportPage"));
 const TmaAnalyticsPage = lazy(() => import("./pages/tma/TmaAnalyticsPage"));
+const TmaTasksPage = lazy(() => import("./pages/tma/TmaTasksPage"));
 
 // Lazy-loaded misc pages
 const InvitePage = lazy(() => import("./pages/InvitePage"));
@@ -124,6 +126,7 @@ const App = () => (
                 <Route path="network" element={<PlanGate feature="network"><NetworkPage /></PlanGate>} />
                 <Route path="comparison" element={<PlanGate feature="comparison"><ComparisonPage /></PlanGate>} />
                 <Route path="transfers" element={<PlanGate feature="transfers"><TransfersPage /></PlanGate>} />
+                <Route path="tasks" element={<TasksPage />} />
               </Route>
               <Route path="/tma" element={<TmaLayout />}>
                 <Route index element={<TmaHomePage />} />
@@ -134,6 +137,7 @@ const App = () => (
                 <Route path="more" element={<TmaMorePage />} />
                 <Route path="support" element={<TmaSupportPage />} />
                 <Route path="analytics" element={<TmaAnalyticsPage />} />
+                <Route path="tasks" element={<TmaTasksPage />} />
               </Route>
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboardPage />} />

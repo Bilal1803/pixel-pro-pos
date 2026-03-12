@@ -1422,6 +1422,72 @@ export type Database = {
           },
         ]
       }
+      tasks: {
+        Row: {
+          assigned_to: string | null
+          company_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          due_date: string | null
+          id: string
+          is_management_task: boolean
+          status: Database["public"]["Enums"]["task_status"]
+          store_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          company_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_management_task?: boolean
+          status?: Database["public"]["Enums"]["task_status"]
+          store_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          company_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_management_task?: boolean
+          status?: Database["public"]["Enums"]["task_status"]
+          store_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       telegram_settings: {
         Row: {
           bot_token: string | null
@@ -1519,6 +1585,7 @@ export type Database = {
         | "ready"
         | "done"
       sale_item_type: "device" | "accessory" | "service" | "repair"
+      task_status: "new" | "in_progress" | "done"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1664,6 +1731,7 @@ export const Constants = {
         "done",
       ],
       sale_item_type: ["device", "accessory", "service", "repair"],
+      task_status: ["new", "in_progress", "done"],
     },
   },
 } as const
