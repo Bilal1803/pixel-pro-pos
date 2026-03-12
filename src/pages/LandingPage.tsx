@@ -20,10 +20,20 @@ const problems = [
 const solutions = [
   { icon: Smartphone, text: "Учёт устройств по IMEI" },
   { icon: Package, text: "Полный контроль склада" },
-  { icon: MessageSquare, text: "Работа продавцов через Mini App" },
+  { icon: ShoppingCart, text: "Продажи и оформление сделок" },
   { icon: ArrowDownUp, text: "Система скупки телефонов" },
-  { icon: Tag, text: "Учёт аксессуаров" },
+  { icon: Tag, text: "Учёт аксессуаров и товаров" },
   { icon: BarChart3, text: "Финансовая аналитика" },
+  { icon: MessageSquare, text: "Telegram Mini App для продавцов" },
+  { icon: DollarSign, text: "Управление кассой" },
+  { icon: Users, text: "Управление сотрудниками" },
+  { icon: Wrench, text: "Ремонт устройств" },
+  { icon: TrendingUp, text: "Мониторинг цен конкурентов" },
+  { icon: Printer, text: "Автоматические ценники" },
+  { icon: Sparkles, text: "AI ассистент для бизнеса" },
+  { icon: Shield, text: "Контроль смен и доступов" },
+  { icon: Send, text: "Telegram уведомления" },
+  { icon: Headphones, text: "Поддержка клиентов" },
 ];
 
 const miniAppFeatures = [
@@ -233,7 +243,7 @@ const LandingPage = () => {
           <h2 className="text-3xl font-bold text-center sm:text-4xl">
             FILTER CRM — система, созданная специально для магазинов техники
           </h2>
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {solutions.map((s) => (
               <div key={s.text} className="flex items-start gap-4 rounded-xl border bg-card p-6 hover:shadow-md transition-shadow">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
