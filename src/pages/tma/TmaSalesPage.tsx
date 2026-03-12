@@ -10,6 +10,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { sendTelegramNotification } from "@/lib/telegram";
 import { usePaymentSettings, calcFee } from "@/hooks/usePaymentSettings";
+import { createSaleCashOperations } from "@/lib/saleCashSync";
 
 type CartItem = {
   id: string;
