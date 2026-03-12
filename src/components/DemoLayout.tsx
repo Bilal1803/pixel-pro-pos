@@ -68,7 +68,7 @@ const DemoLayout = () => {
             <aside className="w-56 shrink-0 border-r bg-card overflow-y-auto">
               <div className="p-4">
                 <Link to="/" className="text-lg font-bold text-foreground">
-                  PhoneCRM
+                  FILTER CRM
                 </Link>
                 <p className="text-[10px] text-muted-foreground mt-0.5">Демо-режим</p>
               </div>

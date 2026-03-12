@@ -17,7 +17,7 @@ const TrialPaywall = () => {
         <div className="space-y-2">
           <h1 className="text-2xl font-bold">Пробный период закончился</h1>
           <p className="text-muted-foreground">
-            Ваш бесплатный период использования PhoneCRM завершён. Оплатите тариф, чтобы продолжить работу.
+            Ваш бесплатный период использования FILTER CRM завершён. Оплатите тариф, чтобы продолжить работу.
           </p>
         </div>
 

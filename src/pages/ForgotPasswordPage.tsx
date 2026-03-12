@@ -33,7 +33,7 @@ const ForgotPasswordPage = () => {
         <div className="mb-8 text-center">
           <Link to="/" className="inline-flex items-center gap-2">
             <Smartphone className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">PhoneCRM</span>
+            <span className="text-xl font-bold">FILTER CRM</span>
           </Link>
           <h1 className="mt-4 text-2xl font-bold">Восстановление пароля</h1>
           <p className="mt-1 text-sm text-muted-foreground">

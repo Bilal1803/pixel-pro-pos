@@ -37,7 +37,7 @@ const LoginPage = () => {
           <Link to="/" className="inline-block">
             <span className="text-xl font-bold text-foreground">PhoneCRM</span>
           </Link>
-          <h1 className="mt-4 text-2xl font-bold text-foreground">Вход в PhoneCRM</h1>
+          <h1 className="mt-4 text-2xl font-bold text-foreground">Вход в FILTER CRM</h1>
           <p className="mt-1 text-sm text-muted-foreground">Введите данные для входа</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
