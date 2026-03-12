@@ -25,13 +25,7 @@ const PwaInstallPrompt = () => {
 
   useEffect(() => {
     if (isStandalone()) return;
-    if (localStorage.getItem(INSTALLED_KEY) === "true") return;
-
-    const dismissed = localStorage.getItem(DISMISS_KEY);
-    if (dismissed) {
-      const diff = Date.now() - Number(dismissed);
-      if (diff < SNOOZE_DAYS * 86400000) return;
-    }
+    if (sessionStorage.getItem(SESSION_SHOWN_KEY) === "true") return;
 
     // Android / Chrome
     const handler = (e: Event) => {
