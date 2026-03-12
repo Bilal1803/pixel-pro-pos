@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => ({
       },
       manifest: {
         name: "PhoneCRM",
-        short_name: "FILTER",
+        short_name: "PhoneCRM",
         description: "CRM для магазинов смартфонов — склад, продажи, сотрудники, аналитика",
         theme_color: "#3B82F6",
         background_color: "#FCFCFD",
