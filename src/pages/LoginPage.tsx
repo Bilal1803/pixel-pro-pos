@@ -55,7 +55,6 @@ const LoginPage = () => {
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-          </div>
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting ? "Вход..." : "Войти"}
           </Button>
