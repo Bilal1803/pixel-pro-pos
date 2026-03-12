@@ -71,6 +71,17 @@ const TmaTasksPage = lazy(() => import("./pages/tma/TmaTasksPage"));
 // Lazy-loaded misc pages
 const InvitePage = lazy(() => import("./pages/InvitePage"));
 
+// Lazy-loaded demo pages
+const DemoLayout = lazy(() => import("./components/DemoLayout"));
+const DemoDashboard = lazy(() => import("./pages/demo/DemoDashboard"));
+const DemoInventory = lazy(() => import("./pages/demo/DemoInventory"));
+const DemoSales = lazy(() => import("./pages/demo/DemoSales"));
+const DemoCash = lazy(() => import("./pages/demo/DemoCash"));
+const DemoFinances = lazy(() => import("./pages/demo/DemoFinances"));
+const DemoTasks = lazy(() => import("./pages/demo/DemoTasks"));
+const DemoPriceTags = lazy(() => import("./pages/demo/DemoPriceTags"));
+const DemoListings = lazy(() => import("./pages/demo/DemoListings"));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
