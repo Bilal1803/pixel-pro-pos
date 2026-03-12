@@ -1,25 +1,29 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Smartphone } from "lucide-react";
+import { Send } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { signIn, user, loading } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  if (!loading && user) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setSubmitting(true);
     const { error } = await signIn(email, password);
-    setLoading(false);
+    setSubmitting(false);
     if (error) {
       toast({ title: "Ошибка входа", description: error.message, variant: "destructive" });
     } else {
@@ -28,14 +32,13 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-secondary/30 p-4">
-      <div className="w-full max-w-md rounded-xl border bg-card p-8 card-shadow">
+    <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
+      <div className="w-full max-w-md rounded-xl border bg-card p-8 shadow-sm">
         <div className="mb-8 text-center">
-          <Link to="/" className="inline-flex items-center gap-2">
-            <Smartphone className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">PhoneCRM</span>
+          <Link to="/" className="inline-block">
+            <span className="text-xl font-bold text-foreground">FILTER CRM</span>
           </Link>
-          <h1 className="mt-4 text-2xl font-bold">Вход в систему</h1>
+          <h1 className="mt-4 text-2xl font-bold text-foreground">Вход в FILTER CRM</h1>
           <p className="mt-1 text-sm text-muted-foreground">Введите данные для входа</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -47,10 +50,17 @@ const LoginPage = () => {
             <Label htmlFor="password">Пароль</Label>
             <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required className="mt-1" />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Вход..." : "Войти"}
+          <Button type="submit" className="w-full" disabled={submitting}>
+            {submitting ? "Вход..." : "Войти"}
           </Button>
         </form>
+        <div className="mt-4">
+          <Button variant="outline" className="w-full" asChild>
+            <a href="https://t.me/filtercrm_bot" target="_blank" rel="noopener noreferrer">
+              <Send className="mr-2 h-4 w-4" /> Войти через Telegram
+            </a>
+          </Button>
+        </div>
         <div className="mt-4 text-center">
           <Link to="/forgot-password" className="text-sm text-muted-foreground hover:text-primary hover:underline">
             Забыли пароль?
