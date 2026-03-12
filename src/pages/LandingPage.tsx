@@ -385,12 +385,16 @@ const LandingPage = () => {
           {/* Chart mock */}
           <div className="mt-8 rounded-xl border bg-card p-6">
             <p className="text-sm font-semibold mb-4">Выручка за неделю</p>
-            <div className="flex items-end gap-2 h-32">
+            <div className="flex items-end gap-3" style={{ height: 128 }}>
               {[65, 45, 80, 55, 90, 70, 85].map((h, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                  <div className="w-full rounded-t bg-primary/80 transition-all" style={{ height: `${h}%` }} />
-                  <span className="text-[10px] text-muted-foreground">{["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"][i]}</span>
+                <div key={i} className="flex-1 flex flex-col items-end h-full justify-end">
+                  <div className="w-full rounded-t-md bg-primary" style={{ height: `${h}%`, minHeight: 4 }} />
                 </div>
+              ))}
+            </div>
+            <div className="flex gap-3 mt-1">
+              {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map((d) => (
+                <span key={d} className="flex-1 text-center text-[10px] text-muted-foreground">{d}</span>
               ))}
             </div>
           </div>
