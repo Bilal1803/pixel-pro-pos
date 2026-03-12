@@ -261,7 +261,7 @@ const TmaLayout = () => {
           <div className="mx-auto h-14 w-14 rounded-full bg-blue-50 flex items-center justify-center">
             <Smartphone className="h-7 w-7 text-blue-600" />
           </div>
-          <p className="text-lg font-bold text-gray-900">FILTER CRM</p>
+          <p className="text-lg font-bold text-gray-900">PhoneCRM</p>
           <p className="text-sm text-gray-500">
             Откройте приложение через Telegram-бот @filtercrm_bot
           </p>
