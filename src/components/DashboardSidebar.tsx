@@ -61,7 +61,7 @@ const DashboardSidebar = () => {
   return (
     <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r bg-card">
       <div className="flex h-16 items-center gap-2 border-b px-6">
-        <Smartphone className="h-6 w-6 text-primary" />
+        <img src="/pwa-icon-512.png" alt="FILTER CRM" className="h-8 w-8 rounded-lg" />
         <span className="text-lg font-bold">FILTER CRM</span>
       </div>
       <nav className="flex-1 overflow-y-auto p-3">

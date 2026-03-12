@@ -34,7 +34,8 @@ const LoginPage = () => {
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
       <div className="w-full max-w-md rounded-xl border bg-card p-8 shadow-sm">
         <div className="mb-8 text-center">
-          <Link to="/" className="inline-block">
+          <Link to="/" className="inline-flex items-center gap-2 justify-center">
+            <img src="/pwa-icon-512.png" alt="FILTER CRM" className="h-10 w-10 rounded-lg" />
             <span className="text-xl font-bold text-foreground">FILTER CRM</span>
           </Link>
           <h1 className="mt-4 text-2xl font-bold text-foreground">Вход в FILTER CRM</h1>

@@ -259,7 +259,7 @@ const TmaLayout = () => {
       <div className="flex min-h-screen items-center justify-center bg-white p-5">
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 text-center space-y-4 max-w-sm w-full">
           <div className="mx-auto h-14 w-14 rounded-full bg-blue-50 flex items-center justify-center">
-            <Smartphone className="h-7 w-7 text-blue-600" />
+            <img src="/pwa-icon-512.png" alt="FILTER CRM" className="h-10 w-10 rounded-lg" />
           </div>
           <p className="text-lg font-bold text-gray-900">FILTER CRM</p>
           <p className="text-sm text-gray-500">
