@@ -53,13 +53,6 @@ const LoginPage = () => {
             {submitting ? "Вход..." : "Войти"}
           </Button>
         </form>
-        <div className="mt-4">
-          <Button variant="outline" className="w-full" asChild>
-            <a href="https://t.me/filtercrm_bot" target="_blank" rel="noopener noreferrer">
-              <Send className="mr-2 h-4 w-4" /> Войти через Telegram
-            </a>
-          </Button>
-        </div>
         <div className="mt-4 text-center">
           <Link to="/forgot-password" className="text-sm text-muted-foreground hover:text-primary hover:underline">
             Забыли пароль?
