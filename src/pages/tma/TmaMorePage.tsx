@@ -1,15 +1,18 @@
 import { useNavigate } from "react-router-dom";
-import { Home, HelpCircle, LogOut } from "lucide-react";
+import { Home, Smartphone, ShoppingCart, Banknote, Clock, HeadphonesIcon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+
+const menuItems = [
+  { to: "/tma", label: "Главная", icon: Home },
+  { to: "/tma/inventory", label: "Склад", icon: Smartphone },
+  { to: "/tma/sales", label: "Продажи", icon: ShoppingCart },
+  { to: "/tma/cash", label: "Касса", icon: Banknote },
+  { to: "/tma/shift", label: "Смена", icon: Clock },
+];
 
 const TmaMorePage = () => {
   const navigate = useNavigate();
-  const { signOut, user } = useAuth();
-
-  const handleLogout = async () => {
-    await signOut();
-    navigate("/");
-  };
+  const { user } = useAuth();
 
   return (
     <div className="space-y-4">
@@ -23,27 +26,23 @@ const TmaMorePage = () => {
       )}
 
       <div className="space-y-1.5">
-        <button
-          onClick={() => navigate("/tma")}
-          className="w-full flex items-center gap-3 bg-white rounded-xl border border-gray-100 p-4 text-left shadow-sm active:scale-[0.98] transition-transform"
-        >
-          <Home className="h-5 w-5 text-gray-400" />
-          <span className="text-sm font-medium text-gray-700">Главная</span>
-        </button>
-        <button
-          onClick={() => navigate("/tma")}
-          className="w-full flex items-center gap-3 bg-white rounded-xl border border-gray-100 p-4 text-left shadow-sm active:scale-[0.98] transition-transform"
-        >
-          <HelpCircle className="h-5 w-5 text-gray-400" />
-          <span className="text-sm font-medium text-gray-700">Помощь</span>
-        </button>
+        {menuItems.map((item) => (
+          <button
+            key={item.to + item.label}
+            onClick={() => navigate(item.to)}
+            className="w-full flex items-center gap-3 bg-white rounded-xl border border-gray-100 p-4 text-left shadow-sm active:scale-[0.98] transition-transform"
+          >
+            <item.icon className="h-5 w-5 text-gray-400" />
+            <span className="text-sm font-medium text-gray-700">{item.label}</span>
+          </button>
+        ))}
       </div>
 
       <button
-        onClick={handleLogout}
-        className="w-full flex items-center justify-center gap-2 bg-white rounded-xl border border-gray-200 p-4 text-red-500 font-medium text-sm active:scale-[0.98] transition-transform"
+        onClick={() => navigate("/tma/support")}
+        className="w-full flex items-center justify-center gap-2 bg-blue-50 rounded-xl border border-blue-100 p-4 text-blue-600 font-medium text-sm active:scale-[0.98] transition-transform"
       >
-        <LogOut className="h-5 w-5" /> Выйти
+        <HeadphonesIcon className="h-5 w-5" /> Поддержка
       </button>
     </div>
   );

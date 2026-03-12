@@ -131,6 +131,7 @@ const App = () => (
                 <Route path="cash" element={<TmaCashPage />} />
                 <Route path="shift" element={<TmaShiftPage />} />
                 <Route path="more" element={<TmaMorePage />} />
+                <Route path="support" element={<TmaSupportPage />} />
               </Route>
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboardPage />} />
