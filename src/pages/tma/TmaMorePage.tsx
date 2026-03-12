@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Home, Smartphone, ShoppingCart, Banknote, Clock, HeadphonesIcon } from "lucide-react";
+import { Home, Smartphone, ShoppingCart, Banknote, Clock, HeadphonesIcon, BarChart3 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const menuItems = [
