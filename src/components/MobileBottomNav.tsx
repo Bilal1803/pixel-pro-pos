@@ -51,7 +51,7 @@ const MobileBottomNav = () => {
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { subscription } = useSubscription();
-  const { isAdmin } = usePlatformAdmin();
+  const { isAdmin, isLoading: isAdminLoading } = usePlatformAdmin();
   const { signOut } = useAuth();
   const isPremier = subscription.plan === "premier";
 

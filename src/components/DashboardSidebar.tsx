@@ -43,7 +43,7 @@ const DashboardSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
-  const { isAdmin } = usePlatformAdmin();
+  const { isAdmin, isLoading: isAdminLoading } = usePlatformAdmin();
   const { subscription } = useSubscription();
 
   const isPremier = subscription.plan === "premier";
