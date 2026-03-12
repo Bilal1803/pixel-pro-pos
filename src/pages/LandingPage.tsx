@@ -20,10 +20,20 @@ const problems = [
 const solutions = [
   { icon: Smartphone, text: "Учёт устройств по IMEI" },
   { icon: Package, text: "Полный контроль склада" },
-  { icon: MessageSquare, text: "Работа продавцов через Mini App" },
+  { icon: ShoppingCart, text: "Продажи и оформление сделок" },
   { icon: ArrowDownUp, text: "Система скупки телефонов" },
-  { icon: Tag, text: "Учёт аксессуаров" },
+  { icon: Tag, text: "Учёт аксессуаров и товаров" },
   { icon: BarChart3, text: "Финансовая аналитика" },
+  { icon: MessageSquare, text: "Telegram Mini App для продавцов" },
+  { icon: DollarSign, text: "Управление кассой" },
+  { icon: Users, text: "Управление сотрудниками" },
+  { icon: Wrench, text: "Ремонт устройств" },
+  { icon: TrendingUp, text: "Мониторинг цен конкурентов" },
+  { icon: Printer, text: "Автоматические ценники" },
+  { icon: Sparkles, text: "AI ассистент для бизнеса" },
+  { icon: Shield, text: "Контроль смен и доступов" },
+  { icon: Send, text: "Telegram уведомления" },
+  { icon: Headphones, text: "Поддержка клиентов" },
 ];
 
 const miniAppFeatures = [
