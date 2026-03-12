@@ -240,6 +240,23 @@ const SalesPage = () => {
 
   const hasPriceChanges = cart.some(i => i.price !== i.originalPrice);
 
+  // For mixed payment, override finalTotal
+  const mixedCash = paymentMethod === "mixed" ? Number(mixedCashAmount) || 0 : 0;
+  const mixedCard = paymentMethod === "mixed" ? Number(mixedCardAmount) || 0 : 0;
+  const mixedTotal = mixedCash + mixedCard;
+
+  // Profile for store_id
+  const { data: saleProfile } = useQuery({
+    queryKey: ["sale-profile", user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await supabase.from("profiles").select("store_id").eq("user_id", user.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60_000,
+  });
+
   const resetForm = () => {
     setCart([]);
     setClientId("");
@@ -252,6 +269,8 @@ const SalesPage = () => {
     setDiscountValue("");
     setEditingItemId(null);
     setPriceChangeReason("");
+    setMixedCashAmount("");
+    setMixedCardAmount("");
   };
 
   const createSale = useMutation({
