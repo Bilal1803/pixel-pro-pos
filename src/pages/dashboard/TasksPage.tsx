@@ -152,6 +152,7 @@ const TasksPage = () => {
         <TabsList className="flex-wrap">
           <TabsTrigger value="all">Активные</TabsTrigger>
           <TabsTrigger value="today">На сегодня</TabsTrigger>
+          <TabsTrigger value="listings">Объявления</TabsTrigger>
           <TabsTrigger value="management">Руководству</TabsTrigger>
           <TabsTrigger value="overdue">Просроченные</TabsTrigger>
           <TabsTrigger value="done">Выполненные</TabsTrigger>
