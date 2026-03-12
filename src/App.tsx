@@ -64,6 +64,7 @@ const TmaCashPage = lazy(() => import("./pages/tma/TmaCashPage"));
 const TmaShiftPage = lazy(() => import("./pages/tma/TmaShiftPage"));
 const TmaMorePage = lazy(() => import("./pages/tma/TmaMorePage"));
 const TmaSupportPage = lazy(() => import("./pages/tma/TmaSupportPage"));
+const TmaAnalyticsPage = lazy(() => import("./pages/tma/TmaAnalyticsPage"));
 
 // Lazy-loaded misc pages
 const InvitePage = lazy(() => import("./pages/InvitePage"));
