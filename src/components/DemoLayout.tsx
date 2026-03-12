@@ -47,7 +47,7 @@ const DemoLayout = () => {
         {bannerVisible && (
           <div className="bg-primary text-primary-foreground px-4 py-2.5 flex items-center justify-between gap-3 text-sm shrink-0 z-50">
             <span className="font-medium truncate">
-              🎯 Вы в демо-режиме PhoneCRM — данные демонстрационные
+              🎯 Вы в демо-режиме FILTER CRM — данные демонстрационные
             </span>
             <div className="flex items-center gap-2 shrink-0">
               <Button size="sm" variant="secondary" className="h-7 text-xs" asChild>
