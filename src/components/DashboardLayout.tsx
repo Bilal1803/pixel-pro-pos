@@ -6,6 +6,7 @@ import OnboardingTour from "@/components/OnboardingTour";
 import NotificationBell from "@/components/NotificationBell";
 import StoreSelector from "@/components/StoreSelector";
 import TrialPaywall from "@/components/TrialPaywall";
+import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { StoreProvider } from "@/contexts/StoreContext";
@@ -55,6 +56,7 @@ const DashboardContent = () => {
       {isMobile && <MobileBottomNav />}
 
       <OnboardingTour />
+      <PwaInstallPrompt />
     </div>
   );
 };
