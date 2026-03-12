@@ -81,6 +81,16 @@ const DemoFinances = lazy(() => import("./pages/demo/DemoFinances"));
 const DemoTasks = lazy(() => import("./pages/demo/DemoTasks"));
 const DemoPriceTags = lazy(() => import("./pages/demo/DemoPriceTags"));
 const DemoListings = lazy(() => import("./pages/demo/DemoListings"));
+const DemoBuyback = lazy(() => import("./pages/demo/DemoBuyback"));
+const DemoCustomers = lazy(() => import("./pages/demo/DemoCustomers"));
+const DemoAccessories = lazy(() => import("./pages/demo/DemoAccessories"));
+const DemoRepairs = lazy(() => import("./pages/demo/DemoRepairs"));
+const DemoMonitoring = lazy(() => import("./pages/demo/DemoMonitoring"));
+const DemoEmployees = lazy(() => import("./pages/demo/DemoEmployees"));
+const DemoShifts = lazy(() => import("./pages/demo/DemoShifts"));
+const DemoReports = lazy(() => import("./pages/demo/DemoReports"));
+const DemoAI = lazy(() => import("./pages/demo/DemoAI"));
+const DemoSettings = lazy(() => import("./pages/demo/DemoSettings"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
