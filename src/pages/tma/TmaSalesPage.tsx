@@ -10,6 +10,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { sendTelegramNotification } from "@/lib/telegram";
 import { usePaymentSettings, calcFee } from "@/hooks/usePaymentSettings";
+import { createSaleCashOperations } from "@/lib/saleCashSync";
 
 type CartItem = {
   id: string;
@@ -38,6 +39,8 @@ const TmaSalesPage = () => {
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [payment, setPayment] = useState("cash");
+  const [mixedCashAmount, setMixedCashAmount] = useState("");
+  const [mixedCardAmount, setMixedCardAmount] = useState("");
   const [step, setStep] = useState<"search" | "cart">("search");
 
   // Price editing
@@ -181,18 +184,26 @@ const TmaSalesPage = () => {
   const { fee: paymentFee, total } = calcFee(cartProductTotal, currentPaymentSetting);
   const hasPriceChanges = cart.some(i => i.price !== i.originalPrice);
 
+  const mixedCash = payment === "mixed" ? Number(mixedCashAmount) || 0 : 0;
+  const mixedCard = payment === "mixed" ? Number(mixedCardAmount) || 0 : 0;
+  const mixedTotal = mixedCash + mixedCard;
+
   const activePaymentMethods = paymentSettings.length > 0
-    ? paymentSettings
+    ? [...paymentSettings, { method: "mixed", label: "Смешанная", percent_fee: 0, fixed_fee: 0 }]
     : [
         { method: "cash", label: "Наличные", percent_fee: 0, fixed_fee: 0 },
         { method: "card", label: "Карта / QR", percent_fee: 0, fixed_fee: 0 },
         { method: "transfer", label: "Перевод", percent_fee: 0, fixed_fee: 0 },
         { method: "installments", label: "Рассрочка", percent_fee: 0, fixed_fee: 0 },
+        { method: "mixed", label: "Смешанная", percent_fee: 0, fixed_fee: 0 },
       ];
 
   const submitSale = useMutation({
     mutationFn: async () => {
       if (!companyId || !user || cart.length === 0) throw new Error("Корзина пуста");
+      if (payment === "mixed" && mixedTotal <= 0) throw new Error("Укажите суммы для смешанной оплаты");
+
+      const saleTotal = payment === "mixed" ? mixedTotal : total;
 
       const reasons = cart
         .filter(i => i.price !== i.originalPrice)
@@ -203,9 +214,9 @@ const TmaSalesPage = () => {
         company_id: companyId,
         employee_id: user.id,
         store_id: profile?.store_id || null,
-        total,
+        total: saleTotal,
         payment_method: payment as any,
-        payment_fee: paymentFee,
+        payment_fee: payment === "mixed" ? 0 : paymentFee,
         price_change_reason: hasPriceChanges && priceChangeReason ? `${priceChangeReason}${reasons ? ` (${reasons})` : ""}` : null,
       }).select().single();
 
@@ -236,17 +247,32 @@ const TmaSalesPage = () => {
         }).eq("id", item.product_id!);
       }
 
+      // Auto-create cash operation for cash register sync
+      await createSaleCashOperations({
+        companyId,
+        employeeId: user.id,
+        storeId: profile?.store_id || null,
+        paymentMethod: payment,
+        totalAmount: saleTotal,
+        cashAmount: payment === "mixed" ? mixedCash : undefined,
+        saleId: sale.id,
+      });
+
       const pmLabel = activePaymentMethods.find(p => p.method === payment)?.label || payment;
-      return { sale, cartItems: cart, totalAmount: total, paymentLabel: pmLabel, paymentFee };
+      return { sale, cartItems: cart, totalAmount: saleTotal, paymentLabel: pmLabel, paymentFee: payment === "mixed" ? 0 : paymentFee };
     },
     onSuccess: (result) => {
       setCart([]);
       setStep("search");
       setSearch("");
       setPriceChangeReason("");
+      setMixedCashAmount("");
+      setMixedCardAmount("");
       queryClient.invalidateQueries({ queryKey: ["tma-available-devices"] });
       queryClient.invalidateQueries({ queryKey: ["tma-products"] });
       queryClient.invalidateQueries({ queryKey: ["tma-today-sales"] });
+      queryClient.invalidateQueries({ queryKey: ["tma-cash-ops"] });
+      queryClient.invalidateQueries({ queryKey: ["tma-cash-sales-total"] });
       toast({ title: "Продажа оформлена ✓" });
 
       if (companyId) {
@@ -338,11 +364,13 @@ const TmaSalesPage = () => {
           <p className="text-sm font-medium mb-2">Способ оплаты</p>
           <div className="grid grid-cols-2 gap-2">
             {activePaymentMethods.map((pm: any) => {
-              const { fee, total: methodTotal } = calcFee(cartProductTotal, pm);
+              const { fee, total: methodTotal } = pm.method === "mixed" 
+                ? { fee: 0, total: cartProductTotal }
+                : calcFee(cartProductTotal, pm);
               return (
                 <button
                   key={pm.method}
-                  onClick={() => setPayment(pm.method)}
+                  onClick={() => { setPayment(pm.method); setMixedCashAmount(""); setMixedCardAmount(""); }}
                   className={`rounded-xl border p-3 text-left transition-all active:scale-95 ${
                     payment === pm.method ? "border-primary bg-primary/10" : "bg-card"
                   }`}
@@ -355,6 +383,41 @@ const TmaSalesPage = () => {
             })}
           </div>
         </div>
+
+        {/* Mixed payment split */}
+        {payment === "mixed" && (
+          <div className="rounded-xl border p-3 space-y-3 bg-muted/30">
+            <p className="text-sm font-semibold">Смешанная оплата</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Наличные</p>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={mixedCashAmount}
+                  onChange={e => setMixedCashAmount(e.target.value)}
+                  className="h-10"
+                  min="0"
+                />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Карта / Безнал</p>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={mixedCardAmount}
+                  onChange={e => setMixedCardAmount(e.target.value)}
+                  className="h-10"
+                  min="0"
+                />
+              </div>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Итого</span>
+              <span className="font-bold">{mixedTotal.toLocaleString("ru")} ₽</span>
+            </div>
+          </div>
+        )}
 
         {/* Price change reason */}
         {hasPriceChanges && (
@@ -373,7 +436,7 @@ const TmaSalesPage = () => {
               <span>Стоимость товаров</span>
               <span>{cartProductTotal.toLocaleString("ru")} ₽</span>
             </div>
-            {paymentFee > 0 && (
+            {payment !== "mixed" && paymentFee > 0 && (
               <div className="flex items-center justify-between text-sm opacity-80">
                 <span>Комиссия оплаты</span>
                 <span>+{paymentFee.toLocaleString("ru")} ₽</span>
@@ -381,7 +444,7 @@ const TmaSalesPage = () => {
             )}
             <div className="flex items-center justify-between">
               <span className="text-sm">Итого</span>
-              <span className="text-xl font-bold">{total.toLocaleString("ru")} ₽</span>
+              <span className="text-xl font-bold">{(payment === "mixed" ? mixedTotal : total).toLocaleString("ru")} ₽</span>
             </div>
           </div>
           <Button

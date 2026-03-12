@@ -66,9 +66,9 @@ const TmaCashPage = () => {
     staleTime: 30_000,
   });
 
-  const deposits = cashOps.filter(o => o.type === "deposit").reduce((s, o) => s + o.amount, 0);
+  const deposits = cashOps.filter(o => o.type === "deposit" || o.type === "sale_cash").reduce((s, o) => s + o.amount, 0);
   const withdrawals = cashOps.filter(o => o.type === "withdraw").reduce((s, o) => s + o.amount, 0);
-  const currentCash = (activeShift?.cash_start || 0) + cashSalesTotal + deposits - withdrawals;
+  const currentCash = (activeShift?.cash_start || 0) + deposits - withdrawals;
 
   const submitOp = useMutation({
     mutationFn: async () => {
@@ -156,11 +156,15 @@ const TmaCashPage = () => {
             {cashOps.map((op: any) => (
               <div key={op.id} className="flex items-center justify-between bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
                 <div className="flex items-center gap-2">
-                  {op.type === "deposit" ? <Plus className="h-4 w-4 text-emerald-500" /> : <Minus className="h-4 w-4 text-red-500" />}
-                  <span className="text-sm text-gray-700">{op.reason || (op.type === "deposit" ? "Внесение" : "Изъятие")}</span>
+                  {op.type === "deposit" || op.type === "sale_cash" 
+                    ? <Plus className="h-4 w-4 text-emerald-500" /> 
+                    : <Minus className="h-4 w-4 text-red-500" />}
+                  <span className="text-sm text-gray-700">
+                    {op.type === "sale_cash" ? (op.reason || "Продажа") : op.reason || (op.type === "deposit" ? "Внесение" : "Изъятие")}
+                  </span>
                 </div>
-                <span className={`text-sm font-semibold ${op.type === "deposit" ? "text-emerald-600" : "text-red-600"}`}>
-                  {op.type === "deposit" ? "+" : "−"}{op.amount.toLocaleString("ru")} ₽
+                <span className={`text-sm font-semibold ${op.type === "deposit" || op.type === "sale_cash" ? "text-emerald-600" : "text-red-600"}`}>
+                  {op.type === "deposit" || op.type === "sale_cash" ? "+" : "−"}{op.amount.toLocaleString("ru")} ₽
                 </span>
               </div>
             ))}

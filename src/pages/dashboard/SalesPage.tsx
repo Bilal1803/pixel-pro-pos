@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Search, Smartphone, ShoppingBag, Wrench, Trash2, Undo2, Pencil, AlertTriangle } from "lucide-react";
+import { createSaleCashOperations } from "@/lib/saleCashSync";
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,6 +47,8 @@ const SalesPage = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [clientId, setClientId] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [mixedCashAmount, setMixedCashAmount] = useState("");
+  const [mixedCardAmount, setMixedCardAmount] = useState("");
   const [serviceName, setServiceName] = useState("");
   const [servicePrice, setServicePrice] = useState("");
   const [discountType, setDiscountType] = useState<"percent" | "fixed">("percent");
@@ -237,6 +240,23 @@ const SalesPage = () => {
 
   const hasPriceChanges = cart.some(i => i.price !== i.originalPrice);
 
+  // For mixed payment, override finalTotal
+  const mixedCash = paymentMethod === "mixed" ? Number(mixedCashAmount) || 0 : 0;
+  const mixedCard = paymentMethod === "mixed" ? Number(mixedCardAmount) || 0 : 0;
+  const mixedTotal = mixedCash + mixedCard;
+
+  // Profile for store_id
+  const { data: saleProfile } = useQuery({
+    queryKey: ["sale-profile", user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await supabase.from("profiles").select("store_id").eq("user_id", user.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60_000,
+  });
+
   const resetForm = () => {
     setCart([]);
     setClientId("");
@@ -249,12 +269,17 @@ const SalesPage = () => {
     setDiscountValue("");
     setEditingItemId(null);
     setPriceChangeReason("");
+    setMixedCashAmount("");
+    setMixedCardAmount("");
   };
 
   const createSale = useMutation({
     mutationFn: async () => {
       if (!companyId || !user) throw new Error("No company");
       if (cart.length === 0) throw new Error("Добавьте хотя бы один товар");
+      if (paymentMethod === "mixed" && mixedTotal <= 0) throw new Error("Укажите суммы для смешанной оплаты");
+
+      const saleTotal = paymentMethod === "mixed" ? mixedTotal : finalTotal;
 
       // Collect price change reasons
       const reasons = cart
@@ -266,10 +291,11 @@ const SalesPage = () => {
         company_id: companyId,
         client_id: clientId || null,
         employee_id: user.id,
-        total: finalTotal,
+        store_id: saleProfile?.store_id || null,
+        total: saleTotal,
         discount: discountAmount || null,
         payment_method: paymentMethod as any,
-        payment_fee: paymentFee,
+        payment_fee: paymentMethod === "mixed" ? 0 : paymentFee,
         price_change_reason: (hasPriceChanges && priceChangeReason) ? `${priceChangeReason}${reasons ? ` (${reasons})` : ""}` : null,
       }).select().single();
       if (saleError) throw saleError;
@@ -300,12 +326,26 @@ const SalesPage = () => {
           await supabase.from("products").update({ stock: (prod.stock ?? 0) - item.quantity }).eq("id", prod.id);
         }
       }
+
+      // Auto-create cash operation for cash register sync
+      await createSaleCashOperations({
+        companyId,
+        employeeId: user.id,
+        storeId: saleProfile?.store_id || null,
+        paymentMethod,
+        totalAmount: saleTotal,
+        cashAmount: paymentMethod === "mixed" ? mixedCash : undefined,
+        saleId: sale.id,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sales"] });
       queryClient.invalidateQueries({ queryKey: ["devices"] });
       queryClient.invalidateQueries({ queryKey: ["available-devices"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["cash-ops"] });
+      queryClient.invalidateQueries({ queryKey: ["all-cash-ops"] });
+      queryClient.invalidateQueries({ queryKey: ["cash-sales-total"] });
       toast({ title: "Продажа оформлена!" });
       setOpen(false);
       resetForm();
@@ -641,13 +681,16 @@ const SalesPage = () => {
                 </div>
                 <div>
                   <Label>Способ оплаты</Label>
-                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <Select value={paymentMethod} onValueChange={(v) => { setPaymentMethod(v); setMixedCashAmount(""); setMixedCardAmount(""); }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {paymentSettings.length > 0 ? (
-                        paymentSettings.map(ps => (
-                          <SelectItem key={ps.method} value={ps.method}>{ps.label}</SelectItem>
-                        ))
+                        <>
+                          {paymentSettings.map(ps => (
+                            <SelectItem key={ps.method} value={ps.method}>{ps.label}</SelectItem>
+                          ))}
+                          <SelectItem value="mixed">Смешанная</SelectItem>
+                        </>
                       ) : (
                         <>
                           <SelectItem value="cash">Наличные</SelectItem>
@@ -661,6 +704,42 @@ const SalesPage = () => {
                   </Select>
                 </div>
               </div>
+
+              {/* Mixed payment split */}
+              {paymentMethod === "mixed" && cart.length > 0 && (
+                <div className="rounded-lg border p-3 space-y-3 bg-muted/30">
+                  <p className="text-sm font-semibold">Смешанная оплата</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Наличные</Label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={mixedCashAmount}
+                        onChange={e => setMixedCashAmount(e.target.value)}
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Карта / Безнал</Label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={mixedCardAmount}
+                        onChange={e => setMixedCardAmount(e.target.value)}
+                        min="0"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Итого</span>
+                    <span className="font-bold">{mixedTotal.toLocaleString("ru")} ₽</span>
+                  </div>
+                  {mixedTotal > 0 && mixedTotal !== productTotal && (
+                    <p className="text-xs text-amber-600">⚠ Сумма ({mixedTotal.toLocaleString("ru")} ₽) отличается от стоимости товаров ({productTotal.toLocaleString("ru")} ₽)</p>
+                  )}
+                </div>
+              )}
 
               {/* Price change reason (global) */}
               {hasPriceChanges && (

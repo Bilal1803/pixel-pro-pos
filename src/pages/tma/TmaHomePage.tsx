@@ -101,9 +101,9 @@ const TmaHomePage = () => {
 
   const todayRevenue = todaySales.reduce((s, sale) => s + (sale.total || 0), 0);
   const todayCashSales = todaySales.filter(s => s.payment_method === "cash").reduce((s, sale) => s + (sale.total || 0), 0);
-  const cashDeposits = cashOps.filter(o => o.type === "deposit").reduce((s, o) => s + o.amount, 0);
+  const cashDeposits = cashOps.filter(o => o.type === "deposit" || o.type === "sale_cash").reduce((s, o) => s + o.amount, 0);
   const cashWithdraws = cashOps.filter(o => o.type === "withdraw").reduce((s, o) => s + o.amount, 0);
-  const currentCash = (activeShift?.cash_start || 0) + todayCashSales + cashDeposits - cashWithdraws;
+  const currentCash = (activeShift?.cash_start || 0) + cashDeposits - cashWithdraws;
 
   const handleSearch = useCallback(() => {
     if (search.trim()) {
