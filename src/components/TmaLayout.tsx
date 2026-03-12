@@ -23,6 +23,7 @@ const moreMenuItems = [
   { to: "/tma/sales", label: "Продажи", icon: ShoppingCart },
   { to: "/tma/cash", label: "Касса", icon: Banknote },
   { to: "/tma/shift", label: "Смена", icon: Clock },
+  { to: "/tma/analytics", label: "Аналитика", icon: BarChart3 },
 ];
 
 const TmaNavBar = memo(({ pathname, onNavigate, onMore, moreActive }: {
