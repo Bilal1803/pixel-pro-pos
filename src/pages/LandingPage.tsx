@@ -454,7 +454,7 @@ const LandingPage = () => {
           <div className="flex justify-center">
             <div className="w-[280px] rounded-[2rem] border-4 border-foreground/10 bg-card p-4 shadow-xl">
               <div className="rounded-2xl bg-muted/50 p-4">
-                <p className="text-xs font-semibold text-center text-foreground mb-3">PhoneCRM</p>
+                <p className="text-xs font-semibold text-center text-foreground mb-3">FILTER CRM</p>
                 <div className="space-y-2">
                   {["📱 Продажа", "📦 Склад", "💰 Касса", "📋 Задачи", "🔄 Скупка", "📊 Смена"].map((item) => (
                     <div key={item} className="flex items-center justify-between rounded-lg bg-card px-3 py-2.5 text-sm border">
