@@ -81,6 +81,16 @@ const DemoFinances = lazy(() => import("./pages/demo/DemoFinances"));
 const DemoTasks = lazy(() => import("./pages/demo/DemoTasks"));
 const DemoPriceTags = lazy(() => import("./pages/demo/DemoPriceTags"));
 const DemoListings = lazy(() => import("./pages/demo/DemoListings"));
+const DemoBuyback = lazy(() => import("./pages/demo/DemoBuyback"));
+const DemoCustomers = lazy(() => import("./pages/demo/DemoCustomers"));
+const DemoAccessories = lazy(() => import("./pages/demo/DemoAccessories"));
+const DemoRepairs = lazy(() => import("./pages/demo/DemoRepairs"));
+const DemoMonitoring = lazy(() => import("./pages/demo/DemoMonitoring"));
+const DemoEmployees = lazy(() => import("./pages/demo/DemoEmployees"));
+const DemoShifts = lazy(() => import("./pages/demo/DemoShifts"));
+const DemoReports = lazy(() => import("./pages/demo/DemoReports"));
+const DemoAI = lazy(() => import("./pages/demo/DemoAI"));
+const DemoSettings = lazy(() => import("./pages/demo/DemoSettings"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -118,11 +128,21 @@ const App = () => (
                 <Route index element={<DemoDashboard />} />
                 <Route path="inventory" element={<DemoInventory />} />
                 <Route path="sales" element={<DemoSales />} />
+                <Route path="buyback" element={<DemoBuyback />} />
+                <Route path="customers" element={<DemoCustomers />} />
+                <Route path="accessories" element={<DemoAccessories />} />
+                <Route path="repairs" element={<DemoRepairs />} />
                 <Route path="cash" element={<DemoCash />} />
                 <Route path="finances" element={<DemoFinances />} />
                 <Route path="tasks" element={<DemoTasks />} />
                 <Route path="price-tags" element={<DemoPriceTags />} />
                 <Route path="listings" element={<DemoListings />} />
+                <Route path="monitoring" element={<DemoMonitoring />} />
+                <Route path="employees" element={<DemoEmployees />} />
+                <Route path="shifts" element={<DemoShifts />} />
+                <Route path="reports" element={<DemoReports />} />
+                <Route path="ai" element={<DemoAI />} />
+                <Route path="settings" element={<DemoSettings />} />
               </Route>
               <Route path="/dashboard" element={<DashboardLayout />}>
                 <Route index element={<DashboardHome />} />
