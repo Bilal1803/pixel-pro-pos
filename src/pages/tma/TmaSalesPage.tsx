@@ -91,6 +91,7 @@ const TmaSalesPage = () => {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 30_000,
   });
 
   const filteredDevices = useMemo(() => {
