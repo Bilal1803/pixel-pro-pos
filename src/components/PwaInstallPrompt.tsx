@@ -3,9 +3,8 @@ import { X, Download, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-const DISMISS_KEY = "pwa_install_dismissed_at";
+const SESSION_SHOWN_KEY = "pwa_install_shown";
 const INSTALLED_KEY = "pwa_installed";
-const SNOOZE_DAYS = 3;
 
 function isStandalone() {
   return (
