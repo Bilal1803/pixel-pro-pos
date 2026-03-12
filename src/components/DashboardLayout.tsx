@@ -56,6 +56,7 @@ const DashboardContent = () => {
       {isMobile && <MobileBottomNav />}
 
       <OnboardingTour />
+      <PwaInstallPrompt />
     </div>
   );
 };
