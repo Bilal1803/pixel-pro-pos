@@ -322,7 +322,7 @@ const LandingPage = () => {
       <section id="features" className="py-20">
         <div className="container">
           <h2 className="text-3xl font-bold text-center sm:text-4xl">
-            PhoneCRM — система, созданная специально для магазинов техники
+            FILTER CRM — система, созданная специально для магазинов техники
           </h2>
           <SolutionsGrid />
         </div>
