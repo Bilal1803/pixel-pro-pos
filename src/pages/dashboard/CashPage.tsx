@@ -220,14 +220,14 @@ const CashPage = () => {
                   <tr key={op.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        op.type === "deposit" ? "bg-emerald-500/10 text-emerald-600" : "bg-destructive/10 text-destructive"
+                        op.type === "deposit" || op.type === "sale_cash" ? "bg-emerald-500/10 text-emerald-600" : "bg-destructive/10 text-destructive"
                       }`}>
-                        {op.type === "deposit" ? <Plus className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
-                        {op.type === "deposit" ? "Внесение" : "Изъятие"}
+                        {op.type === "deposit" || op.type === "sale_cash" ? <Plus className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
+                        {op.type === "sale_cash" ? "Продажа" : op.type === "deposit" ? "Внесение" : "Изъятие"}
                       </span>
                     </td>
-                    <td className={`px-4 py-3 font-semibold ${op.type === "deposit" ? "text-emerald-600" : "text-destructive"}`}>
-                      {op.type === "deposit" ? "+" : "−"}{op.amount.toLocaleString("ru")} ₽
+                    <td className={`px-4 py-3 font-semibold ${op.type === "deposit" || op.type === "sale_cash" ? "text-emerald-600" : "text-destructive"}`}>
+                      {op.type === "deposit" || op.type === "sale_cash" ? "+" : "−"}{op.amount.toLocaleString("ru")} ₽
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{op.reason || "—"}</td>
                     <td className="px-4 py-3">{getEmployeeName(op.employee_id)}</td>

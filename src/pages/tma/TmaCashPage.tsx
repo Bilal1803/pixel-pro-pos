@@ -163,8 +163,8 @@ const TmaCashPage = () => {
                     {op.type === "sale_cash" ? (op.reason || "Продажа") : op.reason || (op.type === "deposit" ? "Внесение" : "Изъятие")}
                   </span>
                 </div>
-                <span className={`text-sm font-semibold ${op.type === "deposit" ? "text-emerald-600" : "text-red-600"}`}>
-                  {op.type === "deposit" ? "+" : "−"}{op.amount.toLocaleString("ru")} ₽
+                <span className={`text-sm font-semibold ${op.type === "deposit" || op.type === "sale_cash" ? "text-emerald-600" : "text-red-600"}`}>
+                  {op.type === "deposit" || op.type === "sale_cash" ? "+" : "−"}{op.amount.toLocaleString("ru")} ₽
                 </span>
               </div>
             ))}
