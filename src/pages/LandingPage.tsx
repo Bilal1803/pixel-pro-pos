@@ -5,6 +5,7 @@ import {
   Smartphone, ShoppingCart, Users, ArrowDownUp, BarChart3, MessageSquare,
   Check, ArrowRight, X, Sparkles, Tag, Shield, Wrench, Star, Headphones,
   Package, DollarSign, TrendingUp, Printer, Send, ChevronRight,
+  ClipboardList, Megaphone, CalendarCheck, Bell,
 } from "lucide-react";
 
 /* ── Data ── */
@@ -15,6 +16,7 @@ const problems = [
   { icon: "📱", text: "Нет системы скупки телефонов" },
   { icon: "📦", text: "Сложно контролировать склад" },
   { icon: "📵", text: "Нет удобного приложения для продавцов" },
+  { icon: "📝", text: "Задачи теряются в чатах" },
 ];
 
 const solutions = [
@@ -24,6 +26,8 @@ const solutions = [
   { icon: ArrowDownUp, text: "Система скупки телефонов" },
   { icon: Tag, text: "Учёт аксессуаров и товаров" },
   { icon: BarChart3, text: "Финансовая аналитика" },
+  { icon: ClipboardList, text: "Система задач для сотрудников" },
+  { icon: Megaphone, text: "AI-контроль объявлений на Авито" },
   { icon: MessageSquare, text: "Telegram Mini App для продавцов" },
   { icon: DollarSign, text: "Управление кассой" },
   { icon: Users, text: "Управление сотрудниками" },
@@ -40,6 +44,7 @@ const miniAppFeatures = [
   "Оформление продажи за несколько секунд",
   "Работа со складом",
   "Оформление скупки устройств",
+  "Задачи на день и уведомления",
   "Работа с кассой",
   "Управление сменами",
 ];
@@ -54,6 +59,7 @@ const inventoryStatuses = [
 const inventoryFeatures = [
   "Учёт устройств по IMEI",
   "Отслеживание статусов устройств",
+  "Статус публикации объявления",
   "Разные цены для разных способов оплаты",
   "История устройства",
 ];
@@ -62,6 +68,22 @@ const buybackFeatures = [
   "База цен выкупа устройств",
   "Быстрое оформление скупки",
   "Автоматическое добавление устройства на склад",
+];
+
+const taskFeatures = [
+  "Задачи от руководителя сотрудникам",
+  "Задачи от сотрудников руководству",
+  "Ежедневные задачи на смену",
+  "Контроль просроченных задач",
+  "История выполнения задач",
+];
+
+const listingFeatures = [
+  "AI анализ склада: какие устройства не опубликованы",
+  "Автоматические задачи на публикацию объявлений",
+  "Напоминание о перевыкладке через 30 дней",
+  "Статус объявления на каждом устройстве",
+  "Уведомления руководителю о задержках",
 ];
 
 const analyticsMetrics = [
@@ -75,6 +97,7 @@ const aiExamples = [
   "Какие телефоны лучше продаются",
   "Какие устройства нужно закупить",
   "Какие цены стоит изменить",
+  "Какие объявления нужно обновить",
 ];
 
 const plans = [
@@ -89,8 +112,10 @@ const plans = [
       { text: "2 сотрудника", ok: true },
       { text: "До 30 устройств на складе", ok: true },
       { text: "POS-система и CRM", ok: true },
+      { text: "Система задач", ok: true },
       { text: "Базовая аналитика", ok: true },
       { text: "AI ассистент", ok: false },
+      { text: "AI-контроль объявлений", ok: false },
       { text: "Модуль ремонта", ok: false },
     ],
   },
@@ -106,6 +131,8 @@ const plans = [
       { text: "До 20 сотрудников", ok: true },
       { text: "До 200 устройств", ok: true },
       { text: "AI ассистент", ok: true },
+      { text: "AI-контроль объявлений", ok: true },
+      { text: "Система задач", ok: true },
       { text: "Модуль ремонта", ok: true },
       { text: "Мониторинг цен", ok: true },
       { text: "Telegram-уведомления", ok: true },
@@ -168,10 +195,10 @@ const LandingPage = () => {
               CRM система для магазинов смартфонов
             </h1>
             <p className="mt-6 text-lg text-muted-foreground leading-relaxed max-w-lg">
-              Управляйте складом, продажами, сотрудниками и финансами магазина в одной системе.
+              Управляйте складом, продажами, задачами сотрудников и объявлениями в одной системе.
             </p>
             <p className="mt-3 text-muted-foreground">
-              FILTER CRM объединяет склад телефонов, продажи, кассу, скупку устройств и аналитику бизнеса.
+              FILTER CRM объединяет склад, продажи, кассу, скупку, систему задач, AI-контроль объявлений и аналитику бизнеса.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
               <Button size="lg" asChild>
@@ -226,7 +253,7 @@ const LandingPage = () => {
           <h2 className="text-3xl font-bold text-center sm:text-4xl">
             Почему обычные CRM не подходят для магазинов смартфонов?
           </h2>
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {problems.map((p) => (
               <div key={p.text} className="flex flex-col items-center text-center rounded-xl border bg-card p-6">
                 <span className="text-3xl mb-3">{p.icon}</span>
@@ -243,7 +270,7 @@ const LandingPage = () => {
           <h2 className="text-3xl font-bold text-center sm:text-4xl">
             FILTER CRM — система, созданная специально для магазинов техники
           </h2>
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {solutions.map((s) => (
               <div key={s.text} className="flex items-start gap-4 rounded-xl border bg-card p-6 hover:shadow-md transition-shadow">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -252,6 +279,106 @@ const LandingPage = () => {
                 <p className="font-medium text-foreground">{s.text}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Tasks ─── */}
+      <section className="border-y bg-muted/30 py-20">
+        <div className="container grid gap-12 lg:grid-cols-2 items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary mb-4">
+              <ClipboardList className="h-4 w-4" /> Задачи
+            </div>
+            <h2 className="text-3xl font-bold sm:text-4xl">Система задач для управления магазином</h2>
+            <p className="mt-4 text-muted-foreground text-lg">
+              Ставьте задачи сотрудникам, контролируйте выполнение и получайте обратную связь от команды.
+            </p>
+            <ul className="mt-8 space-y-3">
+              {taskFeatures.map((f) => (
+                <li key={f} className="flex items-center gap-3 text-sm">
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <Check className="h-3 w-3" />
+                  </div>
+                  {f}
+                </li>
+              ))}
+            </ul>
+          </div>
+          {/* Tasks mock */}
+          <div className="rounded-xl border bg-card p-6 shadow-sm">
+            <p className="text-sm font-semibold mb-4">Задачи на сегодня</p>
+            <div className="space-y-2">
+              {[
+                { title: "Опубликовать iPhone 14 на Авито", status: "В работе", color: "bg-yellow-100 text-yellow-700" },
+                { title: "Сделать переоценку устройств", status: "Новая", color: "bg-blue-100 text-blue-700" },
+                { title: "Распечатать ценники", status: "Выполнена", color: "bg-green-100 text-green-700" },
+                { title: "Проверить склад", status: "Новая", color: "bg-blue-100 text-blue-700" },
+              ].map((t) => (
+                <div key={t.title} className="flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm">
+                  <span className="text-foreground">{t.title}</span>
+                  <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${t.color}`}>{t.status}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 pt-3 border-t">
+              <p className="text-xs text-muted-foreground">
+                <Bell className="inline h-3 w-3 mr-1" />
+                Задача от сотрудника: «Нужно заказать коробки»
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── AI Listings ─── */}
+      <section className="py-20">
+        <div className="container grid gap-12 lg:grid-cols-2 items-center">
+          <div className="order-2 lg:order-1">
+            <div className="rounded-xl border bg-card p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <p className="text-sm font-semibold">AI анализ объявлений</p>
+              </div>
+              <div className="space-y-2">
+                {[
+                  { name: "iPhone 15 Pro 256GB", icon: "📢", hint: "Не опубликован — 2 дня" },
+                  { name: "Samsung S24 128GB", icon: "✔", hint: "Опубликован на Авито" },
+                  { name: "iPhone 13 128GB", icon: "🔄", hint: "Перевыложить (30+ дней)" },
+                ].map((d) => (
+                  <div key={d.name} className="flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span>{d.icon}</span>
+                      <span className="font-medium text-foreground">{d.name}</span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">{d.hint}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 rounded-lg bg-primary/5 p-2.5 text-xs text-primary">
+                <Sparkles className="inline h-3 w-3 mr-1" />
+                AI нашёл 5 устройств без объявлений. Задачи созданы автоматически.
+              </div>
+            </div>
+          </div>
+          <div className="order-1 lg:order-2">
+            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary mb-4">
+              <Megaphone className="h-4 w-4" /> Объявления
+            </div>
+            <h2 className="text-3xl font-bold sm:text-4xl">AI-контроль публикации объявлений</h2>
+            <p className="mt-4 text-muted-foreground text-lg">
+              Система автоматически находит устройства без объявлений и создаёт задачи на публикацию.
+            </p>
+            <ul className="mt-8 space-y-3">
+              {listingFeatures.map((f) => (
+                <li key={f} className="flex items-center gap-3 text-sm">
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <Check className="h-3 w-3" />
+                  </div>
+                  {f}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>
@@ -265,7 +392,7 @@ const LandingPage = () => {
             </div>
             <h2 className="text-3xl font-bold sm:text-4xl">Рабочее приложение для продавцов</h2>
             <p className="mt-4 text-muted-foreground text-lg">
-              Сотрудники могут продавать устройства, работать со складом и кассой прямо со своего телефона.
+              Сотрудники могут продавать устройства, выполнять задачи, работать со складом и кассой прямо со своего телефона.
             </p>
             <ul className="mt-8 space-y-3">
               {miniAppFeatures.map((f) => (
@@ -284,7 +411,7 @@ const LandingPage = () => {
               <div className="rounded-2xl bg-muted/50 p-4">
                 <p className="text-xs font-semibold text-center text-foreground mb-3">FILTER CRM</p>
                 <div className="space-y-2">
-                  {["📱 Продажа", "📦 Склад", "💰 Касса", "🔄 Скупка", "📊 Смена"].map((item) => (
+                  {["📱 Продажа", "📦 Склад", "💰 Касса", "📋 Задачи", "🔄 Скупка", "📊 Смена"].map((item) => (
                     <div key={item} className="flex items-center justify-between rounded-lg bg-card px-3 py-2.5 text-sm border">
                       <span>{item}</span>
                       <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -313,16 +440,19 @@ const LandingPage = () => {
               </div>
               <div className="space-y-2">
                 {[
-                  { name: "iPhone 15 Pro 256GB", imei: "3590...4821", status: "В наличии" },
-                  { name: "Samsung S24 128GB", imei: "3568...9012", status: "Резерв" },
-                  { name: "iPhone 14 128GB", imei: "3541...7634", status: "Продан" },
+                  { name: "iPhone 15 Pro 256GB", imei: "3590...4821", status: "В наличии", listing: "📢" },
+                  { name: "Samsung S24 128GB", imei: "3568...9012", status: "Резерв", listing: "✔" },
+                  { name: "iPhone 14 128GB", imei: "3541...7634", status: "Продан", listing: "✔" },
                 ].map((d) => (
                   <div key={d.imei} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
                     <div>
                       <p className="font-medium text-foreground">{d.name}</p>
                       <p className="text-xs text-muted-foreground">IMEI: {d.imei}</p>
                     </div>
-                    <span className="text-xs text-muted-foreground">{d.status}</span>
+                    <div className="flex items-center gap-2">
+                      <span title="Статус объявления">{d.listing}</span>
+                      <span className="text-xs text-muted-foreground">{d.status}</span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -420,7 +550,7 @@ const LandingPage = () => {
             </div>
             <h2 className="text-3xl font-bold sm:text-4xl">Умный помощник для владельца магазина</h2>
             <p className="mt-4 text-muted-foreground text-lg">
-              AI анализирует продажи и помогает управлять бизнесом.
+              AI анализирует продажи, контролирует объявления и помогает управлять бизнесом.
             </p>
             <ul className="mt-8 space-y-3">
               {aiExamples.map((e) => (
