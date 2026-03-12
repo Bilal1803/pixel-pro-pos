@@ -156,8 +156,12 @@ const TmaCashPage = () => {
             {cashOps.map((op: any) => (
               <div key={op.id} className="flex items-center justify-between bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
                 <div className="flex items-center gap-2">
-                  {op.type === "deposit" ? <Plus className="h-4 w-4 text-emerald-500" /> : <Minus className="h-4 w-4 text-red-500" />}
-                  <span className="text-sm text-gray-700">{op.reason || (op.type === "deposit" ? "Внесение" : "Изъятие")}</span>
+                  {op.type === "deposit" || op.type === "sale_cash" 
+                    ? <Plus className="h-4 w-4 text-emerald-500" /> 
+                    : <Minus className="h-4 w-4 text-red-500" />}
+                  <span className="text-sm text-gray-700">
+                    {op.type === "sale_cash" ? (op.reason || "Продажа") : op.reason || (op.type === "deposit" ? "Внесение" : "Изъятие")}
+                  </span>
                 </div>
                 <span className={`text-sm font-semibold ${op.type === "deposit" ? "text-emerald-600" : "text-red-600"}`}>
                   {op.type === "deposit" ? "+" : "−"}{op.amount.toLocaleString("ru")} ₽
