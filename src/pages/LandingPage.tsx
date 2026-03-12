@@ -1,29 +1,70 @@
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Smartphone, ShoppingCart, Users, ArrowDownUp, BarChart3, MessageSquare,
-  Check, ArrowRight, X, Sparkles, Bell, Wrench, Tag, Shield, Zap, Star,
+  Check, ArrowRight, X, Sparkles, Tag, Shield, Wrench, Star, Headphones,
+  Package, DollarSign, TrendingUp, Printer, Send, ChevronRight,
 } from "lucide-react";
 
-const features = [
-  { icon: Smartphone, title: "Учёт по IMEI", desc: "Полный контроль склада с отслеживанием каждого устройства по IMEI, батарее, памяти и цвету" },
-  { icon: ShoppingCart, title: "POS-система", desc: "Многотоварные продажи: телефоны, аксессуары, услуги. Смешанная оплата и скидки" },
-  { icon: Users, title: "CRM клиентов", desc: "Накопительные скидки, история покупок, анализ клиентов и стратегии возврата" },
-  { icon: ArrowDownUp, title: "Скупка и трейд-ин", desc: "Приём устройств от клиентов с оценкой, проверкой и автоматическим оприходованием" },
-  { icon: Sparkles, title: "AI ассистент", desc: "Анализ продаж, рекомендации акций, прогнозирование спроса и советы по ценам" },
-  { icon: Bell, title: "Уведомления", desc: "Мгновенные оповещения о продажах, сменах и кассе — в CRM и Telegram" },
-  { icon: BarChart3, title: "Расширенная аналитика", desc: "Прибыль по моделям, средний чек, продажи по сотрудникам, залежалый товар" },
-  { icon: MessageSquare, title: "Telegram Mini App", desc: "POS-интерфейс прямо в Telegram для сотрудников с мини-статистикой" },
-  { icon: Wrench, title: "Модуль ремонта", desc: "Полный цикл ремонта: приём, статусы, запчасти, уведомления клиенту" },
-  { icon: Tag, title: "Ценники и мониторинг", desc: "Генерация ценников и отслеживание рыночных цен конкурентов" },
-  { icon: Shield, title: "Роли и доступ", desc: "Владелец, менеджер, сотрудник — гибкое разграничение прав" },
-  { icon: Zap, title: "Stories и акции", desc: "Публикация баннеров и акционных предложений на дашборде" },
+/* ── Data ── */
+
+const problems = [
+  { icon: "📋", text: "Учёт телефонов ведётся в Excel" },
+  { icon: "🔢", text: "Нет учёта IMEI устройств" },
+  { icon: "📱", text: "Нет системы скупки телефонов" },
+  { icon: "📦", text: "Сложно контролировать склад" },
+  { icon: "📵", text: "Нет удобного приложения для продавцов" },
 ];
 
-const steps = [
-  { num: "01", title: "Зарегистрируйтесь", desc: "Создайте аккаунт компании за 30 секунд — без карты и обязательств" },
-  { num: "02", title: "Настройте магазин", desc: "Импортируйте склад из Excel или добавьте устройства вручную" },
-  { num: "03", title: "Продавайте и растите", desc: "Продажи, аналитика и AI-рекомендации с первого дня" },
+const solutions = [
+  { icon: Smartphone, text: "Учёт устройств по IMEI" },
+  { icon: Package, text: "Полный контроль склада" },
+  { icon: MessageSquare, text: "Работа продавцов через Mini App" },
+  { icon: ArrowDownUp, text: "Система скупки телефонов" },
+  { icon: Tag, text: "Учёт аксессуаров" },
+  { icon: BarChart3, text: "Финансовая аналитика" },
+];
+
+const miniAppFeatures = [
+  "Оформление продажи за несколько секунд",
+  "Работа со складом",
+  "Оформление скупки устройств",
+  "Работа с кассой",
+  "Управление сменами",
+];
+
+const inventoryStatuses = [
+  { label: "В наличии", color: "bg-green-500" },
+  { label: "Продан", color: "bg-blue-500" },
+  { label: "Ремонт", color: "bg-amber-500" },
+  { label: "Резерв", color: "bg-purple-500" },
+];
+
+const inventoryFeatures = [
+  "Учёт устройств по IMEI",
+  "Отслеживание статусов устройств",
+  "Разные цены для разных способов оплаты",
+  "История устройства",
+];
+
+const buybackFeatures = [
+  "База цен выкупа устройств",
+  "Быстрое оформление скупки",
+  "Автоматическое добавление устройства на склад",
+];
+
+const analyticsMetrics = [
+  { icon: DollarSign, label: "Выручка", value: "1 250 000 ₽" },
+  { icon: TrendingUp, label: "Прибыль", value: "387 500 ₽" },
+  { icon: ShoppingCart, label: "Продажи", value: "156" },
+  { icon: Package, label: "Касса", value: "89 400 ₽" },
+];
+
+const aiExamples = [
+  "Какие телефоны лучше продаются",
+  "Какие устройства нужно закупить",
+  "Какие цены стоит изменить",
 ];
 
 const plans = [
@@ -31,263 +72,418 @@ const plans = [
     id: "start",
     name: "Старт",
     price: "1 990",
-    priceSuffix: " ₽/мес",
     desc: "Для начинающих предпринимателей",
     trial: "3 дня бесплатно",
     features: [
-      { text: "1 магазин", included: true },
-      { text: "До 2 сотрудников", included: true },
-      { text: "До 30 устройств на складе", included: true },
-      { text: "POS-система и CRM", included: true },
-      { text: "Базовая аналитика", included: true },
-      { text: "Мониторинг цен", included: false },
-      { text: "Объявления Авито", included: false },
-      { text: "Модуль ремонта", included: false },
-      { text: "AI ассистент", included: false },
-      { text: "Telegram-уведомления", included: false },
+      { text: "1 магазин", ok: true },
+      { text: "2 сотрудника", ok: true },
+      { text: "До 30 устройств на складе", ok: true },
+      { text: "POS-система и CRM", ok: true },
+      { text: "Базовая аналитика", ok: true },
+      { text: "AI ассистент", ok: false },
+      { text: "Модуль ремонта", ok: false },
     ],
   },
   {
     id: "business",
     name: "Бизнес",
     price: "2 990",
-    priceSuffix: " ₽/мес",
     desc: "Для растущего бизнеса",
     trial: "3 дня бесплатно",
     popular: true,
     features: [
-      { text: "До 3 магазинов", included: true },
-      { text: "До 20 сотрудников", included: true },
-      { text: "До 200 устройств на складе", included: true },
-      { text: "Модуль ремонта", included: true },
-      { text: "AI ассистент", included: true },
-      { text: "Мониторинг цен", included: true },
-      { text: "Объявления Авито", included: true },
-      { text: "Расширенная аналитика", included: true },
-      { text: "Telegram-уведомления", included: true },
-      { text: "Приоритетная поддержка", included: false },
+      { text: "До 3 магазинов", ok: true },
+      { text: "До 20 сотрудников", ok: true },
+      { text: "До 200 устройств", ok: true },
+      { text: "AI ассистент", ok: true },
+      { text: "Модуль ремонта", ok: true },
+      { text: "Мониторинг цен", ok: true },
+      { text: "Telegram-уведомления", ok: true },
     ],
   },
   {
     id: "premier",
     name: "Премьер",
     price: "7 990",
-    priceSuffix: " ₽/мес",
     desc: "Для крупных сетей",
     features: [
-      { text: "До 10 магазинов", included: true },
-      { text: "Безлимит сотрудников", included: true },
-      { text: "Безлимит устройств", included: true },
-      { text: "Все функции Бизнес", included: true },
-      { text: "API доступ", included: true },
-      { text: "Приоритетная поддержка", included: true },
-      { text: "Персональный менеджер", included: true },
-      { text: "White-label брендинг", included: true },
+      { text: "До 10 магазинов", ok: true },
+      { text: "Безлимит сотрудников", ok: true },
+      { text: "Безлимит устройств", ok: true },
+      { text: "Все функции", ok: true },
+      { text: "Приоритетная поддержка", ok: true },
+      { text: "Персональный менеджер", ok: true },
     ],
   },
 ];
 
-const stats = [
-  { value: "500+", label: "Магазинов" },
-  { value: "50 000+", label: "Устройств на учёте" },
-  { value: "99.9%", label: "Аптайм" },
-  { value: "24/7", label: "Поддержка" },
-];
+/* ── Component ── */
 
 const LandingPage = () => {
+  const { user, loading } = useAuth();
+
+  if (!loading && user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* ─── Header ─── */}
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
         <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Smartphone className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold text-foreground">PhoneCRM</span>
-          </div>
+          <span className="text-xl font-bold tracking-tight text-foreground">FILTER CRM</span>
           <nav className="hidden md:flex items-center gap-6">
             <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Возможности</a>
+            <a href="#modules" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Функции</a>
             <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Тарифы</a>
-            <a href="#how" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Как начать</a>
+            <a href="#support" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Поддержка</a>
           </nav>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" asChild>
+            <Button variant="ghost" size="sm" asChild>
               <Link to="/login">Войти</Link>
             </Button>
-            <Button asChild>
+            <Button size="sm" asChild>
               <Link to="/register">Начать бесплатно</Link>
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5" />
-        <div className="container relative py-24 lg:py-32 text-center">
-          <div className="mx-auto max-w-4xl">
-            <div className="inline-flex items-center gap-2 rounded-full border bg-card px-4 py-1.5 text-sm text-muted-foreground mb-8">
-              <Sparkles className="h-4 w-4 text-primary" />
-              Теперь с AI ассистентом
-            </div>
-            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl">
-              CRM-система для{" "}
-              <span className="text-primary">магазинов телефонов</span>
+      {/* ─── Hero ─── */}
+      <section className="relative overflow-hidden py-20 lg:py-32">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
+        <div className="container relative grid gap-12 lg:grid-cols-2 items-center">
+          <div>
+            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl text-foreground">
+              CRM система для магазинов смартфонов
             </h1>
-            <p className="mt-6 text-lg text-muted-foreground sm:text-xl max-w-2xl mx-auto">
-              Склад IMEI, продажи, скупка, ремонт, AI-аналитика и Telegram — всё в одной платформе. Начните бесплатно за 30 секунд.
+            <p className="mt-6 text-lg text-muted-foreground leading-relaxed max-w-lg">
+              Управляйте складом, продажами, сотрудниками и финансами магазина в одной системе.
             </p>
-            <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-              <Button size="lg" className="text-base px-8" asChild>
+            <p className="mt-3 text-muted-foreground">
+              FILTER CRM объединяет склад телефонов, продажи, кассу, скупку устройств и аналитику бизнеса.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-4">
+              <Button size="lg" asChild>
                 <Link to="/register">
                   Начать бесплатно <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" className="text-base px-8" asChild>
-                <Link to="/login">Войти в аккаунт</Link>
+              <Button size="lg" variant="outline" asChild>
+                <a href="#modules">Посмотреть демо</a>
               </Button>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="border-y bg-card">
-        <div className="container py-10">
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-            {stats.map((s) => (
-              <div key={s.label} className="text-center">
-                <p className="text-3xl font-extrabold text-primary">{s.value}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{s.label}</p>
+          {/* Mock dashboard screenshot */}
+          <div className="relative hidden lg:block">
+            <div className="rounded-2xl border bg-card shadow-2xl p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-3 w-3 rounded-full bg-destructive/60" />
+                <div className="h-3 w-3 rounded-full bg-warning/60" />
+                <div className="h-3 w-3 rounded-full bg-green-500/60" />
+                <span className="ml-2 text-xs text-muted-foreground">FILTER CRM — Дашборд</span>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="features" className="py-20 lg:py-28">
-        <div className="container">
-          <div className="text-center max-w-2xl mx-auto">
-            <h2 className="text-3xl font-bold sm:text-4xl">Всё для вашего бизнеса</h2>
-            <p className="mt-4 text-muted-foreground text-lg">
-              12 модулей, которые закрывают все потребности магазина смартфонов
-            </p>
-          </div>
-          <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {features.map((f) => (
-              <div
-                key={f.title}
-                className="group rounded-xl border bg-card p-6 transition-all hover:shadow-md hover:border-primary/30"
-              >
-                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                  <f.icon className="h-5 w-5" />
-                </div>
-                <h3 className="mt-4 font-semibold">{f.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* AI Section */}
-      <section className="border-y bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 py-20">
-        <div className="container">
-          <div className="grid gap-12 lg:grid-cols-2 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary mb-4">
-                <Sparkles className="h-4 w-4" /> Новое
-              </div>
-              <h2 className="text-3xl font-bold sm:text-4xl">AI ассистент для вашего бизнеса</h2>
-              <p className="mt-4 text-muted-foreground text-lg">
-                Искусственный интеллект анализирует ваши продажи, склад и клиентов — и даёт конкретные рекомендации для роста прибыли.
-              </p>
-              <ul className="mt-8 space-y-3">
+              <div className="grid grid-cols-3 gap-3 mb-4">
                 {[
-                  "Анализ прибыльности по моделям",
-                  "Рекомендации скидок на залежалый товар",
-                  "Идеи акций и бандлов",
-                  "Стратегии возврата клиентов",
-                  "Советы по ценообразованию",
-                ].map((item) => (
-                  <li key={item} className="flex items-center gap-3 text-sm">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                      <Check className="h-3 w-3" />
-                    </div>
-                    {item}
-                  </li>
+                  { l: "Продажи сегодня", v: "12", c: "text-primary" },
+                  { l: "Выручка", v: "284 500 ₽", c: "text-green-600" },
+                  { l: "На складе", v: "87", c: "text-foreground" },
+                ].map((m) => (
+                  <div key={m.l} className="rounded-lg border p-3">
+                    <p className="text-xs text-muted-foreground">{m.l}</p>
+                    <p className={`text-lg font-bold ${m.c}`}>{m.v}</p>
+                  </div>
                 ))}
-              </ul>
-              <Button size="lg" className="mt-8" asChild>
-                <Link to="/register">Попробовать AI бесплатно</Link>
-              </Button>
-            </div>
-            <div className="relative">
-              <div className="rounded-2xl border bg-card p-6 shadow-lg">
-                <div className="flex items-center gap-2 mb-4">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  <span className="font-semibold text-sm">AI Ассистент</span>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex justify-end">
-                    <div className="bg-primary text-primary-foreground rounded-xl px-3 py-2 text-sm max-w-[75%]">
-                      Какие модели приносят больше прибыли?
-                    </div>
+              </div>
+              <div className="space-y-2">
+                {["iPhone 15 Pro Max 256GB", "Samsung S24 Ultra 512GB", "iPhone 14 128GB"].map((d, i) => (
+                  <div key={d} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
+                    <span className="text-foreground">{d}</span>
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${i === 0 ? "bg-green-100 text-green-700" : i === 1 ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"}`}>
+                      {i === 0 ? "В наличии" : i === 1 ? "Резерв" : "Продан"}
+                    </span>
                   </div>
-                  <div className="flex justify-start">
-                    <div className="bg-muted rounded-xl px-3 py-2 text-sm max-w-[85%]">
-                      📊 Топ-3 по прибыли за месяц:<br />
-                      1. iPhone 13 — 127 500 ₽ (23 продажи)<br />
-                      2. Samsung S23 — 89 200 ₽ (15 продаж)<br />
-                      3. iPhone 14 — 76 800 ₽ (12 продаж)<br /><br />
-                      💡 Рекомендую увеличить закупку iPhone 13 — спрос стабильно высокий.
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* How it works */}
-      <section id="how" className="py-20 lg:py-28">
+      {/* ─── Problem ─── */}
+      <section className="border-y bg-muted/30 py-20">
         <div className="container">
-          <h2 className="text-center text-3xl font-bold sm:text-4xl">Начните за 3 шага</h2>
-          <p className="mx-auto mt-4 max-w-xl text-center text-muted-foreground text-lg">
-            Никаких сложных настроек — зарегистрируйтесь и работайте
-          </p>
-          <div className="mt-14 grid gap-8 sm:grid-cols-3">
-            {steps.map((s, i) => (
-              <div key={s.num} className="relative text-center">
-                {i < steps.length - 1 && (
-                  <div className="hidden sm:block absolute top-7 left-[60%] w-[80%] h-px bg-border" />
-                )}
-                <div className="relative mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground text-xl font-bold shadow-lg">
-                  {s.num}
-                </div>
-                <h3 className="mt-5 text-lg font-semibold">{s.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{s.desc}</p>
+          <h2 className="text-3xl font-bold text-center sm:text-4xl">
+            Почему обычные CRM не подходят для магазинов смартфонов?
+          </h2>
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {problems.map((p) => (
+              <div key={p.text} className="flex flex-col items-center text-center rounded-xl border bg-card p-6">
+                <span className="text-3xl mb-3">{p.icon}</span>
+                <p className="text-sm font-medium text-foreground">{p.text}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="border-t bg-secondary/30 py-20 lg:py-28">
+      {/* ─── Solution ─── */}
+      <section id="features" className="py-20">
         <div className="container">
-          <div className="text-center max-w-2xl mx-auto">
-            <h2 className="text-3xl font-bold sm:text-4xl">Простые и прозрачные тарифы</h2>
-            <p className="mt-4 text-muted-foreground text-lg">Попробуйте бесплатно 3 дня, масштабируйтесь по мере роста</p>
+          <h2 className="text-3xl font-bold text-center sm:text-4xl">
+            FILTER CRM — система, созданная специально для магазинов техники
+          </h2>
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {solutions.map((s) => (
+              <div key={s.text} className="flex items-start gap-4 rounded-xl border bg-card p-6 hover:shadow-md transition-shadow">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <s.icon className="h-5 w-5" />
+                </div>
+                <p className="font-medium text-foreground">{s.text}</p>
+              </div>
+            ))}
           </div>
+        </div>
+      </section>
+
+      {/* ─── Mini App ─── */}
+      <section id="modules" className="border-y bg-muted/30 py-20">
+        <div className="container grid gap-12 lg:grid-cols-2 items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary mb-4">
+              <MessageSquare className="h-4 w-4" /> Telegram Mini App
+            </div>
+            <h2 className="text-3xl font-bold sm:text-4xl">Рабочее приложение для продавцов</h2>
+            <p className="mt-4 text-muted-foreground text-lg">
+              Сотрудники могут продавать устройства, работать со складом и кассой прямо со своего телефона.
+            </p>
+            <ul className="mt-8 space-y-3">
+              {miniAppFeatures.map((f) => (
+                <li key={f} className="flex items-center gap-3 text-sm">
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <Check className="h-3 w-3" />
+                  </div>
+                  {f}
+                </li>
+              ))}
+            </ul>
+          </div>
+          {/* Mini App mock */}
+          <div className="flex justify-center">
+            <div className="w-[280px] rounded-[2rem] border-4 border-foreground/10 bg-card p-4 shadow-xl">
+              <div className="rounded-2xl bg-muted/50 p-4">
+                <p className="text-xs font-semibold text-center text-foreground mb-3">FILTER CRM</p>
+                <div className="space-y-2">
+                  {["📱 Продажа", "📦 Склад", "💰 Касса", "🔄 Скупка", "📊 Смена"].map((item) => (
+                    <div key={item} className="flex items-center justify-between rounded-lg bg-card px-3 py-2.5 text-sm border">
+                      <span>{item}</span>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Inventory ─── */}
+      <section className="py-20">
+        <div className="container grid gap-12 lg:grid-cols-2 items-center">
+          <div className="order-2 lg:order-1">
+            <div className="rounded-xl border bg-card p-6 shadow-sm">
+              <p className="text-sm font-semibold mb-4">Статусы устройств</p>
+              <div className="flex flex-wrap gap-2 mb-6">
+                {inventoryStatuses.map((s) => (
+                  <span key={s.label} className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium">
+                    <span className={`h-2 w-2 rounded-full ${s.color}`} />
+                    {s.label}
+                  </span>
+                ))}
+              </div>
+              <div className="space-y-2">
+                {[
+                  { name: "iPhone 15 Pro 256GB", imei: "3590...4821", status: "В наличии" },
+                  { name: "Samsung S24 128GB", imei: "3568...9012", status: "Резерв" },
+                  { name: "iPhone 14 128GB", imei: "3541...7634", status: "Продан" },
+                ].map((d) => (
+                  <div key={d.imei} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
+                    <div>
+                      <p className="font-medium text-foreground">{d.name}</p>
+                      <p className="text-xs text-muted-foreground">IMEI: {d.imei}</p>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{d.status}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="order-1 lg:order-2">
+            <h2 className="text-3xl font-bold sm:text-4xl">Полный контроль склада устройств</h2>
+            <ul className="mt-8 space-y-3">
+              {inventoryFeatures.map((f) => (
+                <li key={f} className="flex items-center gap-3 text-sm">
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <Check className="h-3 w-3" />
+                  </div>
+                  {f}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Buyback ─── */}
+      <section className="border-y bg-muted/30 py-20">
+        <div className="container grid gap-12 lg:grid-cols-2 items-center">
+          <div>
+            <h2 className="text-3xl font-bold sm:text-4xl">Удобная система скупки устройств</h2>
+            <ul className="mt-8 space-y-3">
+              {buybackFeatures.map((f) => (
+                <li key={f} className="flex items-center gap-3 text-sm">
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <Check className="h-3 w-3" />
+                  </div>
+                  {f}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="flex justify-center">
+            <div className="rounded-xl border bg-card p-6 shadow-sm w-full max-w-sm">
+              <p className="text-sm font-semibold mb-4">Скупка устройства</p>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between border-b pb-2"><span className="text-muted-foreground">Модель</span><span className="font-medium">iPhone 13 128GB</span></div>
+                <div className="flex justify-between border-b pb-2"><span className="text-muted-foreground">Состояние</span><span className="font-medium">Хорошее</span></div>
+                <div className="flex justify-between border-b pb-2"><span className="text-muted-foreground">Батарея</span><span className="font-medium">87%</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Цена выкупа</span><span className="font-bold text-primary">32 000 ₽</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Analytics ─── */}
+      <section className="py-20">
+        <div className="container">
+          <h2 className="text-3xl font-bold text-center sm:text-4xl">Финансы и аналитика</h2>
+          <p className="mt-4 text-center text-muted-foreground text-lg max-w-2xl mx-auto">
+            Отслеживайте ключевые показатели бизнеса в реальном времени
+          </p>
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {analyticsMetrics.map((m) => (
+              <div key={m.label} className="rounded-xl border bg-card p-6 text-center hover:shadow-md transition-shadow">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-4">
+                  <m.icon className="h-6 w-6" />
+                </div>
+                <p className="text-2xl font-bold text-foreground">{m.value}</p>
+                <p className="text-sm text-muted-foreground mt-1">{m.label}</p>
+              </div>
+            ))}
+          </div>
+          {/* Chart mock */}
+          <div className="mt-8 rounded-xl border bg-card p-6">
+            <p className="text-sm font-semibold mb-4">Выручка за неделю</p>
+            <div className="flex items-end gap-2 h-32">
+              {[65, 45, 80, 55, 90, 70, 85].map((h, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                  <div className="w-full rounded-t bg-primary/80 transition-all" style={{ height: `${h}%` }} />
+                  <span className="text-[10px] text-muted-foreground">{["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"][i]}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── AI ─── */}
+      <section className="border-y bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 py-20">
+        <div className="container grid gap-12 lg:grid-cols-2 items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary mb-4">
+              <Sparkles className="h-4 w-4" /> AI
+            </div>
+            <h2 className="text-3xl font-bold sm:text-4xl">Умный помощник для владельца магазина</h2>
+            <p className="mt-4 text-muted-foreground text-lg">
+              AI анализирует продажи и помогает управлять бизнесом.
+            </p>
+            <ul className="mt-8 space-y-3">
+              {aiExamples.map((e) => (
+                <li key={e} className="flex items-center gap-3 text-sm">
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <Check className="h-3 w-3" />
+                  </div>
+                  {e}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-2xl border bg-card p-6 shadow-lg">
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <span className="font-semibold text-sm">AI Ассистент</span>
+            </div>
+            <div className="space-y-3">
+              <div className="flex justify-end">
+                <div className="bg-primary text-primary-foreground rounded-xl px-3 py-2 text-sm max-w-[75%]">
+                  Какие модели приносят больше прибыли?
+                </div>
+              </div>
+              <div className="flex justify-start">
+                <div className="bg-muted rounded-xl px-3 py-2 text-sm max-w-[85%]">
+                  📊 Топ-3 по прибыли за месяц:<br />
+                  1. iPhone 13 — 127 500 ₽<br />
+                  2. Samsung S23 — 89 200 ₽<br />
+                  3. iPhone 14 — 76 800 ₽<br /><br />
+                  💡 Рекомендую увеличить закупку iPhone 13.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Price Tags ─── */}
+      <section className="py-20">
+        <div className="container grid gap-12 lg:grid-cols-2 items-center">
+          <div>
+            <h2 className="text-3xl font-bold sm:text-4xl">Автоматическое создание ценников</h2>
+            <ul className="mt-8 space-y-3">
+              {["Вертикальный и горизонтальный формат", "Редактор шаблонов", "Массовая печать"].map((f) => (
+                <li key={f} className="flex items-center gap-3 text-sm">
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <Check className="h-3 w-3" />
+                  </div>
+                  {f}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="flex justify-center">
+            <div className="rounded-xl border bg-card p-6 shadow-sm w-60 text-center">
+              <Printer className="h-8 w-8 text-primary mx-auto mb-3" />
+              <p className="font-bold text-foreground">iPhone 15 Pro</p>
+              <p className="text-xs text-muted-foreground">256GB / Black Titanium</p>
+              <p className="text-2xl font-extrabold text-primary mt-2">89 990 ₽</p>
+              <p className="text-[10px] text-muted-foreground mt-1">IMEI: 3590...4821</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Pricing ─── */}
+      <section id="pricing" className="border-t bg-muted/30 py-20">
+        <div className="container">
+          <h2 className="text-3xl font-bold text-center sm:text-4xl">Простые и прозрачные тарифы</h2>
+          <p className="mt-4 text-center text-muted-foreground text-lg">Попробуйте бесплатно 3 дня</p>
           <div className="mx-auto mt-14 grid max-w-5xl gap-6 lg:grid-cols-3">
             {plans.map((p) => (
               <div
                 key={p.id}
                 className={`relative flex flex-col rounded-2xl border bg-card p-8 transition-all ${
                   p.popular
-                    ? "ring-2 ring-primary shadow-xl shadow-primary/10 scale-[1.03] z-10"
+                    ? "ring-2 ring-primary shadow-xl shadow-primary/10 scale-[1.02] z-10"
                     : "shadow-sm hover:shadow-md"
                 }`}
               >
@@ -298,31 +494,27 @@ const LandingPage = () => {
                     </span>
                   </div>
                 )}
-                <div>
-                  <h3 className="text-xl font-bold">{p.name}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">{p.desc}</p>
-                </div>
+                <h3 className="text-xl font-bold">{p.name}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{p.desc}</p>
                 <div className="mt-6">
                   <span className="text-4xl font-extrabold">{p.price}</span>
-                  <span className="text-muted-foreground">{p.priceSuffix}</span>
-                  {(p as any).trial && (
-                    <p className="mt-2 text-xs font-medium text-success">{(p as any).trial}</p>
-                  )}
+                  <span className="text-muted-foreground"> ₽/мес</span>
+                  {p.trial && <p className="mt-2 text-xs font-medium text-green-600">{p.trial}</p>}
                 </div>
                 <ul className="mt-8 space-y-3 flex-1">
                   {p.features.map((f) => (
                     <li key={f.text} className="flex items-center gap-2.5 text-sm">
-                      {f.included ? (
-                        <Check className="h-4 w-4 text-success flex-shrink-0" />
+                      {f.ok ? (
+                        <Check className="h-4 w-4 text-green-600 shrink-0" />
                       ) : (
-                        <X className="h-4 w-4 text-muted-foreground/50 flex-shrink-0" />
+                        <X className="h-4 w-4 text-muted-foreground/50 shrink-0" />
                       )}
-                      <span className={f.included ? "" : "text-muted-foreground"}>{f.text}</span>
+                      <span className={f.ok ? "" : "text-muted-foreground"}>{f.text}</span>
                     </li>
                   ))}
                 </ul>
                 <Button className="mt-8 w-full" size="lg" variant={p.popular ? "default" : "outline"} asChild>
-                  <Link to="/register">{(p as any).trial ? "Попробовать бесплатно" : "Выбрать"}</Link>
+                  <Link to="/register">{p.trial ? "Попробовать бесплатно" : "Выбрать"}</Link>
                 </Button>
               </div>
             ))}
@@ -330,38 +522,52 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-20 lg:py-28">
-        <div className="container">
-          <div className="mx-auto max-w-3xl rounded-2xl bg-primary p-10 lg:p-14 text-center text-primary-foreground">
-            <h2 className="text-3xl font-bold sm:text-4xl">Готовы начать?</h2>
-            <p className="mt-4 text-primary-foreground/80 text-lg">
-              Присоединяйтесь к сотням магазинов, которые уже используют PhoneCRM для роста прибыли
-            </p>
-            <Button size="lg" variant="secondary" className="mt-8 text-base px-8" asChild>
-              <Link to="/register">
-                Создать аккаунт бесплатно <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
+      {/* ─── Support ─── */}
+      <section id="support" className="py-20">
+        <div className="container text-center max-w-2xl mx-auto">
+          <Headphones className="h-12 w-12 text-primary mx-auto mb-4" />
+          <h2 className="text-3xl font-bold sm:text-4xl">Поддержка</h2>
+          <p className="mt-4 text-muted-foreground text-lg">
+            Мы всегда на связи. Напишите в поддержку прямо из CRM или свяжитесь с нами через Telegram.
+          </p>
+          <div className="mt-8 flex flex-wrap justify-center gap-4">
+            <Button variant="outline" asChild>
+              <Link to="/register">Написать в поддержку</Link>
+            </Button>
+            <Button variant="outline">
+              <Send className="mr-2 h-4 w-4" /> Telegram
             </Button>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t py-12">
+      {/* ─── CTA ─── */}
+      <section className="border-t py-20">
         <div className="container">
-          <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
-            <div className="flex items-center gap-2">
-              <Smartphone className="h-5 w-5 text-primary" />
-              <span className="font-bold">PhoneCRM</span>
-            </div>
-            <div className="flex gap-6 text-sm text-muted-foreground">
-              <a href="#features" className="hover:text-foreground transition-colors">Возможности</a>
-              <a href="#pricing" className="hover:text-foreground transition-colors">Тарифы</a>
-              <Link to="/login" className="hover:text-foreground transition-colors">Войти</Link>
-            </div>
-            <p className="text-sm text-muted-foreground">© 2026 PhoneCRM. Все права защищены.</p>
+          <div className="mx-auto max-w-3xl rounded-2xl bg-primary p-10 lg:p-14 text-center text-primary-foreground">
+            <h2 className="text-3xl font-bold sm:text-4xl">Начните управлять вашим магазином уже сегодня</h2>
+            <Button size="lg" variant="secondary" className="mt-8 text-base px-8" asChild>
+              <Link to="/register">
+                Создать аккаунт <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            </Button>
+            <p className="mt-4 text-primary-foreground/70 text-sm">
+              Уже есть аккаунт? <Link to="/login" className="underline text-primary-foreground">Войти</Link>
+            </p>
           </div>
+        </div>
+      </section>
+
+      {/* ─── Footer ─── */}
+      <footer className="border-t py-12">
+        <div className="container flex flex-col items-center justify-between gap-6 sm:flex-row">
+          <span className="font-bold text-foreground">FILTER CRM</span>
+          <div className="flex gap-6 text-sm text-muted-foreground">
+            <a href="#features" className="hover:text-foreground transition-colors">Возможности</a>
+            <a href="#pricing" className="hover:text-foreground transition-colors">Тарифы</a>
+            <Link to="/login" className="hover:text-foreground transition-colors">Войти</Link>
+          </div>
+          <p className="text-sm text-muted-foreground">© 2026 FILTER CRM</p>
         </div>
       </footer>
     </div>
