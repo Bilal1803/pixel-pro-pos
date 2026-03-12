@@ -84,7 +84,7 @@ const PwaInstallPrompt = () => {
             <Download className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-semibold text-foreground">Установите PhoneCRM</h4>
+            <h4 className="text-sm font-semibold text-foreground">Установите FILTER CRM</h4>
             <p className="text-xs text-muted-foreground mt-0.5">
               Открывайте CRM как приложение и работайте быстрее
             </p>
