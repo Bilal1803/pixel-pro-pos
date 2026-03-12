@@ -399,12 +399,15 @@ const SupportPage = () => {
                 </div>
               </div>
             </Card>
-            <Card className="p-5 card-shadow hover:card-shadow-hover transition-shadow cursor-pointer">
+            <Card
+              className="p-5 card-shadow hover:card-shadow-hover transition-shadow cursor-pointer"
+              onClick={() => window.open("https://t.me/pzlllv", "_blank")}
+            >
               <div className="flex items-center gap-3">
                 <MessageSquare className="h-8 w-8 text-primary" />
                 <div>
-                  <h3 className="font-semibold">Telegram-чат</h3>
-                  <p className="text-sm text-muted-foreground">Быстрая помощь в Telegram</p>
+                  <h3 className="font-semibold">Написать в Telegram</h3>
+                  <p className="text-sm text-muted-foreground">Быстрая помощь — @pzlllv</p>
                 </div>
               </div>
             </Card>
