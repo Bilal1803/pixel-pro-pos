@@ -10,17 +10,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
+import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { useNavigate } from "react-router-dom";
 import SectionHelp from "@/components/SectionHelp";
 import { SECTION_TIPS } from "@/data/sectionTips";
-import { Send } from "lucide-react";
+import { Send, Shield } from "lucide-react";
 import PaymentSettingsCard from "@/components/PaymentSettingsCard";
 
 const planLabels: Record<string, string> = { start: "Старт", business: "Бизнес", premier: "Премьер" };
 const planPrices: Record<string, string> = { start: "1 990 ₽/мес", business: "2 990 ₽/мес", premier: "7 990 ₽/мес" };
 
+const getErrorMessage = (error: unknown) => {
+  if (error instanceof Error) return error.message;
+  return "Неизвестная ошибка";
+};
+
 const SettingsPage = () => {
-  const { companyId } = useAuth();
+  const { companyId, user } = useAuth();
+  const { isAdmin, isLoading: isAdminLoading } = usePlatformAdmin();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -48,8 +55,15 @@ const SettingsPage = () => {
 
   const store = stores[0] || null;
 
+  const [emailForm, setEmailForm] = useState("");
   const [companyForm, setCompanyForm] = useState({ name: "", phone: "", address: "" });
   const [storeForm, setStoreForm] = useState({ name: "", address: "", phone: "" });
+
+  useEffect(() => {
+    if (user?.email) {
+      setEmailForm(user.email);
+    }
+  }, [user?.email]);
 
   useEffect(() => {
     if (company) {
@@ -62,6 +76,44 @@ const SettingsPage = () => {
       setStoreForm({ name: store.name || "", address: store.address || "", phone: store.phone || "" });
     }
   }, [store]);
+
+  const updateEmail = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Пользователь не найден");
+
+      const normalizedEmail = emailForm.trim().toLowerCase();
+      const currentEmail = (user.email || "").trim().toLowerCase();
+
+      if (!normalizedEmail) throw new Error("Введите email");
+      if (normalizedEmail === currentEmail) return { unchanged: true };
+
+      const { error } = await supabase.auth.updateUser({ email: normalizedEmail });
+      if (error) throw error;
+
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ email: normalizedEmail })
+        .eq("user_id", user.id);
+
+      if (profileError) throw profileError;
+
+      return { unchanged: false };
+    },
+    onSuccess: ({ unchanged }) => {
+      if (unchanged) {
+        toast({ title: "Email не изменился" });
+        return;
+      }
+
+      toast({
+        title: "Email обновлён",
+        description: "Если в проекте включено подтверждение email — подтвердите новый адрес из письма.",
+      });
+    },
+    onError: (error: unknown) => {
+      toast({ title: "Ошибка смены email", description: getErrorMessage(error), variant: "destructive" });
+    },
+  });
 
   const updateCompany = useMutation({
     mutationFn: async () => {
@@ -94,6 +146,51 @@ const SettingsPage = () => {
       <h1 className="text-2xl font-bold">Настройки</h1>
 
       <SectionHelp tips={SECTION_TIPS.settings} />
+
+      <Card className="p-6 card-shadow space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold">Аккаунт</h2>
+          <p className="text-sm text-muted-foreground mt-1">Настройки профиля и доступ к админ-панели</p>
+        </div>
+        <Separator />
+
+        <div className="space-y-2">
+          <Label htmlFor="accountEmail">Email</Label>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              id="accountEmail"
+              type="email"
+              value={emailForm}
+              onChange={(e) => setEmailForm(e.target.value)}
+              placeholder="you@example.com"
+              className="sm:flex-1"
+            />
+            <Button
+              onClick={() => updateEmail.mutate()}
+              disabled={updateEmail.isPending || !emailForm.trim()}
+              className="sm:w-auto"
+            >
+              {updateEmail.isPending ? "Сохранение..." : "Изменить email"}
+            </Button>
+          </div>
+        </div>
+
+        <div className="rounded-md border p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">Админ-панель</span>
+            </div>
+            {isAdminLoading ? (
+              <span className="text-xs text-muted-foreground">Проверка прав...</span>
+            ) : isAdmin ? (
+              <Button variant="outline" size="sm" onClick={() => navigate("/admin")}>Открыть</Button>
+            ) : (
+              <span className="text-xs text-muted-foreground">Нет доступа</span>
+            )}
+          </div>
+        </div>
+      </Card>
 
       <Card className="p-6 card-shadow">
         <h2 className="text-lg font-semibold">Компания</h2>
@@ -227,7 +324,7 @@ const TelegramSettingsCard = ({ companyId }: { companyId: string | null }) => {
       queryClient.invalidateQueries({ queryKey: ["telegram-settings"] });
       toast({ title: "Настройки Telegram сохранены" });
     },
-    onError: (e: any) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
+    onError: (error: unknown) => toast({ title: "Ошибка", description: getErrorMessage(error), variant: "destructive" }),
   });
 
   const testMessage = useMutation({
@@ -245,7 +342,7 @@ const TelegramSettingsCard = ({ companyId }: { companyId: string | null }) => {
       if (data?.skipped) throw new Error(data.reason || "Уведомление пропущено");
     },
     onSuccess: () => toast({ title: "Тестовое сообщение отправлено ✓" }),
-    onError: (e: any) => toast({ title: "Ошибка отправки", description: e.message, variant: "destructive" }),
+    onError: (error: unknown) => toast({ title: "Ошибка отправки", description: getErrorMessage(error), variant: "destructive" }),
   });
 
   if (isLoading) return null;
