@@ -42,7 +42,7 @@ const roleLabels: Record<string, { label: string; variant: "default" | "secondar
 /* ── Mobile bottom nav items (first 4 visible) ── */
 const mobileMainCount = 4;
 
-const AdminMobileNav = ({ items, adminRole }: { items: NavItem[]; adminRole: PlatformAdminRole }) => {
+const AdminMobileNav = ({ items }: { items: NavItem[] }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);

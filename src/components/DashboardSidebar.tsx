@@ -121,7 +121,12 @@ const DashboardSidebar = () => {
         )}
       </nav>
       <div className="border-t p-3 space-y-1">
-        {isAdmin && (
+        {isAdminLoading ? (
+          <div className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground/60">
+            <Shield className="h-4 w-4" />
+            Проверка прав...
+          </div>
+        ) : isAdmin ? (
           <RouterNavLink
             to="/admin"
             className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10"
@@ -129,7 +134,7 @@ const DashboardSidebar = () => {
             <Shield className="h-4 w-4" />
             Админ-панель
           </RouterNavLink>
-        )}
+        ) : null}
         <button
           onClick={handleLogout}
           className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
