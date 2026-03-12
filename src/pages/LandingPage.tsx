@@ -756,7 +756,7 @@ const LandingPage = () => {
             <a href="#pricing" className="hover:text-foreground transition-colors">Тарифы</a>
             <Link to="/login" className="hover:text-foreground transition-colors">Войти</Link>
           </div>
-          <p className="text-sm text-muted-foreground">© 2026 PhoneCRM</p>
+          <p className="text-sm text-muted-foreground">© 2026 FILTER CRM</p>
         </div>
       </footer>
     </div>

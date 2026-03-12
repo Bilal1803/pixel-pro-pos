@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Users update own subscription" ON public.subscriptions;
