@@ -3,9 +3,8 @@ import { X, Download, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-const DISMISS_KEY = "pwa_install_dismissed_at";
+const SESSION_SHOWN_KEY = "pwa_install_shown";
 const INSTALLED_KEY = "pwa_installed";
-const SNOOZE_DAYS = 3;
 
 function isStandalone() {
   return (
@@ -26,13 +25,7 @@ const PwaInstallPrompt = () => {
 
   useEffect(() => {
     if (isStandalone()) return;
-    if (localStorage.getItem(INSTALLED_KEY) === "true") return;
-
-    const dismissed = localStorage.getItem(DISMISS_KEY);
-    if (dismissed) {
-      const diff = Date.now() - Number(dismissed);
-      if (diff < SNOOZE_DAYS * 86400000) return;
-    }
+    if (sessionStorage.getItem(SESSION_SHOWN_KEY) === "true") return;
 
     // Android / Chrome
     const handler = (e: Event) => {
@@ -66,7 +59,7 @@ const PwaInstallPrompt = () => {
   }, [deferredPrompt]);
 
   const handleDismiss = useCallback(() => {
-    localStorage.setItem(DISMISS_KEY, String(Date.now()));
+    sessionStorage.setItem(SESSION_SHOWN_KEY, "true");
     setShowBanner(false);
     setShowIosGuide(false);
   }, []);
