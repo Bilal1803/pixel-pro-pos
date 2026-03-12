@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Smartphone, ShoppingCart, ArrowDownUp, Users,
   Headphones, Wrench, Tag, TrendingUp, Megaphone, DollarSign,
   UserCog, Clock, FileBarChart, Settings, HelpCircle, LogOut, CreditCard, Shield, Lock, Sparkles,
-  Store, ArrowRightLeft, BarChart3, Banknote,
+  Store, ArrowRightLeft, BarChart3, Banknote, ClipboardList,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
