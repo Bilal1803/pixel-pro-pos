@@ -439,6 +439,9 @@ export type Database = {
           created_at: string
           id: string
           imei: string
+          listing_published_at: string | null
+          listing_status: string
+          listing_url: string | null
           memory: string | null
           model: string
           notes: string | null
@@ -458,6 +461,9 @@ export type Database = {
           created_at?: string
           id?: string
           imei: string
+          listing_published_at?: string | null
+          listing_status?: string
+          listing_url?: string | null
           memory?: string | null
           model: string
           notes?: string | null
@@ -477,6 +483,9 @@ export type Database = {
           created_at?: string
           id?: string
           imei?: string
+          listing_published_at?: string | null
+          listing_status?: string
+          listing_url?: string | null
           memory?: string | null
           model?: string
           notes?: string | null

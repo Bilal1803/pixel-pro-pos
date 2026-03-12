@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, Upload, FileSpreadsheet, X, Pencil, Trash2, AlertTriangle, Info } from "lucide-react";
+import { Plus, Search, Upload, FileSpreadsheet, X, Pencil, Trash2, AlertTriangle, Info, Megaphone, CheckCircle2, RefreshCw, Loader2 as Spinner, ExternalLink } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import ComboboxInput from "@/components/ComboboxInput";
@@ -26,6 +26,12 @@ const statusLabels: Record<string, { label: string; className: string }> = {
   sold: { label: "Продано", className: "bg-muted text-muted-foreground" },
   defective: { label: "Дефект", className: "bg-destructive/10 text-destructive" },
   rental: { label: "Аренда", className: "bg-primary/10 text-primary" },
+};
+
+const listingLabels: Record<string, { label: string; icon: typeof Megaphone; className: string }> = {
+  not_listed: { label: "Не опубликовано", icon: Megaphone, className: "text-muted-foreground" },
+  listed: { label: "Опубликовано", icon: CheckCircle2, className: "text-green-600" },
+  needs_relist: { label: "Перевыложить", icon: RefreshCw, className: "text-amber-600" },
 };
 
 const STATUS_TABS = [
@@ -91,6 +97,10 @@ const InventoryPage = () => {
   const [form, setForm] = useState({ model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing" as string, notes: "", sim_type: "", condition: "used" });
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({ id: "", model: "", brand: "", memory: "", color: "", imei: "", battery_health: "", purchase_price: "", sale_price: "", status: "testing" as string, notes: "", sim_type: "", condition: "used" });
+  const [listingDialogOpen, setListingDialogOpen] = useState(false);
+  const [listingDevice, setListingDevice] = useState<any>(null);
+  const [listingUrl, setListingUrl] = useState("");
+  const [analyzingListings, setAnalyzingListings] = useState(false);
 
   // IMEI duplicate check
   const [imeiDuplicate, setImeiDuplicate] = useState<{ blocked: boolean; message: string; device?: { model: string; memory: string | null; color: string | null; status: string; store_name?: string } } | null>(null);
@@ -360,7 +370,38 @@ const InventoryPage = () => {
     setEditOpen(true);
   };
 
-  // --- Import logic ---
+  const markAsListed = useMutation({
+    mutationFn: async ({ deviceId, url }: { deviceId: string; url: string }) => {
+      const { error } = await supabase.from("devices").update({
+        listing_status: "listed",
+        listing_url: url || null,
+        listing_published_at: new Date().toISOString(),
+      }).eq("id", deviceId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["devices"] });
+      toast({ title: "Объявление отмечено как опубликованное" });
+      setListingDialogOpen(false);
+      setListingDevice(null);
+      setListingUrl("");
+    },
+  });
+
+  const analyzeListings = async () => {
+    setAnalyzingListings(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("analyze-listings");
+      if (error) throw error;
+      toast({ title: "Анализ завершён", description: `Создано задач: ${data.tasks_created}, обновлено устройств: ${data.devices_updated}` });
+      queryClient.invalidateQueries({ queryKey: ["devices"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    } catch {
+      toast({ title: "Ошибка анализа", variant: "destructive" });
+    } finally {
+      setAnalyzingListings(false);
+    }
+  };
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -500,7 +541,11 @@ const InventoryPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Склад устройств</h1>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={analyzeListings} disabled={analyzingListings}>
+            {analyzingListings ? <Spinner className="mr-2 h-4 w-4 animate-spin" /> : <Megaphone className="mr-2 h-4 w-4" />}
+            Анализ объявлений
+          </Button>
           <Dialog open={importOpen} onOpenChange={(v) => { setImportOpen(v); if (!v) { setParsedRows([]); setFileName(""); } }}>
             <DialogTrigger asChild>
               <Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Импорт</Button>
@@ -795,6 +840,7 @@ const InventoryPage = () => {
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Закупка</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Продажа</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Статус</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Объявление</th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -824,6 +870,31 @@ const InventoryPage = () => {
                           <SelectItem value="defective">Дефект</SelectItem>
                         </SelectContent>
                       </Select>
+                    </td>
+                    <td className="px-4 py-3">
+                      {(() => {
+                        const ls = (d as any).listing_status || "not_listed";
+                        const cfg = listingLabels[ls] || listingLabels.not_listed;
+                        const Icon = cfg.icon;
+                        return (
+                          <button
+                            onClick={() => {
+                              if (ls === "listed" && (d as any).listing_url) {
+                                window.open((d as any).listing_url, "_blank");
+                              } else {
+                                setListingDevice(d);
+                                setListingUrl((d as any).listing_url || "");
+                                setListingDialogOpen(true);
+                              }
+                            }}
+                            className={`flex items-center gap-1 text-xs font-medium ${cfg.className} hover:opacity-70 transition-opacity`}
+                            title={ls === "listed" ? "Открыть объявление" : "Отметить как опубликованное"}
+                          >
+                            <Icon className="h-3.5 w-3.5" />
+                            {ls === "listed" && (d as any).listing_url && <ExternalLink className="h-3 w-3" />}
+                          </button>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-3">
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(d)}>
@@ -925,6 +996,32 @@ const InventoryPage = () => {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Listing publish dialog */}
+      <Dialog open={listingDialogOpen} onOpenChange={setListingDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Публикация объявления</DialogTitle></DialogHeader>
+          {listingDevice && (
+            <div className="space-y-4">
+              <div className="rounded-lg bg-muted/50 p-3 text-sm">
+                <p className="font-medium">{listingDevice.model}</p>
+                <p className="text-xs text-muted-foreground">{[listingDevice.memory, listingDevice.color].filter(Boolean).join(" · ")}</p>
+              </div>
+              <div>
+                <Label>Ссылка на объявление (Авито и т.д.)</Label>
+                <Input placeholder="https://avito.ru/..." value={listingUrl} onChange={(e) => setListingUrl(e.target.value)} />
+              </div>
+              <Button
+                className="w-full"
+                disabled={markAsListed.isPending}
+                onClick={() => markAsListed.mutate({ deviceId: listingDevice.id, url: listingUrl })}
+              >
+                {markAsListed.isPending ? "Сохранение..." : "Опубликовано"}
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
