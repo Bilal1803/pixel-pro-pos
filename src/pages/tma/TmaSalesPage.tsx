@@ -39,6 +39,8 @@ const TmaSalesPage = () => {
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [payment, setPayment] = useState("cash");
+  const [mixedCashAmount, setMixedCashAmount] = useState("");
+  const [mixedCardAmount, setMixedCardAmount] = useState("");
   const [step, setStep] = useState<"search" | "cart">("search");
 
   // Price editing
