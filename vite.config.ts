@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => ({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
       },
       manifest: {
-        name: "FILTER CRM",
+        name: "PhoneCRM",
         short_name: "FILTER",
         description: "CRM для магазинов смартфонов — склад, продажи, сотрудники, аналитика",
         theme_color: "#3B82F6",
