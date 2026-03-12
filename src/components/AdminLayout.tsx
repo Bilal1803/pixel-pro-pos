@@ -238,7 +238,7 @@ const AdminLayout = () => {
       </div>
 
       {/* Mobile bottom nav */}
-      {isMobile && <AdminMobileNav items={visibleNavItems} adminRole={adminRole} />}
+      {isMobile && <AdminMobileNav items={visibleNavItems} />}
     </div>
   );
 };
