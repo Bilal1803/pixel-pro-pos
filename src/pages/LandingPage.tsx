@@ -243,7 +243,7 @@ const LandingPage = () => {
           <h2 className="text-3xl font-bold text-center sm:text-4xl">
             FILTER CRM — система, созданная специально для магазинов техники
           </h2>
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {solutions.map((s) => (
               <div key={s.text} className="flex items-start gap-4 rounded-xl border bg-card p-6 hover:shadow-md transition-shadow">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
