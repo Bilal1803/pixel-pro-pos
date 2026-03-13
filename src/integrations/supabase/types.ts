@@ -1717,15 +1717,18 @@ export type Database = {
       tasks: {
         Row: {
           assigned_to: string | null
+          category: string | null
           company_id: string
           completed_at: string | null
           completed_by: string | null
           created_at: string
           created_by: string
           description: string | null
+          device_id: string | null
           due_date: string | null
           id: string
           is_management_task: boolean
+          result_url: string | null
           status: Database["public"]["Enums"]["task_status"]
           store_id: string | null
           title: string
@@ -1733,15 +1736,18 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          category?: string | null
           company_id: string
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string
           created_by: string
           description?: string | null
+          device_id?: string | null
           due_date?: string | null
           id?: string
           is_management_task?: boolean
+          result_url?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           store_id?: string | null
           title: string
@@ -1749,15 +1755,18 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          category?: string | null
           company_id?: string
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
+          device_id?: string | null
           due_date?: string | null
           id?: string
           is_management_task?: boolean
+          result_url?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           store_id?: string | null
           title?: string
@@ -1769,6 +1778,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
             referencedColumns: ["id"]
           },
           {
