@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import SectionHelp from "@/components/SectionHelp";
 import { SECTION_TIPS } from "@/data/sectionTips";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useSalaryData } from "@/hooks/useSalaryData";
 
 const ShiftsPage = () => {
   const { companyId, user } = useAuth();
