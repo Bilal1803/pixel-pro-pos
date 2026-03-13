@@ -413,6 +413,16 @@ const EmployeesPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                <div>
+                  <Label>Зарплата</Label>
+                  <Select value={form.salaryType} onValueChange={(v) => setForm({ ...form, salaryType: v })}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="global">Общая (по стандарту магазина)</SelectItem>
+                      <SelectItem value="individual">Индивидуальная</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <DialogFooter>
                   <Button onClick={handleCreateSubmit} disabled={createInvitation.isPending || !form.fullName}>
                     {createInvitation.isPending ? "Создание..." : "Создать приглашение"}
