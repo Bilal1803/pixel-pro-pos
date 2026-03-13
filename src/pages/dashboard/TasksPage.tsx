@@ -9,9 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Plus, CheckCircle2, Clock, AlertCircle, Calendar, User, Loader2 } from "lucide-react";
+import { Plus, CheckCircle2, Clock, AlertCircle, Calendar, User, Loader2, Pencil, Undo2 } from "lucide-react";
 import { format, isToday, isPast, parseISO } from "date-fns";
 import { ru } from "date-fns/locale";
 
@@ -43,6 +43,7 @@ const TasksPage = () => {
   const { user, companyId } = useAuth();
   const qc = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [tab, setTab] = useState("all");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -98,6 +99,26 @@ const TasksPage = () => {
     onError: () => toast.error("Ошибка создания задачи"),
   });
 
+  const editTask = useMutation({
+    mutationFn: async () => {
+      if (!editingTask) return;
+      const { error } = await supabase.from("tasks").update({
+        title,
+        description: description || null,
+        assigned_to: assignedTo || null,
+        due_date: dueDate || null,
+        is_management_task: isManagement,
+      }).eq("id", editingTask.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success("Задача обновлена");
+      resetForm();
+    },
+    onError: () => toast.error("Ошибка сохранения"),
+  });
+
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const updates: any = { status };
@@ -119,11 +140,32 @@ const TasksPage = () => {
 
   const resetForm = () => {
     setDialogOpen(false);
+    setEditingTask(null);
     setTitle("");
     setDescription("");
     setAssignedTo("");
     setDueDate("");
     setIsManagement(false);
+  };
+
+  const openEdit = (task: Task) => {
+    setEditingTask(task);
+    setTitle(task.title);
+    setDescription(task.description || "");
+    setAssignedTo(task.assigned_to || "");
+    setDueDate(task.due_date || "");
+    setIsManagement(task.is_management_task);
+    setDialogOpen(true);
+  };
+
+  const openCreate = () => {
+    setEditingTask(null);
+    setTitle("");
+    setDescription("");
+    setAssignedTo("");
+    setDueDate("");
+    setIsManagement(false);
+    setDialogOpen(true);
   };
 
   const getName = (uid: string | null) => {
@@ -144,7 +186,7 @@ const TasksPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Задачи</h1>
-        <Button onClick={() => setDialogOpen(true)}>
+        <Button onClick={openCreate}>
           <Plus className="h-4 w-4 mr-2" /> Новая задача
         </Button>
       </div>
@@ -177,10 +219,21 @@ const TasksPage = () => {
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="text-sm font-semibold leading-tight">{task.title}</CardTitle>
-                    <Badge variant="secondary" className={`shrink-0 text-[10px] ${cfg.color}`}>
-                      <Icon className="h-3 w-3 mr-1" />
-                      {cfg.label}
-                    </Badge>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => openEdit(task)}
+                        title="Редактировать"
+                      >
+                        <Pencil className="h-3 w-3 text-muted-foreground" />
+                      </Button>
+                      <Badge variant="secondary" className={`text-[10px] ${cfg.color}`}>
+                        <Icon className="h-3 w-3 mr-1" />
+                        {cfg.label}
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -211,18 +264,34 @@ const TasksPage = () => {
                       Выполнил: {getName(task.completed_by)} · {format(parseISO(task.completed_at), "d MMM HH:mm", { locale: ru })}
                     </div>
                   )}
-                  {task.status !== "done" && (
-                    <div className="flex gap-1 pt-1">
-                      {task.status === "new" && (
-                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => updateStatus.mutate({ id: task.id, status: "in_progress" })}>
-                          В работу
-                        </Button>
-                      )}
-                      <Button size="sm" className="h-7 text-xs" onClick={() => updateStatus.mutate({ id: task.id, status: "done" })}>
-                        <CheckCircle2 className="h-3 w-3 mr-1" /> Выполнена
+                  <div className="flex gap-1 pt-1">
+                    {task.status === "done" ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        onClick={() => updateStatus.mutate({ id: task.id, status: "in_progress" })}
+                      >
+                        <Undo2 className="h-3 w-3 mr-1" /> Вернуть в работу
                       </Button>
-                    </div>
-                  )}
+                    ) : (
+                      <>
+                        {task.status === "new" && (
+                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => updateStatus.mutate({ id: task.id, status: "in_progress" })}>
+                            В работу
+                          </Button>
+                        )}
+                        {task.status === "in_progress" && (
+                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => updateStatus.mutate({ id: task.id, status: "new" })}>
+                            <Undo2 className="h-3 w-3 mr-1" /> Назад
+                          </Button>
+                        )}
+                        <Button size="sm" className="h-7 text-xs" onClick={() => updateStatus.mutate({ id: task.id, status: "done" })}>
+                          <CheckCircle2 className="h-3 w-3 mr-1" /> Выполнена
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             );
@@ -230,10 +299,10 @@ const TasksPage = () => {
         </div>
       )}
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={(v) => { if (!v) resetForm(); else setDialogOpen(v); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Новая задача</DialogTitle>
+            <DialogTitle>{editingTask ? "Редактировать задачу" : "Новая задача"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <Input placeholder="Название задачи" value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -251,9 +320,13 @@ const TasksPage = () => {
               <input type="checkbox" checked={isManagement} onChange={(e) => setIsManagement(e.target.checked)} className="rounded" />
               Задача для руководства
             </label>
-            <Button className="w-full" disabled={!title.trim() || createTask.isPending} onClick={() => createTask.mutate()}>
-              {createTask.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Создать задачу
+            <Button
+              className="w-full"
+              disabled={!title.trim() || createTask.isPending || editTask.isPending}
+              onClick={() => editingTask ? editTask.mutate() : createTask.mutate()}
+            >
+              {(createTask.isPending || editTask.isPending) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              {editingTask ? "Сохранить" : "Создать задачу"}
             </Button>
           </div>
         </DialogContent>
