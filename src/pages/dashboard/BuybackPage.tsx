@@ -634,9 +634,6 @@ const BuybackPage = () => {
         </Card>
       )}
 
-      {/* Buyback Price Adjustments */}
-      <PriceAdjustmentsCard companyId={companyId} type="buyback" title="Корректировка цены скупки" />
-
       {/* Delete model confirmation */}
       <AlertDialog open={!!deleteModelTarget} onOpenChange={(open) => !open && setDeleteModelTarget(null)}>
         <AlertDialogContent>
