@@ -95,6 +95,19 @@ const FinancesPage = () => {
 
   const monthExpenses = expenses.filter((e: any) => new Date(e.date) >= new Date(monthStart));
 
+  const { totalSalary, byEmployee, isLoading: salaryLoading } = useSalaryData(companyId || null, { from: monthStart });
+
+  // Profiles for names
+  const { data: finProfiles = [] } = useQuery({
+    queryKey: ["fin-profiles", companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data } = await supabase.from("profiles").select("user_id, full_name").eq("company_id", companyId);
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+
   const totalRevenue = sales.reduce((s: number, sale: any) => s + (sale.total || 0), 0);
   const totalPaymentFees = sales.reduce((s: number, sale: any) => s + (sale.payment_fee || 0), 0);
   const salesProductRevenue = totalRevenue - totalPaymentFees;
@@ -104,7 +117,6 @@ const FinancesPage = () => {
     return s + (sale.sale_items || []).reduce((a: number, i: any) => a + (i.cost_price || 0), 0);
   }, 0);
   const totalExpenses = monthExpenses.reduce((s: number, e: any) => s + (e.amount || 0), 0);
-  // Profit = product revenue + repair revenue - cost of goods - expenses (fees excluded from profit)
   const netProfit = salesProductRevenue + repairRevenue - costOfGoods - totalExpenses;
 
   const totalInventoryCost = 
@@ -118,6 +130,7 @@ const FinancesPage = () => {
     { label: "Доход от ремонта", value: `${repairRevenue.toLocaleString("ru")} ₽`, icon: Wrench },
     { label: "Товары по себестоимости", value: `${totalInventoryCost.toLocaleString("ru")} ₽`, icon: DollarSign },
     { label: "Расходы за месяц", value: `${totalExpenses.toLocaleString("ru")} ₽`, icon: TrendingDown },
+    { label: "Зарплаты сотрудников", value: `${totalSalary.toLocaleString("ru")} ₽`, icon: Users },
     { label: "Чистая прибыль", value: `${netProfit.toLocaleString("ru")} ₽`, icon: TrendingUp },
   ];
 
