@@ -596,9 +596,6 @@ const MonitoringPage = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Sale Price Adjustments */}
-      <PriceAdjustmentsCard companyId={companyId} type="sale" title="Корректировка цены продажи" />
-
       {/* Import preview dialog */}
       <Dialog open={importOpen} onOpenChange={(o) => { if (!o) { setImportOpen(false); setImportRows([]); } }}>
         <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
