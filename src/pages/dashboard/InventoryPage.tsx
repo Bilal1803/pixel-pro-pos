@@ -538,17 +538,9 @@ const InventoryPage = () => {
     setParsedRows((prev) => prev.filter((_, i) => i !== idx));
   };
 
+  // Server-side filtering already applied via queryKey, just sort locally
   const filtered = useMemo(() => {
-    let result = [...devices];
-    if (statusTab !== "all") {
-      result = result.filter(d => d.status === statusTab);
-    }
-    if (search.trim()) {
-      const q = search.toLowerCase().trim();
-      result = result.filter(d =>
-        d.model.toLowerCase().includes(q) || d.imei.includes(q)
-      );
-    }
+    const result = [...devices];
     result.sort((a, b) => {
       const modelCmp = a.model.localeCompare(b.model);
       if (modelCmp !== 0) return modelCmp;
@@ -557,7 +549,7 @@ const InventoryPage = () => {
       return memA.localeCompare(memB);
     });
     return result;
-  }, [devices, statusTab, search]);
+  }, [devices]);
 
   return (
     <div className="space-y-6">
