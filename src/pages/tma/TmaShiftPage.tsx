@@ -27,7 +27,7 @@ const TmaShiftPage = () => {
       return data;
     },
     enabled: !!user,
-    staleTime: 5 * 60_000,
+    staleTime: 60_000,
   });
 
   const { data: activeShift, isLoading } = useQuery({
