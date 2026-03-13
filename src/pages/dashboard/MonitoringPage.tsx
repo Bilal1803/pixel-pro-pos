@@ -357,6 +357,8 @@ const MonitoringPage = () => {
         </div>
       </div>
 
+      <PriceAdjustmentsCard companyId={companyId} type="sale" title="Корректировка цены продажи" />
+
       <SectionHelp tips={SECTION_TIPS.monitoring} />
 
       <p className="text-sm text-muted-foreground">
@@ -595,9 +597,6 @@ const MonitoringPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Sale Price Adjustments */}
-      <PriceAdjustmentsCard companyId={companyId} type="sale" title="Корректировка цены продажи" />
 
       {/* Import preview dialog */}
       <Dialog open={importOpen} onOpenChange={(o) => { if (!o) { setImportOpen(false); setImportRows([]); } }}>
