@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,20 +15,11 @@ import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { useNavigate } from "react-router-dom";
 import SectionHelp from "@/components/SectionHelp";
 import { SECTION_TIPS } from "@/data/sectionTips";
-import { Send, Shield, FileText } from "lucide-react";
+import { Send, Shield } from "lucide-react";
 import PaymentSettingsCard from "@/components/PaymentSettingsCard";
 
 const planLabels: Record<string, string> = { start: "Старт", business: "Бизнес", premier: "Премьер" };
 const planPrices: Record<string, string> = { start: "1 990 ₽/мес", business: "2 990 ₽/мес", premier: "7 990 ₽/мес" };
-
-const DEFAULT_TEMPLATE = `📱 {модель} {память} {цвет}
-
-Состояние: {состояние}
-АКБ: {акб}
-{информация_о_замене}
-
-Магазин: {название_магазина}
-{гарантия}`;
 
 const getErrorMessage = (error: unknown) => {
   if (error instanceof Error) return error.message;
@@ -75,7 +66,7 @@ const SettingsPage = () => {
     enabled: !!user?.id,
   });
 
-  const canEditTemplate = userRole === "owner" || userRole === "manager";
+  
 
   const [emailForm, setEmailForm] = useState("");
   const [companyForm, setCompanyForm] = useState({ name: "", phone: "", address: "" });
@@ -194,8 +185,7 @@ const SettingsPage = () => {
 
       <PaymentSettingsCard companyId={companyId} />
 
-      {/* Listing Template */}
-      {canEditTemplate && <ListingTemplateCard companyId={companyId} />}
+      {/* Listing Template moved to ListingsPage */}
 
 
       <TelegramSettingsCard companyId={companyId} />
@@ -216,79 +206,6 @@ const SettingsPage = () => {
   );
 };
 
-/* ── Listing Template Card ── */
-const ListingTemplateCard = ({ companyId }: { companyId: string | null }) => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const { data: template, isLoading } = useQuery({
-    queryKey: ["listing-template", companyId],
-    queryFn: async () => {
-      if (!companyId) return null;
-      const { data } = await supabase.from("listing_templates").select("*").eq("company_id", companyId).order("is_default", { ascending: false }).limit(1).maybeSingle();
-      return data;
-    },
-    enabled: !!companyId,
-  });
-
-  const [text, setText] = useState("");
-
-  useEffect(() => {
-    setText(template?.template_text || DEFAULT_TEMPLATE);
-  }, [template]);
-
-  const saveTemplate = useMutation({
-    mutationFn: async () => {
-      if (!companyId) throw new Error("Нет компании");
-      if (template) {
-        const { error } = await supabase.from("listing_templates").update({ template_text: text }).eq("id", template.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("listing_templates").insert({ company_id: companyId, template_text: text, is_default: true, name: "Основной" });
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["listing-template"] });
-      toast({ title: "Шаблон сохранён" });
-    },
-    onError: (e: unknown) => toast({ title: "Ошибка", description: getErrorMessage(e), variant: "destructive" }),
-  });
-
-  if (isLoading) return null;
-
-  return (
-    <Card className="p-6 card-shadow">
-      <div className="flex items-center gap-2">
-        <FileText className="h-5 w-5 text-primary" />
-        <h2 className="text-lg font-semibold">Шаблон объявления</h2>
-      </div>
-      <p className="text-sm text-muted-foreground mt-1">
-        Текст объявления автоматически генерируется при добавлении устройства
-      </p>
-      <Separator className="my-4" />
-      <div className="space-y-4">
-        <Textarea value={text} onChange={(e) => setText(e.target.value)} className="min-h-[200px] font-mono text-sm" />
-        <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
-          <p className="font-medium text-foreground">Доступные переменные:</p>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
-            <span><code className="text-primary">{"{модель}"}</code> — название модели</span>
-            <span><code className="text-primary">{"{память}"}</code> — объём памяти</span>
-            <span><code className="text-primary">{"{цвет}"}</code> — цвет устройства</span>
-            <span><code className="text-primary">{"{состояние}"}</code> — грейд состояния</span>
-            <span><code className="text-primary">{"{акб}"}</code> — здоровье батареи</span>
-            <span><code className="text-primary">{"{информация_о_замене}"}</code> — о заменах</span>
-            <span><code className="text-primary">{"{название_магазина}"}</code> — компания</span>
-            <span><code className="text-primary">{"{гарантия}"}</code> — условия гарантии</span>
-          </div>
-        </div>
-        <Button onClick={() => saveTemplate.mutate()} disabled={saveTemplate.isPending}>
-          {saveTemplate.isPending ? "Сохранение..." : "Сохранить шаблон"}
-        </Button>
-      </div>
-    </Card>
-  );
-};
 
 
 /* ── Telegram Settings Card ── */
