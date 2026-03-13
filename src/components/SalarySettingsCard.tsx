@@ -125,6 +125,11 @@ export const SalarySettingsCard = ({ employeeId, companyId }: { employeeId: stri
 
   return (
     <div className="space-y-3">
+      {usingGlobal && (
+        <p className="text-xs text-muted-foreground bg-muted rounded-md px-3 py-2">
+          Используются общие настройки магазина. Измените значения ниже, чтобы задать индивидуальные ставки.
+        </p>
+      )}
       {ACCRUAL_TYPES.map(at => {
         const s = settings[at.value];
         if (!s) return null;
