@@ -753,6 +753,39 @@ export type Database = {
           },
         ]
       }
+      plans: {
+        Row: {
+          ai_enabled: boolean
+          created_at: string
+          id: string
+          max_devices: number
+          max_employees: number
+          max_stores: number
+          name: string
+          repairs_enabled: boolean
+        }
+        Insert: {
+          ai_enabled?: boolean
+          created_at?: string
+          id?: string
+          max_devices?: number
+          max_employees?: number
+          max_stores?: number
+          name: string
+          repairs_enabled?: boolean
+        }
+        Update: {
+          ai_enabled?: boolean
+          created_at?: string
+          id?: string
+          max_devices?: number
+          max_employees?: number
+          max_stores?: number
+          name?: string
+          repairs_enabled?: boolean
+        }
+        Relationships: []
+      }
       platform_admins: {
         Row: {
           created_at: string
@@ -1342,6 +1375,7 @@ export type Database = {
           max_stores: number
           paid: boolean
           plan: string
+          plan_id: string | null
           repairs_enabled: boolean
           trial_ends_at: string | null
           updated_at: string
@@ -1356,6 +1390,7 @@ export type Database = {
           max_stores?: number
           paid?: boolean
           plan?: string
+          plan_id?: string | null
           repairs_enabled?: boolean
           trial_ends_at?: string | null
           updated_at?: string
@@ -1370,6 +1405,7 @@ export type Database = {
           max_stores?: number
           paid?: boolean
           plan?: string
+          plan_id?: string | null
           repairs_enabled?: boolean
           trial_ends_at?: string | null
           updated_at?: string
@@ -1380,6 +1416,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: true
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
             referencedColumns: ["id"]
           },
         ]
