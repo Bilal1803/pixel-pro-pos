@@ -38,7 +38,7 @@ export async function createSalaryAccruals(params: {
     .eq("is_active", true);
 
   // If no individual settings, fall back to global defaults
-  let activeSettings = settings;
+  let activeSettings: any[] | null = settings;
   if (!activeSettings || activeSettings.length === 0) {
     const { data: globalSettings } = await supabase
       .from("global_salary_settings")
