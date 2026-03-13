@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { CheckCircle2, Clock, AlertCircle, Plus, Loader2 } from "lucide-react";
+import { CheckCircle2, Clock, AlertCircle, Plus, Loader2, Pencil, Undo2 } from "lucide-react";
 import { format, isToday, parseISO } from "date-fns";
 import { ru } from "date-fns/locale";
 
@@ -35,6 +35,7 @@ const TmaTasksPage = () => {
   const qc = useQueryClient();
   const [showDone, setShowDone] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
@@ -63,6 +64,9 @@ const TmaTasksPage = () => {
       if (status === "done") {
         updates.completed_at = new Date().toISOString();
         updates.completed_by = user!.id;
+      } else {
+        updates.completed_at = null;
+        updates.completed_by = null;
       }
       const { error } = await supabase.from("tasks").update(updates).eq("id", id);
       if (error) throw error;
@@ -87,11 +91,47 @@ const TmaTasksPage = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["tasks"] });
       toast.success("Задача отправлена руководству");
-      setDialogOpen(false);
-      setTitle("");
-      setDescription("");
+      resetForm();
     },
   });
+
+  const editTask = useMutation({
+    mutationFn: async () => {
+      if (!editingTask) return;
+      const { error } = await supabase.from("tasks").update({
+        title,
+        description: description || null,
+      }).eq("id", editingTask.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success("Задача обновлена");
+      resetForm();
+    },
+    onError: () => toast.error("Ошибка сохранения"),
+  });
+
+  const resetForm = () => {
+    setDialogOpen(false);
+    setEditingTask(null);
+    setTitle("");
+    setDescription("");
+  };
+
+  const openEdit = (task: Task) => {
+    setEditingTask(task);
+    setTitle(task.title);
+    setDescription(task.description || "");
+    setDialogOpen(true);
+  };
+
+  const openCreate = () => {
+    setEditingTask(null);
+    setTitle("");
+    setDescription("");
+    setDialogOpen(true);
+  };
 
   const displayed = showDone ? doneTasks : activeTasks;
 
@@ -107,7 +147,7 @@ const TmaTasksPage = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold text-gray-900">Задачи</h1>
-        <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setDialogOpen(true)}>
+        <Button size="sm" variant="outline" className="rounded-xl" onClick={openCreate}>
           <Plus className="h-4 w-4 mr-1" /> Руководству
         </Button>
       </div>
@@ -151,9 +191,18 @@ const TmaTasksPage = () => {
               <div key={task.id} className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm font-semibold text-gray-900 flex-1">{task.title}</p>
-                  <Badge className={`shrink-0 text-[10px] ${statusColor[task.status]}`}>
-                    <Icon className="h-3 w-3 mr-0.5" /> {statusLabel[task.status]}
-                  </Badge>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => openEdit(task)}
+                      className="p-1 rounded hover:bg-gray-100 transition-colors"
+                      title="Редактировать"
+                    >
+                      <Pencil className="h-3 w-3 text-gray-400" />
+                    </button>
+                    <Badge className={`text-[10px] ${statusColor[task.status]}`}>
+                      <Icon className="h-3 w-3 mr-0.5" /> {statusLabel[task.status]}
+                    </Badge>
+                  </div>
                 </div>
                 {task.description && <p className="text-xs text-gray-500 line-clamp-2">{task.description}</p>}
                 <div className="flex items-center gap-2 text-[10px] text-gray-400">
@@ -161,35 +210,55 @@ const TmaTasksPage = () => {
                   {task.is_management_task && <Badge variant="outline" className="text-[9px]">Руководству</Badge>}
                   <span>{format(parseISO(task.created_at), "d MMM HH:mm", { locale: ru })}</span>
                 </div>
-                {task.status !== "done" && (
-                  <div className="flex gap-1.5">
-                    {task.status === "new" && (
-                      <Button size="sm" variant="outline" className="h-7 text-xs rounded-lg" onClick={() => updateStatus.mutate({ id: task.id, status: "in_progress" })}>
-                        В работу
-                      </Button>
-                    )}
-                    <Button size="sm" className="h-7 text-xs rounded-lg" onClick={() => updateStatus.mutate({ id: task.id, status: "done" })}>
-                      <CheckCircle2 className="h-3 w-3 mr-1" /> Выполнена
+                <div className="flex gap-1.5">
+                  {task.status === "done" ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs rounded-lg"
+                      onClick={() => updateStatus.mutate({ id: task.id, status: "in_progress" })}
+                    >
+                      <Undo2 className="h-3 w-3 mr-1" /> Вернуть в работу
                     </Button>
-                  </div>
-                )}
+                  ) : (
+                    <>
+                      {task.status === "new" && (
+                        <Button size="sm" variant="outline" className="h-7 text-xs rounded-lg" onClick={() => updateStatus.mutate({ id: task.id, status: "in_progress" })}>
+                          В работу
+                        </Button>
+                      )}
+                      {task.status === "in_progress" && (
+                        <Button size="sm" variant="outline" className="h-7 text-xs rounded-lg" onClick={() => updateStatus.mutate({ id: task.id, status: "new" })}>
+                          <Undo2 className="h-3 w-3 mr-1" /> Назад
+                        </Button>
+                      )}
+                      <Button size="sm" className="h-7 text-xs rounded-lg" onClick={() => updateStatus.mutate({ id: task.id, status: "done" })}>
+                        <CheckCircle2 className="h-3 w-3 mr-1" /> Выполнена
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             );
           })}
         </div>
       )}
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={(v) => { if (!v) resetForm(); else setDialogOpen(v); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Задача руководству</DialogTitle>
+            <DialogTitle>{editingTask ? "Редактировать задачу" : "Задача руководству"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <Input placeholder="Что нужно сделать?" value={title} onChange={(e) => setTitle(e.target.value)} />
             <Textarea placeholder="Подробности (необязательно)" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
-            <Button className="w-full" disabled={!title.trim() || createTask.isPending} onClick={() => createTask.mutate()}>
-              {createTask.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Отправить
+            <Button
+              className="w-full"
+              disabled={!title.trim() || createTask.isPending || editTask.isPending}
+              onClick={() => editingTask ? editTask.mutate() : createTask.mutate()}
+            >
+              {(createTask.isPending || editTask.isPending) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              {editingTask ? "Сохранить" : "Отправить"}
             </Button>
           </div>
         </DialogContent>
