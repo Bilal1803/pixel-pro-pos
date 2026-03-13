@@ -169,6 +169,7 @@ const App = () => (
                 <Route path="reports" element={<ReportsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="pricing" element={<PricingPage />} />
+                <Route path="learning" element={<LearningPage />} />
                 <Route path="support" element={<SupportPage />} />
                 <Route path="ai" element={<PlanGate feature="ai"><AIPage /></PlanGate>} />
                 <Route path="network" element={<PlanGate feature="network"><NetworkPage /></PlanGate>} />
