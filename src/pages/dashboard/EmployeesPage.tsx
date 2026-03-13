@@ -33,8 +33,6 @@ import { Plus, Copy, MoreVertical, Pencil, Trash2, RefreshCw, UserX, Send, Dolla
 import { SalarySettingsCard } from "@/components/SalarySettingsCard";
 import { SalaryBonusCard } from "@/components/SalaryBonusCard";
 import { useSalaryData } from "@/hooks/useSalaryData";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 
 const roleLabels: Record<string, string> = {
