@@ -92,6 +92,18 @@ const SalesPage = () => {
     enabled: !!companyId,
   });
 
+  // Fetch salary accruals for all sales
+  const saleIds = sales.map((s: any) => s.id);
+  const { data: saleAccruals = [] } = useQuery({
+    queryKey: ["sale-salary-accruals", saleIds],
+    queryFn: async () => {
+      if (saleIds.length === 0) return [];
+      const { data } = await supabase.from("salary_accruals").select("*").in("sale_id", saleIds);
+      return data || [];
+    },
+    enabled: saleIds.length > 0,
+  });
+
   const { data: availableDevices = [] } = useQuery({
     queryKey: ["available-devices", companyId],
     queryFn: async () => {
