@@ -3,6 +3,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +26,7 @@ interface PriceAdjustmentsCardProps {
 const PriceAdjustmentsCard = ({ companyId, type, title }: PriceAdjustmentsCardProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isOpen, setIsOpen] = useState(false);
 
   const condType = `${type}_condition`;
   const battType = `${type}_battery`;
@@ -90,50 +93,61 @@ const PriceAdjustmentsCard = ({ companyId, type, title }: PriceAdjustmentsCardPr
   if (isLoading) return null;
 
   return (
-    <Card className="p-6 card-shadow">
-      <h2 className="text-lg font-semibold">{title}</h2>
-      <p className="text-sm text-muted-foreground mt-1">
-        Автоматическая коррекция рекомендуемой цены по состоянию и АКБ устройства
-      </p>
-      <Separator className="my-4" />
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">По состоянию</p>
-            {CONDITION_GRADES.map(g => (
-              <div key={g} className="flex items-center gap-2">
-                <span className="text-sm w-8 font-medium">{g}</span>
-                <Input
-                  type="number"
-                  className="h-8"
-                  value={values[`${condType}_${g}`] || "0"}
-                  onChange={(e) => setValues(prev => ({ ...prev, [`${condType}_${g}`]: e.target.value }))}
-                />
-                <span className="text-xs text-muted-foreground">₽</span>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <Card className="card-shadow">
+        <CollapsibleTrigger asChild>
+          <button className="w-full p-6 flex items-center justify-between hover:bg-muted/50 transition-colors text-left">
+            <div>
+              <h2 className="text-lg font-semibold">{title}</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Автоматическая коррекция рекомендуемой цены по состоянию и АКБ устройства
+              </p>
+            </div>
+            <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <Separator />
+          <div className="p-6 pt-4 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">По состоянию</p>
+                {CONDITION_GRADES.map(g => (
+                  <div key={g} className="flex items-center gap-2">
+                    <span className="text-sm w-8 font-medium">{g}</span>
+                    <Input
+                      type="number"
+                      className="h-8"
+                      value={values[`${condType}_${g}`] || "0"}
+                      onChange={(e) => setValues(prev => ({ ...prev, [`${condType}_${g}`]: e.target.value }))}
+                    />
+                    <span className="text-xs text-muted-foreground">₽</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">По АКБ</p>
-            {BATTERY_GRADES.map(b => (
-              <div key={b.value} className="flex items-center gap-2">
-                <span className="text-sm w-16 font-medium truncate" title={b.label}>{b.label}</span>
-                <Input
-                  type="number"
-                  className="h-8"
-                  value={values[`${battType}_${b.value}`] || "0"}
-                  onChange={(e) => setValues(prev => ({ ...prev, [`${battType}_${b.value}`]: e.target.value }))}
-                />
-                <span className="text-xs text-muted-foreground">₽</span>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">По АКБ</p>
+                {BATTERY_GRADES.map(b => (
+                  <div key={b.value} className="flex items-center gap-2">
+                    <span className="text-sm w-16 font-medium truncate" title={b.label}>{b.label}</span>
+                    <Input
+                      type="number"
+                      className="h-8"
+                      value={values[`${battType}_${b.value}`] || "0"}
+                      onChange={(e) => setValues(prev => ({ ...prev, [`${battType}_${b.value}`]: e.target.value }))}
+                    />
+                    <span className="text-xs text-muted-foreground">₽</span>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+            <Button onClick={() => saveAdjustments.mutate()} disabled={saveAdjustments.isPending}>
+              {saveAdjustments.isPending ? "Сохранение..." : "Сохранить корректировки"}
+            </Button>
           </div>
-        </div>
-        <Button onClick={() => saveAdjustments.mutate()} disabled={saveAdjustments.isPending}>
-          {saveAdjustments.isPending ? "Сохранение..." : "Сохранить корректировки"}
-        </Button>
-      </div>
-    </Card>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 };
 
