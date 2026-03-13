@@ -96,7 +96,7 @@ const TmaHomePage = () => {
       return data || [];
     },
     enabled: !!activeShift,
-    staleTime: 30_000,
+    staleTime: 10_000,
   });
 
   // Today's salary accruals for this employee
