@@ -148,16 +148,37 @@ const InventoryPage = () => {
     imeiCheckTimer.current = setTimeout(() => checkImeiDuplicate(imei), 400);
   };
 
-  const { data: devices = [], isLoading } = useQuery({
-    queryKey: ["devices", companyId],
+  const PAGE_SIZE = 50;
+  const [page, setPage] = useState(0);
+
+  const { data: devicesData, isLoading, isFetchingNextPage } = useQuery({
+    queryKey: ["devices", companyId, statusTab, search],
     queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase.from("devices").select("*").eq("company_id", companyId).order("model", { ascending: true }).order("memory", { ascending: true }).order("created_at", { ascending: false });
+      if (!companyId) return { data: [], count: 0 };
+      let query = supabase
+        .from("devices")
+        .select("id, model, brand, memory, color, imei, battery_health, purchase_price, sale_price, status, notes, sim_type, condition, listing_status, listing_url, listing_published_at, store_id, created_at", { count: "exact" })
+        .eq("company_id", companyId);
+
+      if (statusTab !== "all") {
+        query = query.eq("status", statusTab as any);
+      }
+      if (search.trim()) {
+        const q = search.trim();
+        query = query.or(`model.ilike.%${q}%,imei.ilike.%${q}%`);
+      }
+
+      query = query.order("model").order("memory").order("created_at", { ascending: false });
+
+      const { data, error, count } = await query;
       if (error) throw error;
-      return data;
+      return { data: data || [], count: count || 0 };
     },
     enabled: !!companyId,
   });
+
+  const devices = devicesData?.data || [];
+  const totalCount = devicesData?.count || 0;
 
   const { data: priceMonitoring = [] } = useQuery({
     queryKey: ["price_monitoring", companyId],
