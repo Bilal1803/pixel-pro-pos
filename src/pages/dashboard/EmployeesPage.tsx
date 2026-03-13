@@ -342,10 +342,14 @@ const EmployeesPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Сотрудники</h1>
-        <Dialog open={createOpen} onOpenChange={(v) => { if (!v) handleCreateClose(); else setCreateOpen(true); }}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-1" />Пригласить</Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setGlobalSettingsOpen(true)}>
+            <Settings className="h-4 w-4 mr-1" />Настройка зарплаты
+          </Button>
+          <Dialog open={createOpen} onOpenChange={(v) => { if (!v) handleCreateClose(); else setCreateOpen(true); }}>
+            <DialogTrigger asChild>
+              <Button><Plus className="h-4 w-4 mr-1" />Пригласить</Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{inviteLink ? "Приглашение создано" : "Новый сотрудник"}</DialogTitle>
