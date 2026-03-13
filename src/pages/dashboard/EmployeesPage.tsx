@@ -29,9 +29,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Copy, MoreVertical, Pencil, Trash2, RefreshCw, UserX, Send, DollarSign } from "lucide-react";
+import { Plus, Copy, MoreVertical, Pencil, Trash2, RefreshCw, UserX, Send, DollarSign, Settings } from "lucide-react";
 import { SalarySettingsCard } from "@/components/SalarySettingsCard";
 import { SalaryBonusCard } from "@/components/SalaryBonusCard";
+import { GlobalSalarySettingsCard } from "@/components/GlobalSalarySettingsCard";
 import { useSalaryData } from "@/hooks/useSalaryData";
 import { format } from "date-fns";
 
