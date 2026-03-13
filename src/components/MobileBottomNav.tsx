@@ -71,8 +71,8 @@ const MobileBottomNav = () => {
   return (
     <>
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <DrawerContent className="max-h-[80vh]">
-          <div className="px-4 pt-2 pb-6 overflow-y-auto">
+        <DrawerContent className="max-h-[70vh]">
+          <div className="px-4 pt-2 pb-safe overflow-y-auto" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1.5rem)" }}>
             <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-muted mb-4" />
             <h3 className="text-sm font-semibold text-muted-foreground mb-3 px-1">Все разделы</h3>
             <div className="grid grid-cols-3 gap-2">
