@@ -60,7 +60,7 @@ const TmaShiftPage = () => {
       return data || [];
     },
     enabled: !!activeShift,
-    staleTime: 15_000,
+    staleTime: 10_000,
   });
 
   // Salary accruals for this shift
