@@ -266,4 +266,33 @@ const ShiftsPage = () => {
   );
 };
 
+
+// Inline component for shift salary info
+const ShiftSalaryInfo = ({ companyId, employeeId, from, to }: { companyId: string; employeeId: string; from: string; to: string | null }) => {
+  const { totalSalary, totalAccruals, totalBonuses, totalPenalties, byEmployee } = useSalaryData(companyId, {
+    employeeId,
+    from,
+    to: to || undefined,
+  });
+  
+  const salesCount = byEmployee[employeeId]?.salesCount || 0;
+
+  if (totalSalary === 0 && salesCount === 0) return null;
+
+  return (
+    <Card className="p-3 mt-2 bg-emerald-500/5 border-emerald-200">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium">💰 Заработок за смену</span>
+        <span className="text-sm font-bold text-emerald-600">{totalSalary.toLocaleString("ru")} ₽</span>
+      </div>
+      <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
+        <span>{salesCount} продаж</span>
+        {totalAccruals > 0 && <span>Начислено: {totalAccruals.toLocaleString("ru")} ₽</span>}
+        {totalBonuses > 0 && <span className="text-emerald-600">+{totalBonuses.toLocaleString("ru")} ₽</span>}
+        {totalPenalties > 0 && <span className="text-destructive">−{totalPenalties.toLocaleString("ru")} ₽</span>}
+      </div>
+    </Card>
+  );
+};
+
 export default ShiftsPage;
