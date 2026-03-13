@@ -422,6 +422,7 @@ const EmployeesPage = () => {
             )}
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <SectionHelp tips={SECTION_TIPS.employees} sectionKey="employees" />
