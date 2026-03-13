@@ -189,6 +189,7 @@ const InventoryPage = () => {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60_000,
   });
 
   const { data: buybackSettings } = useQuery({
