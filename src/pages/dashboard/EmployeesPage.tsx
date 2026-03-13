@@ -47,7 +47,8 @@ const EmployeesPage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
-  const [form, setForm] = useState({ fullName: "", phone: "", role: "employee", storeId: "", telegram: "" });
+  const [form, setForm] = useState({ fullName: "", phone: "", role: "employee", storeId: "", telegram: "", salaryType: "global" });
+  const [globalSettingsOpen, setGlobalSettingsOpen] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
 
   // Edit state
