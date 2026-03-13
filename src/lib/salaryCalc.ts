@@ -51,7 +51,7 @@ export async function createSalaryAccruals(params: {
   if (!activeSettings || activeSettings.length === 0) return;
 
   const settingsMap: Record<string, SalarySetting> = {};
-  for (const s of settings) {
+  for (const s of activeSettings) {
     settingsMap[s.accrual_type] = s;
   }
 
