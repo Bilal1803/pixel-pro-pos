@@ -148,10 +148,7 @@ const InventoryPage = () => {
     imeiCheckTimer.current = setTimeout(() => checkImeiDuplicate(imei), 400);
   };
 
-  const PAGE_SIZE = 50;
-  const [page, setPage] = useState(0);
-
-  const { data: devicesData, isLoading, isFetchingNextPage } = useQuery({
+  const { data: devicesData, isLoading } = useQuery({
     queryKey: ["devices", companyId, statusTab, search],
     queryFn: async () => {
       if (!companyId) return { data: [], count: 0 };
@@ -178,7 +175,6 @@ const InventoryPage = () => {
   });
 
   const devices = devicesData?.data || [];
-  const totalCount = devicesData?.count || 0;
 
   const { data: priceMonitoring = [] } = useQuery({
     queryKey: ["price_monitoring", companyId],
