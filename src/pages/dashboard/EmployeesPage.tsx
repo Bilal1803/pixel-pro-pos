@@ -468,6 +468,7 @@ const EmployeesPage = () => {
                 <TableHead>Имя</TableHead>
                 <TableHead>Магазин</TableHead>
                 <TableHead>Роль</TableHead>
+                <TableHead>Заработок (мес.)</TableHead>
                 <TableHead>Дата</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
@@ -477,6 +478,7 @@ const EmployeesPage = () => {
                 const role = getRoleForUser(e.user_id);
                 const isOwner = role === "owner";
                 const isSelf = e.user_id === user?.id;
+                const salary = salaryByEmployee[e.user_id];
                 return (
                   <TableRow key={e.id}>
                     <TableCell>
@@ -491,6 +493,18 @@ const EmployeesPage = () => {
                         {roleLabels[role] || role}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      {salary ? (
+                        <button onClick={() => { setSalaryEmployee(e); setSalaryOpen(true); }} className="text-left hover:underline">
+                          <p className="text-sm font-semibold text-emerald-600">{salary.total.toLocaleString("ru")} ₽</p>
+                          <p className="text-[10px] text-muted-foreground">{salary.salesCount} продаж</p>
+                        </button>
+                      ) : (
+                        <button onClick={() => { setSalaryEmployee(e); setSalaryOpen(true); }} className="text-xs text-muted-foreground hover:underline">
+                          Настроить
+                        </button>
+                      )}
+                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {format(new Date(e.created_at), "dd.MM.yyyy")}
                     </TableCell>
@@ -503,6 +517,9 @@ const EmployeesPage = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => { setSalaryEmployee(e); setSalaryOpen(true); }}>
+                              <DollarSign className="h-4 w-4 mr-2" />Зарплата
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => openEdit(e)}>
                               <Pencil className="h-4 w-4 mr-2" />Редактировать
                             </DropdownMenuItem>
