@@ -37,6 +37,7 @@ const moreItems = [
   { to: "/dashboard/ai", label: "AI Ассистент", icon: Sparkles },
   { to: "/dashboard/settings", label: "Настройки", icon: Settings },
   { to: "/dashboard/pricing", label: "Тарифы", icon: CreditCard },
+  { to: "/dashboard/learning", label: "Обучение", icon: BookOpen },
   { to: "/dashboard/support", label: "Поддержка", icon: HelpCircle },
 ];
 
