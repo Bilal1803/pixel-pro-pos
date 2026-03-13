@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Play, Square, Plus, Minus } from "lucide-react";
+import { Play, Square, Plus, Minus, Award } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -63,6 +63,23 @@ const TmaShiftPage = () => {
     staleTime: 15_000,
   });
 
+  // Salary accruals for this shift
+  const { data: shiftSalary = 0 } = useQuery({
+    queryKey: ["tma-salary", companyId, user?.id, activeShift?.start_time],
+    queryFn: async () => {
+      if (!activeShift || !companyId || !user) return 0;
+      const { data } = await supabase
+        .from("salary_accruals")
+        .select("amount")
+        .eq("company_id", companyId)
+        .eq("employee_id", user.id)
+        .gte("created_at", activeShift.start_time);
+      return (data || []).reduce((s, a) => s + (a.amount || 0), 0);
+    },
+    enabled: !!activeShift && !!companyId && !!user,
+    staleTime: 30_000,
+  });
+
   const shiftRevenue = shiftSales.reduce((s, sale) => s + (sale.total || 0), 0);
   const cashSales = shiftSales.filter(s => s.payment_method === "cash").reduce((s, sale) => s + (sale.total || 0), 0);
   const cardSales = shiftSales.filter(s => s.payment_method !== "cash").reduce((s, sale) => s + (sale.total || 0), 0);
@@ -107,7 +124,7 @@ const TmaShiftPage = () => {
       toast({ title: "Смена закрыта" });
       if (companyId) {
         sendTelegramNotification(companyId, "shift_close",
-          `⏹ <b>Смена закрыта</b>\n\n📊 Продаж: <b>${shiftSales.length}</b>\n💰 Выручка: <b>${shiftRevenue.toLocaleString("ru")} ₽</b>\n💵 Наличные: ${cashSales.toLocaleString("ru")} ₽\n💳 Карта: ${cardSales.toLocaleString("ru")} ₽\n🏦 Система: ${systemCash.toLocaleString("ru")} ₽\n💰 Факт: ${(Number(cashEnd) || 0).toLocaleString("ru")} ₽\n${diffText}`);
+          `⏹ <b>Смена закрыта</b>\n\n📊 Продаж: <b>${shiftSales.length}</b>\n💰 Выручка: <b>${shiftRevenue.toLocaleString("ru")} ₽</b>\n💵 Наличные: ${cashSales.toLocaleString("ru")} ₽\n💳 Карта: ${cardSales.toLocaleString("ru")} ₽\n🏆 Заработок: ${shiftSalary.toLocaleString("ru")} ₽\n🏦 Система: ${systemCash.toLocaleString("ru")} ₽\n💰 Факт: ${(Number(cashEnd) || 0).toLocaleString("ru")} ₽\n${diffText}`);
       }
     },
     onError: (e: any) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
@@ -170,6 +187,17 @@ const TmaShiftPage = () => {
         ))}
       </div>
 
+      {/* Salary earned this shift */}
+      <div className="bg-purple-50 rounded-xl border border-purple-100 p-4 shadow-sm flex items-center gap-3">
+        <div className="h-10 w-10 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
+          <Award className="h-5 w-5 text-purple-600" />
+        </div>
+        <div>
+          <p className="text-xs text-purple-600 font-medium">Заработок за смену</p>
+          <p className="text-2xl font-bold text-purple-700">{shiftSalary.toLocaleString("ru")} ₽</p>
+        </div>
+      </div>
+
       <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
         <p className="text-xs text-gray-500 mb-1">Касса по системе</p>
         <p className="text-2xl font-bold text-gray-900">{systemCash.toLocaleString("ru")} ₽</p>
@@ -205,6 +233,10 @@ const TmaShiftPage = () => {
               <div className="text-gray-500">Выручка: <strong className="text-gray-900">{shiftRevenue.toLocaleString("ru")} ₽</strong></div>
               <div className="text-gray-500">Наличные: <strong className="text-gray-900">{cashSales.toLocaleString("ru")} ₽</strong></div>
               <div className="text-gray-500">Карта: <strong className="text-gray-900">{cardSales.toLocaleString("ru")} ₽</strong></div>
+            </div>
+            <div className="bg-purple-50 rounded-xl p-3">
+              <p className="text-xs text-purple-600">Заработок за смену</p>
+              <p className="text-xl font-bold text-purple-700">{shiftSalary.toLocaleString("ru")} ₽</p>
             </div>
             <div className="bg-gray-50 rounded-xl p-3">
               <p className="text-xs text-gray-500">Касса по системе</p>

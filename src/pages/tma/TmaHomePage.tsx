@@ -1,5 +1,5 @@
 import { useState, useCallback, memo } from "react";
-import { ShoppingCart, Smartphone, Banknote, Clock, Package, ArrowDownLeft, Search, TrendingUp, Hash, Box, Wallet } from "lucide-react";
+import { ShoppingCart, Smartphone, Banknote, Clock, Package, ArrowDownLeft, Search, TrendingUp, Hash, Box, Wallet, Award } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
@@ -99,6 +99,23 @@ const TmaHomePage = () => {
     staleTime: 30_000,
   });
 
+  // Today's salary accruals for this employee
+  const { data: todaySalary = 0 } = useQuery({
+    queryKey: ["tma-salary", companyId, user?.id, todayISO],
+    queryFn: async () => {
+      if (!companyId || !user) return 0;
+      const { data } = await supabase
+        .from("salary_accruals")
+        .select("amount")
+        .eq("company_id", companyId)
+        .eq("employee_id", user.id)
+        .gte("created_at", todayISO);
+      return (data || []).reduce((s, a) => s + (a.amount || 0), 0);
+    },
+    enabled: !!companyId && !!user,
+    staleTime: 30_000,
+  });
+
   const todayRevenue = todaySales.reduce((s, sale) => s + (sale.total || 0), 0);
   const todayCashSales = todaySales.filter(s => s.payment_method === "cash").reduce((s, sale) => s + (sale.total || 0), 0);
   const cashDeposits = cashOps.filter(o => o.type === "deposit" || o.type === "sale_cash").reduce((s, o) => s + o.amount, 0);
@@ -129,6 +146,7 @@ const TmaHomePage = () => {
       <div className="grid grid-cols-2 gap-3">
         <StatCard icon={TrendingUp} label="Выручка" value={`${todayRevenue.toLocaleString("ru")} ₽`} iconColor="text-emerald-600" bg="bg-emerald-50" />
         <StatCard icon={Hash} label="Продажи" value={String(todaySales.length)} iconColor="text-blue-600" bg="bg-blue-50" />
+        <StatCard icon={Award} label="Заработок" value={`${todaySalary.toLocaleString("ru")} ₽`} iconColor="text-purple-600" bg="bg-purple-50" />
         <StatCard icon={Box} label="На складе" value={String(stockCount)} iconColor="text-indigo-600" bg="bg-indigo-50" />
         <StatCard icon={Wallet} label="Наличные" value={`${currentCash.toLocaleString("ru")} ₽`} iconColor="text-amber-600" bg="bg-amber-50" />
       </div>
