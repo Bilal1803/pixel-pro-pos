@@ -59,7 +59,8 @@ export async function createSalaryAccruals(params: {
     let accrualType: string;
     if (item.item_type === "device") accrualType = "device";
     else if (item.item_type === "accessory") accrualType = "accessory";
-    else if (item.item_type === "service" || item.item_type === "repair") accrualType = "service";
+    else if (item.item_type === "service") accrualType = "service";
+    else if (item.item_type === "repair") accrualType = "repair";
     else continue;
 
     const setting = settingsMap[accrualType];

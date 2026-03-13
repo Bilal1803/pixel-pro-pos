@@ -14,6 +14,7 @@ const ACCRUAL_TYPES = [
   { value: "device", label: "Продажа телефона", emoji: "📱" },
   { value: "accessory", label: "Продажа аксессуара", emoji: "🎧" },
   { value: "service", label: "Продажа услуги", emoji: "🔧" },
+  { value: "repair", label: "Ремонт", emoji: "🛠️" },
   { value: "above_price", label: "Продажа выше цены", emoji: "💎" },
 ];
 
