@@ -47,7 +47,7 @@ const TmaCashPage = () => {
       return data || [];
     },
     enabled: !!activeShift,
-    staleTime: 15_000,
+    staleTime: 10_000,
   });
 
   const { data: cashSalesTotal = 0 } = useQuery({
