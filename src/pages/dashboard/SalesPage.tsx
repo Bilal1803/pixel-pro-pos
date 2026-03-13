@@ -376,6 +376,7 @@ const SalesPage = () => {
       queryClient.invalidateQueries({ queryKey: ["cash-ops"] });
       queryClient.invalidateQueries({ queryKey: ["all-cash-ops"] });
       queryClient.invalidateQueries({ queryKey: ["cash-sales-total"] });
+      queryClient.invalidateQueries({ queryKey: ["salary-accruals"] });
       toast({ title: "Продажа оформлена!" });
       setOpen(false);
       resetForm();
