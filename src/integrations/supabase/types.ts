@@ -117,6 +117,44 @@ export type Database = {
           },
         ]
       }
+      buyback_prices: {
+        Row: {
+          base_price: number
+          company_id: string
+          created_at: string
+          id: string
+          memory: string | null
+          model: string
+          updated_at: string
+        }
+        Insert: {
+          base_price?: number
+          company_id: string
+          created_at?: string
+          id?: string
+          memory?: string | null
+          model: string
+          updated_at?: string
+        }
+        Update: {
+          base_price?: number
+          company_id?: string
+          created_at?: string
+          id?: string
+          memory?: string | null
+          model?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyback_prices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buyback_settings: {
         Row: {
           company_id: string
@@ -437,6 +475,7 @@ export type Database = {
           company_id: string
           condition: string | null
           created_at: string
+          has_replacement: boolean
           id: string
           imei: string
           listing_published_at: string | null
@@ -446,6 +485,7 @@ export type Database = {
           model: string
           notes: string | null
           purchase_price: number | null
+          replacement_details: string | null
           sale_price: number | null
           sim_type: string | null
           status: Database["public"]["Enums"]["device_status"]
@@ -459,6 +499,7 @@ export type Database = {
           company_id: string
           condition?: string | null
           created_at?: string
+          has_replacement?: boolean
           id?: string
           imei: string
           listing_published_at?: string | null
@@ -468,6 +509,7 @@ export type Database = {
           model: string
           notes?: string | null
           purchase_price?: number | null
+          replacement_details?: string | null
           sale_price?: number | null
           sim_type?: string | null
           status?: Database["public"]["Enums"]["device_status"]
@@ -481,6 +523,7 @@ export type Database = {
           company_id?: string
           condition?: string | null
           created_at?: string
+          has_replacement?: boolean
           id?: string
           imei?: string
           listing_published_at?: string | null
@@ -490,6 +533,7 @@ export type Database = {
           model?: string
           notes?: string | null
           purchase_price?: number | null
+          replacement_details?: string | null
           sale_price?: number | null
           sim_type?: string | null
           status?: Database["public"]["Enums"]["device_status"]
@@ -620,6 +664,44 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listing_templates: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          template_text: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          template_text?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          template_text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_templates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -809,6 +891,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      price_adjustments: {
+        Row: {
+          adjustment: number
+          company_id: string
+          created_at: string
+          grade: string
+          id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          adjustment?: number
+          company_id: string
+          created_at?: string
+          grade: string
+          id?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          adjustment?: number
+          company_id?: string
+          created_at?: string
+          grade?: string
+          id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_adjustments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       price_monitoring: {
         Row: {
