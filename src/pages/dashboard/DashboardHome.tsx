@@ -34,20 +34,22 @@ const DashboardHome = () => {
     queryKey: ["devices-dash", companyId],
     queryFn: async () => {
       if (!companyId) return [];
-      const { data } = await supabase.from("devices").select("*").eq("company_id", companyId);
+      const { data } = await supabase.from("devices").select("id, status, sale_price, model, memory, imei, store_id").eq("company_id", companyId);
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 30_000,
   });
 
   const { data: sales = [] } = useQuery({
     queryKey: ["sales-dash", companyId],
     queryFn: async () => {
       if (!companyId) return [];
-      const { data } = await supabase.from("sales").select("*, clients(name), sale_items(name, price, cost_price, item_type, quantity, device_id, devices(model, imei, memory, color, battery_health, brand))").eq("company_id", companyId).order("created_at", { ascending: false }).limit(10);
+      const { data } = await supabase.from("sales").select("id, total, created_at, store_id, payment_method, clients(name), sale_items(name, price, cost_price, item_type, quantity, device_id, devices(model, imei, memory, color, battery_health, brand))").eq("company_id", companyId).order("created_at", { ascending: false }).limit(10);
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 30_000,
   });
 
   const { data: repairs = [] } = useQuery({
@@ -58,6 +60,7 @@ const DashboardHome = () => {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 60_000,
   });
 
   const { data: activeShift } = useQuery({

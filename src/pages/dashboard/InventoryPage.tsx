@@ -148,16 +148,33 @@ const InventoryPage = () => {
     imeiCheckTimer.current = setTimeout(() => checkImeiDuplicate(imei), 400);
   };
 
-  const { data: devices = [], isLoading } = useQuery({
-    queryKey: ["devices", companyId],
+  const { data: devicesData, isLoading } = useQuery({
+    queryKey: ["devices", companyId, statusTab, search],
     queryFn: async () => {
-      if (!companyId) return [];
-      const { data, error } = await supabase.from("devices").select("*").eq("company_id", companyId).order("model", { ascending: true }).order("memory", { ascending: true }).order("created_at", { ascending: false });
+      if (!companyId) return { data: [], count: 0 };
+      let query = supabase
+        .from("devices")
+        .select("id, model, brand, memory, color, imei, battery_health, purchase_price, sale_price, status, notes, sim_type, condition, listing_status, listing_url, listing_published_at, store_id, created_at", { count: "exact" })
+        .eq("company_id", companyId);
+
+      if (statusTab !== "all") {
+        query = query.eq("status", statusTab as any);
+      }
+      if (search.trim()) {
+        const q = search.trim();
+        query = query.or(`model.ilike.%${q}%,imei.ilike.%${q}%`);
+      }
+
+      query = query.order("model").order("memory").order("created_at", { ascending: false });
+
+      const { data, error, count } = await query;
       if (error) throw error;
-      return data;
+      return { data: data || [], count: count || 0 };
     },
     enabled: !!companyId,
   });
+
+  const devices = devicesData?.data || [];
 
   const { data: priceMonitoring = [] } = useQuery({
     queryKey: ["price_monitoring", companyId],
@@ -168,6 +185,7 @@ const InventoryPage = () => {
       return data;
     },
     enabled: !!companyId,
+    staleTime: 5 * 60_000,
   });
 
   const { data: buybackSettings } = useQuery({
@@ -230,13 +248,25 @@ const InventoryPage = () => {
   };
 
 
-  const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: devices.length };
-    for (const d of devices) {
-      counts[d.status] = (counts[d.status] || 0) + 1;
-    }
-    return counts;
-  }, [devices]);
+  // Status counts - fetch separately for tab badges (lightweight query)
+  const { data: statusCounts = { all: 0 } } = useQuery({
+    queryKey: ["device-status-counts", companyId],
+    queryFn: async () => {
+      if (!companyId) return { all: 0 };
+      const { data, error } = await supabase
+        .from("devices")
+        .select("status")
+        .eq("company_id", companyId);
+      if (error) throw error;
+      const counts: Record<string, number> = { all: data.length };
+      for (const d of data) {
+        counts[d.status] = (counts[d.status] || 0) + 1;
+      }
+      return counts;
+    },
+    enabled: !!companyId,
+    staleTime: 30_000,
+  });
 
   const modelOptions = useMemo(() => {
     const fromDb = devices.map(d => d.model).filter(Boolean);
@@ -516,17 +546,9 @@ const InventoryPage = () => {
     setParsedRows((prev) => prev.filter((_, i) => i !== idx));
   };
 
+  // Server-side filtering already applied via queryKey, just sort locally
   const filtered = useMemo(() => {
-    let result = [...devices];
-    if (statusTab !== "all") {
-      result = result.filter(d => d.status === statusTab);
-    }
-    if (search.trim()) {
-      const q = search.toLowerCase().trim();
-      result = result.filter(d =>
-        d.model.toLowerCase().includes(q) || d.imei.includes(q)
-      );
-    }
+    const result = [...devices];
     result.sort((a, b) => {
       const modelCmp = a.model.localeCompare(b.model);
       if (modelCmp !== 0) return modelCmp;
@@ -535,7 +557,7 @@ const InventoryPage = () => {
       return memA.localeCompare(memB);
     });
     return result;
-  }, [devices, statusTab, search]);
+  }, [devices]);
 
   return (
     <div className="space-y-6">
