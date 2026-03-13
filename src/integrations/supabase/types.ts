@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_notifications: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          message: string
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          message: string
+          title: string
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          message?: string
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       ai_support_conversations: {
         Row: {
           company_id: string
@@ -116,6 +149,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          ip_address: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       buyback_prices: {
         Row: {
@@ -1593,6 +1662,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      system_errors: {
+        Row: {
+          column_number: number | null
+          company_id: string | null
+          company_name: string | null
+          created_at: string
+          error_type: string
+          file_name: string | null
+          id: string
+          line_number: number | null
+          message: string
+          stack: string | null
+          url: string | null
+          user_agent: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          column_number?: number | null
+          company_id?: string | null
+          company_name?: string | null
+          created_at?: string
+          error_type?: string
+          file_name?: string | null
+          id?: string
+          line_number?: number | null
+          message: string
+          stack?: string | null
+          url?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          column_number?: number | null
+          company_id?: string | null
+          company_name?: string | null
+          created_at?: string
+          error_type?: string
+          file_name?: string | null
+          id?: string
+          line_number?: number | null
+          message?: string
+          stack?: string | null
+          url?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       tasks: {
         Row: {

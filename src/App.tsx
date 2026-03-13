@@ -54,10 +54,12 @@ const AdminStoriesPage = lazy(() => import("./pages/admin/AdminStoriesPage"));
 const AdminCompaniesPage = lazy(() => import("./pages/admin/AdminCompaniesPage"));
 const AdminUsersPage = lazy(() => import("./pages/admin/AdminUsersPage"));
 const AdminSubscriptionsPage = lazy(() => import("./pages/admin/AdminSubscriptionsPage"));
-const AdminFinancesPage = lazy(() => import("./pages/admin/AdminFinancesPage"));
 const AdminSupportPage = lazy(() => import("./pages/admin/AdminSupportPage"));
-const AdminAnalyticsPage = lazy(() => import("./pages/admin/AdminAnalyticsPage"));
-const AdminSystemPage = lazy(() => import("./pages/admin/AdminSystemPage"));
+const AdminAdminsPage = lazy(() => import("./pages/admin/AdminAdminsPage"));
+const AdminNotificationsPage = lazy(() => import("./pages/admin/AdminNotificationsPage"));
+const AdminErrorsPage = lazy(() => import("./pages/admin/AdminErrorsPage"));
+const AdminAuditPage = lazy(() => import("./pages/admin/AdminAuditPage"));
+const AdminMonitoringPage = lazy(() => import("./pages/admin/AdminMonitoringPage"));
 
 // Lazy-loaded TMA pages
 const TmaHomePage = lazy(() => import("./pages/tma/TmaHomePage"));
@@ -189,11 +191,13 @@ const App = () => (
                 <Route path="companies" element={<AdminCompaniesPage />} />
                 <Route path="users" element={<AdminUsersPage />} />
                 <Route path="subscriptions" element={<AdminSubscriptionsPage />} />
-                <Route path="finances" element={<AdminFinancesPage />} />
                 <Route path="stories" element={<AdminStoriesPage />} />
                 <Route path="support" element={<AdminSupportPage />} />
-                <Route path="analytics" element={<AdminAnalyticsPage />} />
-                <Route path="system" element={<AdminSystemPage />} />
+                <Route path="admins" element={<AdminAdminsPage />} />
+                <Route path="notifications" element={<AdminNotificationsPage />} />
+                <Route path="errors" element={<AdminErrorsPage />} />
+                <Route path="audit" element={<AdminAuditPage />} />
+                <Route path="monitoring" element={<AdminMonitoringPage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
