@@ -4,7 +4,7 @@ import {
   Users, DollarSign, UserCog, Wrench, Clock, FileBarChart,
   Settings, HelpCircle, CreditCard, Sparkles, Headphones,
   Store, BarChart3, ArrowRightLeft, Tag, TrendingUp, Megaphone,
-  MoreHorizontal, Shield, LogOut, Banknote, ClipboardList,
+  MoreHorizontal, Shield, LogOut, Banknote, ClipboardList, BookOpen,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,7 @@ const moreItems = [
   { to: "/dashboard/ai", label: "AI Ассистент", icon: Sparkles },
   { to: "/dashboard/settings", label: "Настройки", icon: Settings },
   { to: "/dashboard/pricing", label: "Тарифы", icon: CreditCard },
+  { to: "/dashboard/learning", label: "Обучение", icon: BookOpen },
   { to: "/dashboard/support", label: "Поддержка", icon: HelpCircle },
 ];
 

@@ -406,7 +406,7 @@ const EmployeesPage = () => {
         </Dialog>
       </div>
 
-      <SectionHelp tips={SECTION_TIPS.employees} />
+      <SectionHelp tips={SECTION_TIPS.employees} sectionKey="employees" />
 
       {/* Pending Invitations */}
       {pendingInvitations.length > 0 && (

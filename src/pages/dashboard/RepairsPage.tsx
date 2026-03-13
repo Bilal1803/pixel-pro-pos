@@ -120,7 +120,7 @@ const RepairsPage = () => {
         </Dialog>
       </div>
 
-      <SectionHelp tips={SECTION_TIPS.repairs} />
+      <SectionHelp tips={SECTION_TIPS.repairs} sectionKey="repairs" />
 
       <Card className="card-shadow overflow-hidden">
         {isLoading ? (

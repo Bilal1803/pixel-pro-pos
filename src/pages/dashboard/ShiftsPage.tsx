@@ -196,7 +196,7 @@ const ShiftsPage = () => {
         </div>
       </div>
 
-      <SectionHelp tips={SECTION_TIPS.shifts} />
+      <SectionHelp tips={SECTION_TIPS.shifts} sectionKey="shifts" />
 
       <Card className="card-shadow overflow-hidden">
         {isLoading ? (

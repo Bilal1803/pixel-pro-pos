@@ -1,6 +1,9 @@
 import { useState } from "react";
-import { HelpCircle, ChevronDown, ChevronUp, Lightbulb, Link2, AlertTriangle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { HelpCircle, ChevronDown, ChevronUp, Lightbulb, Link2, AlertTriangle, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { SECTION_TO_CATEGORY } from "@/data/knowledgeBase";
 
 export type HelpTip = {
   text: string;
@@ -10,6 +13,7 @@ export type HelpTip = {
 interface SectionHelpProps {
   tips: HelpTip[];
   className?: string;
+  sectionKey?: string;
 }
 
 const iconMap = {
@@ -26,10 +30,13 @@ const colorMap = {
   warning: "text-destructive",
 };
 
-const SectionHelp = ({ tips, className }: SectionHelpProps) => {
+const SectionHelp = ({ tips, className, sectionKey }: SectionHelpProps) => {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   if (!tips.length) return null;
+
+  const categoryId = sectionKey ? SECTION_TO_CATEGORY[sectionKey] : null;
 
   return (
     <div className={cn("rounded-lg border bg-muted/30", className)}>
@@ -60,6 +67,17 @@ const SectionHelp = ({ tips, className }: SectionHelpProps) => {
               </div>
             );
           })}
+          {categoryId && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2 text-primary hover:text-primary mt-1"
+              onClick={() => navigate("/dashboard/learning")}
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              Подробные инструкции
+            </Button>
+          )}
         </div>
       )}
     </div>

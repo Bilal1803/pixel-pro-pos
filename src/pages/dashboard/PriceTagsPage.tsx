@@ -498,7 +498,7 @@ const PriceTagsPage = () => {
         </div>
       </div>
 
-      <SectionHelp tips={SECTION_TIPS.priceTags} />
+      <SectionHelp tips={SECTION_TIPS.priceTags} sectionKey="priceTags" />
 
       {/* Selection UI */}
       <div className="print:hidden space-y-4">

@@ -127,7 +127,7 @@ const SettingsPage = () => {
   return (
     <div className="space-y-6 max-w-2xl">
       <h1 className="text-2xl font-bold">Настройки</h1>
-      <SectionHelp tips={SECTION_TIPS.settings} />
+      <SectionHelp tips={SECTION_TIPS.settings} sectionKey="settings" />
 
       {/* Account */}
       <Card className="p-6 card-shadow space-y-4">

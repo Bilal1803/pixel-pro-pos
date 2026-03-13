@@ -47,6 +47,7 @@ const NetworkPage = lazy(() => import("./pages/dashboard/NetworkPage"));
 const ComparisonPage = lazy(() => import("./pages/dashboard/ComparisonPage"));
 const TransfersPage = lazy(() => import("./pages/dashboard/TransfersPage"));
 const TasksPage = lazy(() => import("./pages/dashboard/TasksPage"));
+const LearningPage = lazy(() => import("./pages/dashboard/LearningPage"));
 
 // Lazy-loaded admin pages
 const AdminDashboardPage = lazy(() => import("./pages/admin/AdminDashboardPage"));
@@ -168,6 +169,7 @@ const App = () => (
                 <Route path="reports" element={<ReportsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="pricing" element={<PricingPage />} />
+                <Route path="learning" element={<LearningPage />} />
                 <Route path="support" element={<SupportPage />} />
                 <Route path="ai" element={<PlanGate feature="ai"><AIPage /></PlanGate>} />
                 <Route path="network" element={<PlanGate feature="network"><NetworkPage /></PlanGate>} />

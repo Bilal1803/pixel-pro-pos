@@ -761,7 +761,7 @@ const SalesPage = () => {
         </Dialog>
       </div>
 
-      <SectionHelp tips={SECTION_TIPS.sales} />
+      <SectionHelp tips={SECTION_TIPS.sales} sectionKey="sales" />
 
       <Card className="card-shadow overflow-hidden">
         {isLoading ? (
