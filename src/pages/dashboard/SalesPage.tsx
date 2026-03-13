@@ -313,10 +313,18 @@ const SalesPage = () => {
         quantity: i.quantity,
       }));
 
-      const { error: itemError } = await supabase.from("sale_items").insert(saleItems);
+      const { data: insertedItems, error: itemError } = await supabase.from("sale_items").insert(saleItems).select();
       if (itemError) throw itemError;
 
       const deviceIds = cart.filter(i => i.type === "device" && i.device_id).map(i => i.device_id!);
+      
+      // Build device sale prices map for above_price calculation
+      const deviceSalePrices: Record<string, number> = {};
+      for (const item of cart.filter(i => i.type === "device" && i.device_id)) {
+        const dev = availableDevices.find(d => d.id === item.device_id);
+        if (dev?.sale_price) deviceSalePrices[item.device_id!] = dev.sale_price;
+      }
+
       for (const did of deviceIds) {
         await supabase.from("devices").update({ status: "sold" as any }).eq("id", did);
       }
@@ -338,7 +346,27 @@ const SalesPage = () => {
         cashAmount: paymentMethod === "mixed" ? mixedCash : undefined,
         saleId: sale.id,
       });
-    },
+
+      // Auto-calculate salary accruals
+      if (insertedItems && insertedItems.length > 0) {
+        const salaryItems = insertedItems.map((si: any, idx: number) => ({
+          item_type: cart[idx].type,
+          price: si.price,
+          original_price: si.original_price,
+          cost_price: si.cost_price,
+          device_id: si.device_id,
+          name: si.name,
+          sale_item_id: si.id,
+        }));
+        
+        await createSalaryAccruals({
+          companyId,
+          employeeId: user.id,
+          saleId: sale.id,
+          items: salaryItems,
+          deviceSalePrices,
+        });
+      }
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sales"] });
       queryClient.invalidateQueries({ queryKey: ["devices"] });
