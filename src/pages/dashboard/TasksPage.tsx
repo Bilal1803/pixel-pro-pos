@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Plus, CheckCircle2, Clock, AlertCircle, Calendar, User, Loader2, Pencil, Undo2 } from "lucide-react";
+import { Plus, CheckCircle2, Clock, AlertCircle, Calendar, User, Loader2, Pencil, Undo2, Search } from "lucide-react";
 import { format, isToday, isPast, parseISO } from "date-fns";
 import { ru } from "date-fns/locale";
 import { Label } from "@/components/ui/label";
@@ -36,6 +36,7 @@ type Task = {
 };
 
 type Profile = { user_id: string; full_name: string };
+type Device = { id: string; model: string; memory: string | null; color: string | null; imei: string; status: string; listing_status: string; created_at: string };
 
 const TASK_CATEGORIES = [
   { value: "listing", label: "📢 Выложить объявление" },
@@ -69,6 +70,9 @@ const TasksPage = () => {
   const [dueDate, setDueDate] = useState("");
   const [isManagement, setIsManagement] = useState(false);
   const [category, setCategory] = useState("other");
+  const [selectedDeviceId, setSelectedDeviceId] = useState("");
+  const [deviceSearch, setDeviceSearch] = useState("");
+  const [manualTitle, setManualTitle] = useState("");
 
   // Completion dialog for listing tasks
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
@@ -102,6 +106,83 @@ const TasksPage = () => {
     enabled: !!companyId,
   });
 
+  const { data: devices = [] } = useQuery({
+    queryKey: ["devices-for-tasks", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("devices")
+        .select("id, model, memory, color, imei, status, listing_status, created_at")
+        .eq("company_id", companyId!)
+        .in("status", ["available", "testing"])
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as Device[];
+    },
+    enabled: !!companyId,
+  });
+
+  // Filter devices: for listing — not_listed; for relist — listed/needs_relist
+  const filteredDevices = devices.filter(d => {
+    const q = deviceSearch.toLowerCase();
+    const matchesSearch = !q || d.model.toLowerCase().includes(q) || d.imei.includes(q);
+    if (category === "listing") return matchesSearch && d.listing_status === "not_listed";
+    if (category === "relist") return matchesSearch && (d.listing_status === "listed" || d.listing_status === "needs_relist");
+    return matchesSearch;
+  });
+
+  const needsDevicePicker = category === "listing" || category === "relist";
+  const needsModelInput = category === "check_prices" || category === "sale" || category === "buyback" || category === "inventory";
+
+  const getAutoTitle = (dev?: Device) => {
+    const catLabels: Record<string, string> = {
+      listing: "Опубликовать",
+      relist: "Перевыложить",
+      check_prices: "Проверить цены",
+      sale: "Продажа",
+      buyback: "Скупка",
+      inventory: "Склад",
+    };
+    const prefix = catLabels[category] || "";
+    if (dev) {
+      const parts = [dev.model, dev.memory, dev.color].filter(Boolean).join(" ");
+      return `${prefix}: ${parts}`;
+    }
+    if (manualTitle) return `${prefix}: ${manualTitle}`;
+    return prefix;
+  };
+
+  const handleCategoryChange = (val: string) => {
+    setCategory(val);
+    setSelectedDeviceId("");
+    setManualTitle("");
+    setDeviceSearch("");
+    if (val !== "other" && !editingTask) {
+      setTitle("");
+    }
+  };
+
+  const handleDeviceSelect = (deviceId: string) => {
+    setSelectedDeviceId(deviceId);
+    const dev = devices.find(d => d.id === deviceId);
+    if (dev) {
+      setTitle(getAutoTitle(dev));
+    }
+  };
+
+  const handleManualTitleChange = (val: string) => {
+    setManualTitle(val);
+    const catLabels: Record<string, string> = {
+      listing: "Опубликовать",
+      relist: "Перевыложить",
+      check_prices: "Проверить цены",
+      sale: "Продажа",
+      buyback: "Скупка",
+      inventory: "Склад",
+    };
+    const prefix = catLabels[category] || "";
+    setTitle(val ? `${prefix}: ${val}` : prefix);
+  };
+
   const createTask = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("tasks").insert({
@@ -113,6 +194,7 @@ const TasksPage = () => {
         is_management_task: isManagement,
         created_by: user!.id,
         category,
+        device_id: selectedDeviceId || null,
       } as any);
       if (error) throw error;
     },
@@ -134,6 +216,7 @@ const TasksPage = () => {
         due_date: dueDate || null,
         is_management_task: isManagement,
         category,
+        device_id: selectedDeviceId || null,
       } as any).eq("id", editingTask.id);
       if (error) throw error;
     },
@@ -168,7 +251,6 @@ const TasksPage = () => {
     mutationFn: async () => {
       if (!completingTask || !companyId) return;
       
-      // 1. Update the task as done with result_url
       const { error: taskError } = await supabase.from("tasks").update({
         status: "done",
         completed_at: new Date().toISOString(),
@@ -177,7 +259,6 @@ const TasksPage = () => {
       } as any).eq("id", completingTask.id);
       if (taskError) throw taskError;
 
-      // 2. If task has device_id, update device listing status
       if (completingTask.device_id) {
         const { error: deviceError } = await supabase.from("devices").update({
           listing_status: "listed",
@@ -187,11 +268,9 @@ const TasksPage = () => {
         if (deviceError) throw deviceError;
       }
 
-      // 3. Try to extract model info from task title and create listing
       const titleMatch = completingTask.title.match(/:\s*(.+)/);
       const groupName = titleMatch ? titleMatch[1].trim() : completingTask.title;
       
-      // Check if listing with this group already exists
       const { data: existing } = await supabase
         .from("listings")
         .select("id, device_count")
@@ -200,14 +279,12 @@ const TasksPage = () => {
         .maybeSingle();
 
       if (existing) {
-        // Update existing listing count and URL
         await supabase.from("listings").update({
           device_count: (existing.device_count || 0) + 1,
           avito_url: resultUrl,
           last_refreshed: new Date().toISOString(),
         }).eq("id", existing.id);
       } else {
-        // Create new listing
         await supabase.from("listings").insert({
           company_id: companyId,
           group_name: groupName,
@@ -251,6 +328,9 @@ const TasksPage = () => {
     setDueDate("");
     setIsManagement(false);
     setCategory("other");
+    setSelectedDeviceId("");
+    setDeviceSearch("");
+    setManualTitle("");
   };
 
   const openEdit = (task: Task) => {
@@ -261,17 +341,12 @@ const TasksPage = () => {
     setDueDate(task.due_date || "");
     setIsManagement(task.is_management_task);
     setCategory(task.category || "other");
+    setSelectedDeviceId(task.device_id || "");
     setDialogOpen(true);
   };
 
   const openCreate = () => {
-    setEditingTask(null);
-    setTitle("");
-    setDescription("");
-    setAssignedTo("");
-    setDueDate("");
-    setIsManagement(false);
-    setCategory("other");
+    resetForm();
     setDialogOpen(true);
   };
 
@@ -288,6 +363,11 @@ const TasksPage = () => {
     if (tab === "done") return t.status === "done";
     return t.status !== "done";
   });
+
+  const deviceLabel = (d: Device) => {
+    const parts = [d.model, d.memory, d.color].filter(Boolean).join(" · ");
+    return parts;
+  };
 
   return (
     <div className="space-y-6">
@@ -404,14 +484,14 @@ const TasksPage = () => {
 
       {/* Create/Edit dialog */}
       <Dialog open={dialogOpen} onOpenChange={(v) => { if (!v) resetForm(); else setDialogOpen(v); }}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingTask ? "Редактировать задачу" : "Новая задача"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
               <Label className="text-sm mb-1.5 block">Категория</Label>
-              <Select value={category} onValueChange={setCategory}>
+              <Select value={category} onValueChange={handleCategoryChange}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {TASK_CATEGORIES.map(c => (
@@ -420,7 +500,79 @@ const TasksPage = () => {
                 </SelectContent>
               </Select>
             </div>
-            <Input placeholder="Название задачи" value={title} onChange={(e) => setTitle(e.target.value)} />
+
+            {/* Device picker for listing/relist */}
+            {needsDevicePicker && (
+              <div className="space-y-2">
+                <Label className="text-sm">Устройство</Label>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Поиск по модели или IMEI..."
+                    value={deviceSearch}
+                    onChange={(e) => setDeviceSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <div className="max-h-40 overflow-y-auto border rounded-md divide-y">
+                  {filteredDevices.length === 0 ? (
+                    <p className="text-xs text-muted-foreground p-3 text-center">Нет доступных устройств</p>
+                  ) : (
+                    filteredDevices.slice(0, 20).map(d => (
+                      <button
+                        key={d.id}
+                        type="button"
+                        onClick={() => handleDeviceSelect(d.id)}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors ${selectedDeviceId === d.id ? "bg-accent font-medium" : ""}`}
+                      >
+                        <div className="font-medium">{deviceLabel(d)}</div>
+                        <div className="text-[10px] text-muted-foreground">IMEI: {d.imei} · {format(parseISO(d.created_at), "d MMM", { locale: ru })}</div>
+                      </button>
+                    ))
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground">или введите вручную:</div>
+                <Input
+                  placeholder="Название модели вручную"
+                  value={manualTitle}
+                  onChange={(e) => {
+                    handleManualTitleChange(e.target.value);
+                    setSelectedDeviceId("");
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Model/item input for other categories */}
+            {needsModelInput && (
+              <div>
+                <Label className="text-sm mb-1.5 block">
+                  {category === "check_prices" && "Модель для проверки"}
+                  {category === "sale" && "Что продать"}
+                  {category === "buyback" && "Что выкупить"}
+                  {category === "inventory" && "Что на складе"}
+                </Label>
+                <Input
+                  placeholder="Введите модель или описание..."
+                  value={manualTitle}
+                  onChange={(e) => handleManualTitleChange(e.target.value)}
+                />
+              </div>
+            )}
+
+            {/* Custom title only for "other" */}
+            {category === "other" && (
+              <Input placeholder="Название задачи" value={title} onChange={(e) => setTitle(e.target.value)} />
+            )}
+
+            {/* Show generated title for non-other categories */}
+            {category !== "other" && title && (
+              <div className="bg-muted/50 rounded-md px-3 py-2">
+                <p className="text-xs text-muted-foreground">Название задачи:</p>
+                <p className="text-sm font-medium">{title}</p>
+              </div>
+            )}
+
             <Textarea placeholder="Описание (необязательно)" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
             <Select value={assignedTo} onValueChange={setAssignedTo}>
               <SelectTrigger><SelectValue placeholder="Ответственный" /></SelectTrigger>
