@@ -274,6 +274,8 @@ const ListingsPage = () => {
 
       <SectionHelp tips={SECTION_TIPS.listings} sectionKey="listings" />
 
+      <ListingTemplateCard companyId={companyId} />
+
       <Card className="card-shadow overflow-hidden">
         {isLoading ? (
           <div className="p-8 text-center text-muted-foreground">Загрузка...</div>

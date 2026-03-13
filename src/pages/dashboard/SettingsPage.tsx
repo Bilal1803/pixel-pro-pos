@@ -21,15 +21,6 @@ import PaymentSettingsCard from "@/components/PaymentSettingsCard";
 const planLabels: Record<string, string> = { start: "Старт", business: "Бизнес", premier: "Премьер" };
 const planPrices: Record<string, string> = { start: "1 990 ₽/мес", business: "2 990 ₽/мес", premier: "7 990 ₽/мес" };
 
-const DEFAULT_TEMPLATE = `📱 {модель} {память} {цвет}
-
-Состояние: {состояние}
-АКБ: {акб}
-{информация_о_замене}
-
-Магазин: {название_магазина}
-{гарантия}`;
-
 const getErrorMessage = (error: unknown) => {
   if (error instanceof Error) return error.message;
   return "Неизвестная ошибка";
