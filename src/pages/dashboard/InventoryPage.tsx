@@ -252,13 +252,25 @@ const InventoryPage = () => {
   };
 
 
-  const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: devices.length };
-    for (const d of devices) {
-      counts[d.status] = (counts[d.status] || 0) + 1;
-    }
-    return counts;
-  }, [devices]);
+  // Status counts - fetch separately for tab badges (lightweight query)
+  const { data: statusCounts = { all: 0 } } = useQuery({
+    queryKey: ["device-status-counts", companyId],
+    queryFn: async () => {
+      if (!companyId) return { all: 0 };
+      const { data, error } = await supabase
+        .from("devices")
+        .select("status")
+        .eq("company_id", companyId);
+      if (error) throw error;
+      const counts: Record<string, number> = { all: data.length };
+      for (const d of data) {
+        counts[d.status] = (counts[d.status] || 0) + 1;
+      }
+      return counts;
+    },
+    enabled: !!companyId,
+    staleTime: 30_000,
+  });
 
   const modelOptions = useMemo(() => {
     const fromDb = devices.map(d => d.model).filter(Boolean);

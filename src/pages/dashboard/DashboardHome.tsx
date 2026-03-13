@@ -60,6 +60,7 @@ const DashboardHome = () => {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 60_000,
   });
 
   const { data: activeShift } = useQuery({
