@@ -1,13 +1,10 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Save, Plus, Trash2 } from "lucide-react";
+import { Loader2, Save, Plus } from "lucide-react";
+import { SalaryRuleRow } from "./SalaryRuleRow";
 
 const ACCRUAL_TYPES = [
   { value: "device", label: "Продажа телефона", emoji: "📱" },
@@ -69,7 +66,6 @@ export const SalarySettingsCard = ({ employeeId, companyId }: { employeeId: stri
     if (savedRules) {
       const hasIndividual = savedRules.length > 0;
       setUsingGlobal(!hasIndividual);
-      
       const source = hasIndividual ? savedRules : (globalRules || []);
       const mapped: SalaryRule[] = source.map((s: any) => ({
         id: hasIndividual ? s.id : undefined,
@@ -148,17 +144,19 @@ export const SalarySettingsCard = ({ employeeId, companyId }: { employeeId: stri
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
+      <p className="text-sm font-medium">Настройки начислений</p>
       {usingGlobal && (
         <p className="text-xs text-muted-foreground bg-muted rounded-md px-3 py-2">
-          Используются общие настройки магазина. Измените значения ниже, чтобы задать индивидуальные ставки.
+          Используются общие настройки. Измените значения, чтобы задать индивидуальные ставки.
         </p>
       )}
 
       {ACCRUAL_TYPES.map(at => {
         const typeRules = getRulesForType(at.value);
+        const showPriceRange = at.value !== "above_price" && at.value !== "device";
         return (
-          <div key={at.value} className="border rounded-lg p-3 space-y-2">
+          <div key={at.value} className="border rounded-lg p-2.5 sm:p-3 space-y-1">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold">{at.emoji} {at.label}</p>
               <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => addRule(at.value)}>
@@ -166,80 +164,34 @@ export const SalarySettingsCard = ({ employeeId, companyId }: { employeeId: stri
               </Button>
             </div>
 
+            {showPriceRange && typeRules.length > 0 && (
+              <div className="flex flex-wrap gap-x-2 text-[10px] text-muted-foreground pl-12">
+                <span className="w-16 sm:w-20">От ₽</span>
+                <span className="w-16 sm:w-20">До ₽</span>
+                <span className="w-[52px]">Тип</span>
+                <span>Размер</span>
+              </div>
+            )}
+            {!showPriceRange && typeRules.length > 0 && (
+              <div className="flex flex-wrap gap-x-2 text-[10px] text-muted-foreground pl-12">
+                <span className="w-[52px]">Тип</span>
+                <span>Размер</span>
+              </div>
+            )}
+
             {typeRules.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="h-8 text-xs">Вкл</TableHead>
-                    {at.value !== "above_price" && at.value !== "device" && (
-                      <>
-                        <TableHead className="h-8 text-xs">От ₽</TableHead>
-                        <TableHead className="h-8 text-xs">До ₽</TableHead>
-                      </>
-                    )}
-                    <TableHead className="h-8 text-xs">Тип</TableHead>
-                    <TableHead className="h-8 text-xs">Размер</TableHead>
-                    <TableHead className="h-8 text-xs w-8"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {typeRules.map((rule) => {
-                    const idx = rules.indexOf(rule);
-                    return (
-                      <TableRow key={idx}>
-                        <TableCell className="p-2">
-                          <Switch checked={rule.is_active} onCheckedChange={(v) => updateRule(idx, "is_active", v)} />
-                        </TableCell>
-                        {at.value !== "above_price" && at.value !== "device" && (
-                          <>
-                            <TableCell className="p-2">
-                              <Input
-                                type="number"
-                                value={rule.min_price || ""}
-                                onChange={(e) => updateRule(idx, "min_price", Number(e.target.value) || 0)}
-                                className="w-20 h-8 text-xs"
-                                placeholder="0"
-                              />
-                            </TableCell>
-                            <TableCell className="p-2">
-                              <Input
-                                type="number"
-                                value={rule.max_price ?? ""}
-                                onChange={(e) => updateRule(idx, "max_price", e.target.value ? Number(e.target.value) : null)}
-                                className="w-20 h-8 text-xs"
-                                placeholder="∞"
-                              />
-                            </TableCell>
-                          </>
-                        )}
-                        <TableCell className="p-2">
-                          <Select value={rule.calc_type} onValueChange={(v) => updateRule(idx, "calc_type", v)}>
-                            <SelectTrigger className="w-16 h-8 text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="percent">%</SelectItem>
-                              <SelectItem value="fixed">₽</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell className="p-2">
-                          <Input
-                            type="number"
-                            value={rule.value || ""}
-                            onChange={(e) => updateRule(idx, "value", Number(e.target.value) || 0)}
-                            className="w-20 h-8 text-xs"
-                            placeholder="0"
-                          />
-                        </TableCell>
-                        <TableCell className="p-2">
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeRule(idx)}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+              typeRules.map((rule) => {
+                const idx = rules.indexOf(rule);
+                return (
+                  <SalaryRuleRow
+                    key={idx}
+                    rule={rule}
+                    showPriceRange={showPriceRange}
+                    onUpdate={(field, value) => updateRule(idx, field, value)}
+                    onRemove={() => removeRule(idx)}
+                  />
+                );
+              })
             ) : (
               <p className="text-xs text-muted-foreground">Нет правил</p>
             )}
