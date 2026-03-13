@@ -48,7 +48,7 @@ const TmaHomePage = () => {
       return data;
     },
     enabled: !!user,
-    staleTime: 5 * 60_000,
+    staleTime: 60_000,
   });
 
   const { data: todaySales = [] } = useQuery({
@@ -74,7 +74,7 @@ const TmaHomePage = () => {
       return count || 0;
     },
     enabled: !!companyId,
-    staleTime: 60_000,
+    staleTime: 10_000,
   });
 
   const { data: activeShift } = useQuery({
@@ -85,7 +85,7 @@ const TmaHomePage = () => {
       return data;
     },
     enabled: !!user && !!companyId,
-    staleTime: 30_000,
+    staleTime: 10_000,
   });
 
   const { data: cashOps = [] } = useQuery({
@@ -96,7 +96,7 @@ const TmaHomePage = () => {
       return data || [];
     },
     enabled: !!activeShift,
-    staleTime: 30_000,
+    staleTime: 10_000,
   });
 
   // Today's salary accruals for this employee
@@ -113,7 +113,7 @@ const TmaHomePage = () => {
       return (data || []).reduce((s, a) => s + (a.amount || 0), 0);
     },
     enabled: !!companyId && !!user,
-    staleTime: 30_000,
+    staleTime: 10_000,
   });
 
   const todayRevenue = todaySales.reduce((s, sale) => s + (sale.total || 0), 0);

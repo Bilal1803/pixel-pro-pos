@@ -35,7 +35,7 @@ const TmaInventoryPage = () => {
       return data;
     },
     enabled: !!user,
-    staleTime: 5 * 60_000,
+    staleTime: 60_000,
   });
 
   const { data: devices = [], isLoading } = useQuery({
@@ -48,7 +48,7 @@ const TmaInventoryPage = () => {
       return data || [];
     },
     enabled: !!companyId,
-    staleTime: 30_000,
+    staleTime: 10_000,
   });
 
   const [visibleCount, setVisibleCount] = useState(30);

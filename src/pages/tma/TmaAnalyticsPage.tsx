@@ -74,7 +74,7 @@ const TmaAnalyticsPage = () => {
       return data;
     },
     enabled: !!user,
-    staleTime: 5 * 60_000,
+    staleTime: 60_000,
   });
 
   const { data: sales = [], isLoading } = useQuery({
@@ -92,7 +92,7 @@ const TmaAnalyticsPage = () => {
       return data || [];
     },
     enabled: !!companyId,
-    staleTime: 60_000,
+    staleTime: 10_000,
   });
 
   const { data: activeShift } = useQuery({
@@ -103,7 +103,7 @@ const TmaAnalyticsPage = () => {
       return data;
     },
     enabled: !!user && !!companyId,
-    staleTime: 30_000,
+    staleTime: 10_000,
   });
 
   const { data: cashOps = [] } = useQuery({
@@ -114,7 +114,7 @@ const TmaAnalyticsPage = () => {
       return data || [];
     },
     enabled: !!activeShift,
-    staleTime: 30_000,
+    staleTime: 10_000,
   });
 
   // Salary accruals for the selected period
@@ -131,7 +131,7 @@ const TmaAnalyticsPage = () => {
       return (data || []).reduce((s, a) => s + (a.amount || 0), 0);
     },
     enabled: !!companyId && !!user,
-    staleTime: 60_000,
+    staleTime: 10_000,
   });
 
   // Bonuses/penalties for the selected period
@@ -150,7 +150,7 @@ const TmaAnalyticsPage = () => {
       return { bonus, penalty };
     },
     enabled: !!companyId && !!user,
-    staleTime: 60_000,
+    staleTime: 10_000,
   });
 
   const stats = useMemo(() => {

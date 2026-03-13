@@ -27,7 +27,7 @@ const TmaShiftPage = () => {
       return data;
     },
     enabled: !!user,
-    staleTime: 5 * 60_000,
+    staleTime: 60_000,
   });
 
   const { data: activeShift, isLoading } = useQuery({
@@ -38,7 +38,7 @@ const TmaShiftPage = () => {
       return data;
     },
     enabled: !!user && !!companyId,
-    staleTime: 30_000,
+    staleTime: 10_000,
   });
 
   const { data: shiftSales = [] } = useQuery({
@@ -49,7 +49,7 @@ const TmaShiftPage = () => {
       return data || [];
     },
     enabled: !!activeShift,
-    staleTime: 30_000,
+    staleTime: 10_000,
   });
 
   const { data: cashOps = [] } = useQuery({
@@ -60,7 +60,7 @@ const TmaShiftPage = () => {
       return data || [];
     },
     enabled: !!activeShift,
-    staleTime: 15_000,
+    staleTime: 10_000,
   });
 
   // Salary accruals for this shift
@@ -77,7 +77,7 @@ const TmaShiftPage = () => {
       return (data || []).reduce((s, a) => s + (a.amount || 0), 0);
     },
     enabled: !!activeShift && !!companyId && !!user,
-    staleTime: 30_000,
+    staleTime: 10_000,
   });
 
   const shiftRevenue = shiftSales.reduce((s, sale) => s + (sale.total || 0), 0);

@@ -1,0 +1,8 @@
+ALTER PUBLICATION supabase_realtime ADD TABLE public.sales;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.sale_items;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.devices;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.products;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.cash_operations;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.shifts;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.salary_accruals;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.salary_bonuses;

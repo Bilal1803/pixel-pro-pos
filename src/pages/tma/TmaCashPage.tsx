@@ -25,7 +25,7 @@ const TmaCashPage = () => {
       return data;
     },
     enabled: !!user,
-    staleTime: 5 * 60_000,
+    staleTime: 60_000,
   });
 
   const { data: activeShift } = useQuery({
@@ -36,7 +36,7 @@ const TmaCashPage = () => {
       return data;
     },
     enabled: !!user && !!companyId,
-    staleTime: 30_000,
+    staleTime: 10_000,
   });
 
   const { data: cashOps = [] } = useQuery({
@@ -47,7 +47,7 @@ const TmaCashPage = () => {
       return data || [];
     },
     enabled: !!activeShift,
-    staleTime: 15_000,
+    staleTime: 10_000,
   });
 
   const { data: cashSalesTotal = 0 } = useQuery({
@@ -63,7 +63,7 @@ const TmaCashPage = () => {
       return (data || []).reduce((s, sale) => s + (sale.total || 0), 0);
     },
     enabled: !!companyId && !!activeShift && !!user,
-    staleTime: 30_000,
+    staleTime: 10_000,
   });
 
   const deposits = cashOps.filter(o => o.type === "deposit" || o.type === "sale_cash").reduce((s, o) => s + o.amount, 0);
