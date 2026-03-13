@@ -82,7 +82,7 @@ const TmaSalesPage = () => {
       return data || [];
     },
     enabled: !!companyId,
-    staleTime: 30_000,
+    staleTime: 10_000,
   });
 
   const { data: products = [] } = useQuery({
