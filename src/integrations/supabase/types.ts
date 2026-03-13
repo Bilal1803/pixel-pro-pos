@@ -674,6 +674,47 @@ export type Database = {
           },
         ]
       }
+      global_salary_settings: {
+        Row: {
+          accrual_type: string
+          calc_type: string
+          company_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          accrual_type: string
+          calc_type?: string
+          company_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          value?: number
+        }
+        Update: {
+          accrual_type?: string
+          calc_type?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "global_salary_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           code: string
