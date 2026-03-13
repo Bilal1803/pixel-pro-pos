@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { IPHONE_CATALOG } from "@/data/deviceCatalog";
 import SectionHelp from "@/components/SectionHelp";
 import { SECTION_TIPS } from "@/data/sectionTips";
+import ListingTemplateCard from "@/components/ListingTemplateCard";
 
 const ListingsPage = () => {
   const { companyId } = useAuth();
