@@ -424,6 +424,8 @@ const BuybackPage = () => {
         <span>Маржа новые: <strong className="text-foreground">{currentMarginNew.toLocaleString("ru")} ₽</strong></span>
       </div>
 
+      <PriceAdjustmentsCard companyId={companyId} type="buyback" title="Корректировка цены скупки" />
+
       <SectionHelp tips={SECTION_TIPS.buyback} />
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as "prices" | "history")}>

@@ -357,6 +357,8 @@ const MonitoringPage = () => {
         </div>
       </div>
 
+      <PriceAdjustmentsCard companyId={companyId} type="sale" title="Корректировка цены продажи" />
+
       <SectionHelp tips={SECTION_TIPS.monitoring} />
 
       <p className="text-sm text-muted-foreground">
