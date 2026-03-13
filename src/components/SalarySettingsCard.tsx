@@ -30,6 +30,7 @@ export const SalarySettingsCard = ({ employeeId, companyId }: { employeeId: stri
   const qc = useQueryClient();
   const [settings, setSettings] = useState<Record<string, SalarySetting>>({});
   const [hasChanges, setHasChanges] = useState(false);
+  const [usingGlobal, setUsingGlobal] = useState(false);
 
   const { data: savedSettings, isLoading } = useQuery({
     queryKey: ["salary-settings", companyId, employeeId],
@@ -45,19 +46,37 @@ export const SalarySettingsCard = ({ employeeId, companyId }: { employeeId: stri
     enabled: !!companyId && !!employeeId,
   });
 
+  const { data: globalSettings } = useQuery({
+    queryKey: ["global-salary-settings", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("global_salary_settings")
+        .select("*")
+        .eq("company_id", companyId);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+
   useEffect(() => {
     if (savedSettings) {
+      const hasIndividual = savedSettings.length > 0;
+      setUsingGlobal(!hasIndividual);
+      
+      // Use individual settings if exist, otherwise fall back to global
+      const source = hasIndividual ? savedSettings : (globalSettings || []);
       const map: Record<string, SalarySetting> = {};
       for (const at of ACCRUAL_TYPES) {
-        const saved = savedSettings.find((s: any) => s.accrual_type === at.value);
+        const saved = source.find((s: any) => s.accrual_type === at.value);
         map[at.value] = saved
-          ? { id: saved.id, accrual_type: at.value, calc_type: saved.calc_type, value: saved.value, is_active: saved.is_active }
+          ? { id: hasIndividual ? saved.id : undefined, accrual_type: at.value, calc_type: saved.calc_type, value: saved.value, is_active: saved.is_active }
           : { accrual_type: at.value, calc_type: "percent", value: 0, is_active: false };
       }
       setSettings(map);
       setHasChanges(false);
     }
-  }, [savedSettings]);
+  }, [savedSettings, globalSettings]);
 
   const updateSetting = (type: string, field: string, value: any) => {
     setSettings(prev => ({
