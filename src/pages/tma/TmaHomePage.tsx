@@ -74,7 +74,7 @@ const TmaHomePage = () => {
       return count || 0;
     },
     enabled: !!companyId,
-    staleTime: 60_000,
+    staleTime: 10_000,
   });
 
   const { data: activeShift } = useQuery({
