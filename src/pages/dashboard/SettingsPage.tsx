@@ -197,8 +197,6 @@ const SettingsPage = () => {
       {/* Listing Template */}
       {canEditTemplate && <ListingTemplateCard companyId={companyId} />}
 
-      {/* Price Adjustments */}
-      {canEditTemplate && <PriceAdjustmentsCard companyId={companyId} />}
 
       <TelegramSettingsCard companyId={companyId} />
 
