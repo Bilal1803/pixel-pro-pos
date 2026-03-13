@@ -45,10 +45,11 @@ const DashboardHome = () => {
     queryKey: ["sales-dash", companyId],
     queryFn: async () => {
       if (!companyId) return [];
-      const { data } = await supabase.from("sales").select("*, clients(name), sale_items(name, price, cost_price, item_type, quantity, device_id, devices(model, imei, memory, color, battery_health, brand))").eq("company_id", companyId).order("created_at", { ascending: false }).limit(10);
+      const { data } = await supabase.from("sales").select("id, total, created_at, store_id, payment_method, clients(name), sale_items(name, price, cost_price, item_type, quantity, device_id, devices(model, imei, memory, color, battery_health, brand))").eq("company_id", companyId).order("created_at", { ascending: false }).limit(10);
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 30_000,
   });
 
   const { data: repairs = [] } = useQuery({
