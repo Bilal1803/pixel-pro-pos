@@ -653,6 +653,11 @@ const EmployeesPage = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Global Salary Settings */}
+      {companyId && (
+        <GlobalSalarySettingsCard companyId={companyId} open={globalSettingsOpen} onOpenChange={setGlobalSettingsOpen} />
+      )}
     </div>
   );
 };
