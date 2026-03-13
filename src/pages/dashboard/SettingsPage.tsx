@@ -15,7 +15,7 @@ import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { useNavigate } from "react-router-dom";
 import SectionHelp from "@/components/SectionHelp";
 import { SECTION_TIPS } from "@/data/sectionTips";
-import { Send, Shield, FileText } from "lucide-react";
+import { Send, Shield } from "lucide-react";
 import PaymentSettingsCard from "@/components/PaymentSettingsCard";
 
 const planLabels: Record<string, string> = { start: "Старт", business: "Бизнес", premier: "Премьер" };
