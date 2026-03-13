@@ -162,7 +162,7 @@ const FinancesPage = () => {
         </Dialog>
       </div>
 
-      <SectionHelp tips={SECTION_TIPS.finances} />
+      <SectionHelp tips={SECTION_TIPS.finances} sectionKey="finances" />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (

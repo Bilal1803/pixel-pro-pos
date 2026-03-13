@@ -168,7 +168,7 @@ const CashPage = () => {
         </div>
       </div>
 
-      <SectionHelp tips={SECTION_TIPS.cash || []} />
+      <SectionHelp tips={SECTION_TIPS.cash || []} sectionKey="cash" />
 
       {/* Balance card */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

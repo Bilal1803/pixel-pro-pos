@@ -145,7 +145,7 @@ const DashboardHome = () => {
       
       {!tipsDismissed && (
         <div className="relative">
-          <SectionHelp tips={SECTION_TIPS.dashboard} />
+          <SectionHelp tips={SECTION_TIPS.dashboard} sectionKey="dashboard" />
           <button
             onClick={dismissTips}
             className="absolute top-2 right-2 text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-muted transition-colors"

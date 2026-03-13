@@ -186,7 +186,7 @@ const ReportsPage = () => {
         )}
       </div>
 
-      <SectionHelp tips={SECTION_TIPS.reports} />
+      <SectionHelp tips={SECTION_TIPS.reports} sectionKey="reports" />
 
       {/* Period selector */}
       <Card>

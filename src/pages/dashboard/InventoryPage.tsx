@@ -879,7 +879,7 @@ const InventoryPage = () => {
         </TabsList>
       </Tabs>
 
-      <SectionHelp tips={SECTION_TIPS.inventory} />
+      <SectionHelp tips={SECTION_TIPS.inventory} sectionKey="inventory" />
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

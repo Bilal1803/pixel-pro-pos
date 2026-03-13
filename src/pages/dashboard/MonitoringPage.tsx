@@ -359,7 +359,7 @@ const MonitoringPage = () => {
 
       <PriceAdjustmentsCard companyId={companyId} type="sale" title="Корректировка цены продажи" />
 
-      <SectionHelp tips={SECTION_TIPS.monitoring} />
+      <SectionHelp tips={SECTION_TIPS.monitoring} sectionKey="monitoring" />
 
       <p className="text-sm text-muted-foreground">
         Нажмите на модель, чтобы ввести 10 цен с Avito и рассчитать среднюю рыночную цену.

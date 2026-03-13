@@ -144,7 +144,7 @@ const AIPage = () => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] space-y-3">
-      <SectionHelp tips={SECTION_TIPS.ai} />
+      <SectionHelp tips={SECTION_TIPS.ai} sectionKey="ai" />
       <Card className="flex-1 flex flex-col overflow-hidden">
         <div className="flex items-center gap-2 border-b px-4 py-3 bg-primary/5">
           <Sparkles className="h-4 w-4 text-primary" />

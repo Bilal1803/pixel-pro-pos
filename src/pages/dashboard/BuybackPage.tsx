@@ -426,7 +426,7 @@ const BuybackPage = () => {
 
       <PriceAdjustmentsCard companyId={companyId} type="buyback" title="Корректировка цены скупки" />
 
-      <SectionHelp tips={SECTION_TIPS.buyback} />
+      <SectionHelp tips={SECTION_TIPS.buyback} sectionKey="buyback" />
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as "prices" | "history")}>
         <TabsList>
