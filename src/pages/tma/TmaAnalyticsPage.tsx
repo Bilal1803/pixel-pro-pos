@@ -114,7 +114,7 @@ const TmaAnalyticsPage = () => {
       return data || [];
     },
     enabled: !!activeShift,
-    staleTime: 30_000,
+    staleTime: 10_000,
   });
 
   // Salary accruals for the selected period
