@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Search, Smartphone, ShoppingBag, Wrench, Trash2, Undo2, Pencil, AlertTriangle } from "lucide-react";
 import { createSaleCashOperations } from "@/lib/saleCashSync";
+import { createSalaryAccruals } from "@/lib/salaryCalc";
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
