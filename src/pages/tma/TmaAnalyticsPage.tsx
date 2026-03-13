@@ -92,7 +92,7 @@ const TmaAnalyticsPage = () => {
       return data || [];
     },
     enabled: !!companyId,
-    staleTime: 60_000,
+    staleTime: 10_000,
   });
 
   const { data: activeShift } = useQuery({
