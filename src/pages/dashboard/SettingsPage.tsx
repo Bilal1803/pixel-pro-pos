@@ -66,7 +66,7 @@ const SettingsPage = () => {
     enabled: !!user?.id,
   });
 
-  const canEditTemplate = userRole === "owner" || userRole === "manager";
+  
 
   const [emailForm, setEmailForm] = useState("");
   const [companyForm, setCompanyForm] = useState({ name: "", phone: "", address: "" });
