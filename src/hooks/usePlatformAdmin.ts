@@ -29,7 +29,7 @@ export const usePlatformAdmin = () => {
           ? supabase
               .from("platform_admins")
               .select("role")
-              .eq("email", normalizedEmail)
+              .ilike("email", normalizedEmail)
               .order("created_at", { ascending: false })
               .limit(1)
           : Promise.resolve({ data: [], error: null }),
