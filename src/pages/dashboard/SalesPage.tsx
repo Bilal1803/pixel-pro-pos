@@ -854,6 +854,10 @@ const SalesPage = () => {
                       {Number(s.payment_fee) > 0 && (
                         <p className="text-xs text-muted-foreground">комиссия: {Number(s.payment_fee).toLocaleString("ru")} ₽</p>
                       )}
+                      {(() => {
+                        const accrual = saleAccruals.filter((a: any) => a.sale_id === s.id).reduce((sum: number, a: any) => sum + (a.amount || 0), 0);
+                        return accrual > 0 ? <p className="text-xs text-emerald-600">👤 Сотруднику: {accrual.toLocaleString("ru")} ₽</p> : null;
+                      })()}
                     </td>
                     <td className="px-4 py-3">{activePaymentLabels[s.payment_method] || paymentLabels[s.payment_method] || s.payment_method}</td>
                     <td className="px-4 py-3">{s.clients?.name || "—"}</td>
