@@ -136,21 +136,17 @@ const SettingsPage = () => {
             </Button>
           </div>
         </div>
-        <div className="rounded-md border p-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">Админ-панель</span>
-            </div>
-            {isAdminLoading ? (
-              <span className="text-xs text-muted-foreground">Проверка...</span>
-            ) : isAdmin ? (
+        {isAdmin && (
+          <div className="rounded-md border p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">Админ-панель</span>
+              </div>
               <Button variant="outline" size="sm" onClick={() => navigate("/admin")}>Открыть</Button>
-            ) : (
-              <span className="text-xs text-muted-foreground">Нет доступа</span>
-            )}
+            </div>
           </div>
-        </div>
+        )}
       </Card>
 
       {/* Company */}
