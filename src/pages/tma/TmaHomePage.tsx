@@ -113,7 +113,7 @@ const TmaHomePage = () => {
       return (data || []).reduce((s, a) => s + (a.amount || 0), 0);
     },
     enabled: !!companyId && !!user,
-    staleTime: 30_000,
+    staleTime: 10_000,
   });
 
   const todayRevenue = todaySales.reduce((s, sale) => s + (sale.total || 0), 0);
