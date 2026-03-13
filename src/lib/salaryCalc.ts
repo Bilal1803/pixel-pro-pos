@@ -37,7 +37,18 @@ export async function createSalaryAccruals(params: {
     .eq("employee_id", employeeId)
     .eq("is_active", true);
 
-  if (!settings || settings.length === 0) return;
+  // If no individual settings, fall back to global defaults
+  let activeSettings = settings;
+  if (!activeSettings || activeSettings.length === 0) {
+    const { data: globalSettings } = await supabase
+      .from("global_salary_settings")
+      .select("*")
+      .eq("company_id", companyId)
+      .eq("is_active", true);
+    activeSettings = globalSettings;
+  }
+
+  if (!activeSettings || activeSettings.length === 0) return;
 
   const settingsMap: Record<string, SalarySetting> = {};
   for (const s of settings) {
