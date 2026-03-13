@@ -339,9 +339,7 @@ const PriceAdjustmentsCard = ({ companyId }: { companyId: string | null }) => {
     mutationFn: async () => {
       if (!companyId) throw new Error("Нет компании");
       const rows = Object.entries(values).map(([key, val]) => {
-        const lastUnderscore = key.lastIndexOf("_");
-        // Parse type and grade from the compound key
-        // Keys like: sale_condition_A+, sale_battery_90+, buyback_condition_B
+        // Parse type and grade from compound key like: sale_condition_A+, sale_battery_90+
         const parts = key.split("_");
         let type: string, grade: string;
         if (parts.length === 3) {

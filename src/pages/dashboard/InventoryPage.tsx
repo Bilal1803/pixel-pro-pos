@@ -337,13 +337,6 @@ const InventoryPage = () => {
     return text;
   };
 
-  const handleModelChange = (model: string) => {
-    setForm(prev => ({ ...prev, model }));
-  };
-
-  const handleEditModelChange = (model: string) => {
-    setEditForm(prev => ({ ...prev, model }));
-  };
 
   const { data: statusCounts = { all: 0 } } = useQuery({
     queryKey: ["device-status-counts", companyId],
