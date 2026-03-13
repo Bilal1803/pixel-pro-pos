@@ -253,6 +253,7 @@ const ShiftsPage = () => {
                           </>
                         )}
                       </Card>
+                      <ShiftSalaryInfo companyId={companyId!} employeeId={s.employee_id} from={s.start_time} to={s.end_time} />
                     </div>
                   )}
                 </div>
