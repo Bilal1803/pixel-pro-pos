@@ -34,10 +34,11 @@ const DashboardHome = () => {
     queryKey: ["devices-dash", companyId],
     queryFn: async () => {
       if (!companyId) return [];
-      const { data } = await supabase.from("devices").select("*").eq("company_id", companyId);
+      const { data } = await supabase.from("devices").select("id, status, sale_price, model, memory, imei, store_id").eq("company_id", companyId);
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 30_000,
   });
 
   const { data: sales = [] } = useQuery({
