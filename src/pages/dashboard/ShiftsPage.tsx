@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import SectionHelp from "@/components/SectionHelp";
 import { SECTION_TIPS } from "@/data/sectionTips";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useSalaryData } from "@/hooks/useSalaryData";
 
 const ShiftsPage = () => {
   const { companyId, user } = useAuth();
@@ -252,6 +253,7 @@ const ShiftsPage = () => {
                           </>
                         )}
                       </Card>
+                      <ShiftSalaryInfo companyId={companyId!} employeeId={s.employee_id} from={s.start_time} to={s.end_time} />
                     </div>
                   )}
                 </div>
@@ -261,6 +263,35 @@ const ShiftsPage = () => {
         )}
       </Card>
     </div>
+  );
+};
+
+
+// Inline component for shift salary info
+const ShiftSalaryInfo = ({ companyId, employeeId, from, to }: { companyId: string; employeeId: string; from: string; to: string | null }) => {
+  const { totalSalary, totalAccruals, totalBonuses, totalPenalties, byEmployee } = useSalaryData(companyId, {
+    employeeId,
+    from,
+    to: to || undefined,
+  });
+  
+  const salesCount = byEmployee[employeeId]?.salesCount || 0;
+
+  if (totalSalary === 0 && salesCount === 0) return null;
+
+  return (
+    <Card className="p-3 mt-2 bg-emerald-500/5 border-emerald-200">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium">💰 Заработок за смену</span>
+        <span className="text-sm font-bold text-emerald-600">{totalSalary.toLocaleString("ru")} ₽</span>
+      </div>
+      <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
+        <span>{salesCount} продаж</span>
+        {totalAccruals > 0 && <span>Начислено: {totalAccruals.toLocaleString("ru")} ₽</span>}
+        {totalBonuses > 0 && <span className="text-emerald-600">+{totalBonuses.toLocaleString("ru")} ₽</span>}
+        {totalPenalties > 0 && <span className="text-destructive">−{totalPenalties.toLocaleString("ru")} ₽</span>}
+      </div>
+    </Card>
   );
 };
 

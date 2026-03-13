@@ -29,7 +29,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Copy, MoreVertical, Pencil, Trash2, RefreshCw, UserX, Send } from "lucide-react";
+import { Plus, Copy, MoreVertical, Pencil, Trash2, RefreshCw, UserX, Send, DollarSign } from "lucide-react";
+import { SalarySettingsCard } from "@/components/SalarySettingsCard";
+import { SalaryBonusCard } from "@/components/SalaryBonusCard";
+import { useSalaryData } from "@/hooks/useSalaryData";
 import { format } from "date-fns";
 
 const roleLabels: Record<string, string> = {
@@ -57,6 +60,15 @@ const EmployeesPage = () => {
   // Invite link dialog
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [linkDialogUrl, setLinkDialogUrl] = useState("");
+
+  // Salary dialog
+  const [salaryOpen, setSalaryOpen] = useState(false);
+  const [salaryEmployee, setSalaryEmployee] = useState<any>(null);
+
+  // Salary data for current month
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const { byEmployee: salaryByEmployee } = useSalaryData(companyId || null, { from: monthStart });
 
   // Stores
   const { data: stores = [] } = useQuery({
@@ -454,6 +466,7 @@ const EmployeesPage = () => {
                 <TableHead>Имя</TableHead>
                 <TableHead>Магазин</TableHead>
                 <TableHead>Роль</TableHead>
+                <TableHead>Заработок (мес.)</TableHead>
                 <TableHead>Дата</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
@@ -463,6 +476,7 @@ const EmployeesPage = () => {
                 const role = getRoleForUser(e.user_id);
                 const isOwner = role === "owner";
                 const isSelf = e.user_id === user?.id;
+                const salary = salaryByEmployee[e.user_id];
                 return (
                   <TableRow key={e.id}>
                     <TableCell>
@@ -477,6 +491,18 @@ const EmployeesPage = () => {
                         {roleLabels[role] || role}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      {salary ? (
+                        <button onClick={() => { setSalaryEmployee(e); setSalaryOpen(true); }} className="text-left hover:underline">
+                          <p className="text-sm font-semibold text-emerald-600">{salary.total.toLocaleString("ru")} ₽</p>
+                          <p className="text-[10px] text-muted-foreground">{salary.salesCount} продаж</p>
+                        </button>
+                      ) : (
+                        <button onClick={() => { setSalaryEmployee(e); setSalaryOpen(true); }} className="text-xs text-muted-foreground hover:underline">
+                          Настроить
+                        </button>
+                      )}
+                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {format(new Date(e.created_at), "dd.MM.yyyy")}
                     </TableCell>
@@ -489,6 +515,9 @@ const EmployeesPage = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => { setSalaryEmployee(e); setSalaryOpen(true); }}>
+                              <DollarSign className="h-4 w-4 mr-2" />Зарплата
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => openEdit(e)}>
                               <Pencil className="h-4 w-4 mr-2" />Редактировать
                             </DropdownMenuItem>
@@ -584,6 +613,27 @@ const EmployeesPage = () => {
               <Button onClick={() => setLinkDialogOpen(false)}>Закрыть</Button>
             </DialogFooter>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Salary Dialog */}
+      <Dialog open={salaryOpen} onOpenChange={(v) => { setSalaryOpen(v); if (!v) setSalaryEmployee(null); }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Зарплата — {salaryEmployee?.full_name}</DialogTitle>
+          </DialogHeader>
+          {salaryEmployee && companyId && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-semibold mb-2">Настройки начислений</h3>
+                <SalarySettingsCard employeeId={salaryEmployee.user_id} companyId={companyId} />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold mb-2">Премии и штрафы</h3>
+                <SalaryBonusCard employeeId={salaryEmployee.user_id} companyId={companyId} />
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

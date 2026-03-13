@@ -3,7 +3,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DollarSign, TrendingDown, TrendingUp, Plus, Wrench, CreditCard } from "lucide-react";
+import { DollarSign, TrendingDown, TrendingUp, Plus, Wrench, CreditCard, Users } from "lucide-react";
+import { useSalaryData } from "@/hooks/useSalaryData";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -94,6 +95,19 @@ const FinancesPage = () => {
 
   const monthExpenses = expenses.filter((e: any) => new Date(e.date) >= new Date(monthStart));
 
+  const { totalSalary, byEmployee } = useSalaryData(companyId || null, { from: monthStart });
+
+  // Profiles for names
+  const { data: finProfiles = [] } = useQuery({
+    queryKey: ["fin-profiles", companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data } = await supabase.from("profiles").select("user_id, full_name").eq("company_id", companyId);
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+
   const totalRevenue = sales.reduce((s: number, sale: any) => s + (sale.total || 0), 0);
   const totalPaymentFees = sales.reduce((s: number, sale: any) => s + (sale.payment_fee || 0), 0);
   const salesProductRevenue = totalRevenue - totalPaymentFees;
@@ -103,7 +117,6 @@ const FinancesPage = () => {
     return s + (sale.sale_items || []).reduce((a: number, i: any) => a + (i.cost_price || 0), 0);
   }, 0);
   const totalExpenses = monthExpenses.reduce((s: number, e: any) => s + (e.amount || 0), 0);
-  // Profit = product revenue + repair revenue - cost of goods - expenses (fees excluded from profit)
   const netProfit = salesProductRevenue + repairRevenue - costOfGoods - totalExpenses;
 
   const totalInventoryCost = 
@@ -117,6 +130,7 @@ const FinancesPage = () => {
     { label: "Доход от ремонта", value: `${repairRevenue.toLocaleString("ru")} ₽`, icon: Wrench },
     { label: "Товары по себестоимости", value: `${totalInventoryCost.toLocaleString("ru")} ₽`, icon: DollarSign },
     { label: "Расходы за месяц", value: `${totalExpenses.toLocaleString("ru")} ₽`, icon: TrendingDown },
+    { label: "Зарплаты сотрудников", value: `${totalSalary.toLocaleString("ru")} ₽`, icon: Users },
     { label: "Чистая прибыль", value: `${netProfit.toLocaleString("ru")} ₽`, icon: TrendingUp },
   ];
 
@@ -196,6 +210,27 @@ const FinancesPage = () => {
           </div>
         )}
       </Card>
+
+      {/* Salary breakdown */}
+      {Object.keys(byEmployee).length > 0 && (
+        <Card className="card-shadow overflow-hidden">
+          <div className="border-b p-4"><h3 className="font-semibold">Зарплаты сотрудников (за месяц)</h3></div>
+          <div className="divide-y">
+            {Object.entries(byEmployee).map(([empId, data]) => {
+              const name = finProfiles.find((p: any) => p.user_id === empId)?.full_name || "—";
+              return (
+                <div key={empId} className="flex items-center justify-between p-4">
+                  <div>
+                    <p className="text-sm font-medium">{name}</p>
+                    <p className="text-xs text-muted-foreground">{data.salesCount} продаж · начислено {data.accruals.toLocaleString("ru")} ₽{data.bonuses > 0 ? ` · премии +${data.bonuses.toLocaleString("ru")} ₽` : ""}{data.penalties > 0 ? ` · штрафы −${data.penalties.toLocaleString("ru")} ₽` : ""}</p>
+                  </div>
+                  <span className="text-sm font-bold text-emerald-600">{data.total.toLocaleString("ru")} ₽</span>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
     </div>
   );
 };

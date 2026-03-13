@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Search, Smartphone, ShoppingBag, Wrench, Trash2, Undo2, Pencil, AlertTriangle } from "lucide-react";
 import { createSaleCashOperations } from "@/lib/saleCashSync";
+import { createSalaryAccruals } from "@/lib/salaryCalc";
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -89,6 +90,18 @@ const SalesPage = () => {
       return data;
     },
     enabled: !!companyId,
+  });
+
+  // Fetch salary accruals for all sales
+  const saleIds = sales.map((s: any) => s.id);
+  const { data: saleAccruals = [] } = useQuery({
+    queryKey: ["sale-salary-accruals", saleIds],
+    queryFn: async () => {
+      if (saleIds.length === 0) return [];
+      const { data } = await supabase.from("salary_accruals").select("*").in("sale_id", saleIds);
+      return data || [];
+    },
+    enabled: saleIds.length > 0,
   });
 
   const { data: availableDevices = [] } = useQuery({
@@ -312,10 +325,18 @@ const SalesPage = () => {
         quantity: i.quantity,
       }));
 
-      const { error: itemError } = await supabase.from("sale_items").insert(saleItems);
+      const { data: insertedItems, error: itemError } = await supabase.from("sale_items").insert(saleItems).select();
       if (itemError) throw itemError;
 
       const deviceIds = cart.filter(i => i.type === "device" && i.device_id).map(i => i.device_id!);
+      
+      // Build device sale prices map for above_price calculation
+      const deviceSalePrices: Record<string, number> = {};
+      for (const item of cart.filter(i => i.type === "device" && i.device_id)) {
+        const dev = availableDevices.find(d => d.id === item.device_id);
+        if (dev?.sale_price) deviceSalePrices[item.device_id!] = dev.sale_price;
+      }
+
       for (const did of deviceIds) {
         await supabase.from("devices").update({ status: "sold" as any }).eq("id", did);
       }
@@ -337,6 +358,27 @@ const SalesPage = () => {
         cashAmount: paymentMethod === "mixed" ? mixedCash : undefined,
         saleId: sale.id,
       });
+
+      // Auto-calculate salary accruals
+      if (insertedItems && insertedItems.length > 0) {
+        const salaryItems = insertedItems.map((si: any, idx: number) => ({
+          item_type: cart[idx].type,
+          price: si.price,
+          original_price: si.original_price,
+          cost_price: si.cost_price,
+          device_id: si.device_id,
+          name: si.name,
+          sale_item_id: si.id,
+        }));
+        
+        await createSalaryAccruals({
+          companyId,
+          employeeId: user.id,
+          saleId: sale.id,
+          items: salaryItems,
+          deviceSalePrices,
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sales"] });
@@ -346,6 +388,7 @@ const SalesPage = () => {
       queryClient.invalidateQueries({ queryKey: ["cash-ops"] });
       queryClient.invalidateQueries({ queryKey: ["all-cash-ops"] });
       queryClient.invalidateQueries({ queryKey: ["cash-sales-total"] });
+      queryClient.invalidateQueries({ queryKey: ["salary-accruals"] });
       toast({ title: "Продажа оформлена!" });
       setOpen(false);
       resetForm();
@@ -811,6 +854,10 @@ const SalesPage = () => {
                       {Number(s.payment_fee) > 0 && (
                         <p className="text-xs text-muted-foreground">комиссия: {Number(s.payment_fee).toLocaleString("ru")} ₽</p>
                       )}
+                      {(() => {
+                        const accrual = saleAccruals.filter((a: any) => a.sale_id === s.id).reduce((sum: number, a: any) => sum + (a.amount || 0), 0);
+                        return accrual > 0 ? <p className="text-xs text-emerald-600">👤 Сотруднику: {accrual.toLocaleString("ru")} ₽</p> : null;
+                      })()}
                     </td>
                     <td className="px-4 py-3">{activePaymentLabels[s.payment_method] || paymentLabels[s.payment_method] || s.payment_method}</td>
                     <td className="px-4 py-3">{s.clients?.name || "—"}</td>

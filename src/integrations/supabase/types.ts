@@ -1262,6 +1262,149 @@ export type Database = {
           },
         ]
       }
+      salary_accruals: {
+        Row: {
+          accrual_type: string
+          amount: number
+          company_id: string
+          created_at: string
+          description: string | null
+          employee_id: string
+          id: string
+          sale_id: string | null
+          sale_item_id: string | null
+        }
+        Insert: {
+          accrual_type: string
+          amount?: number
+          company_id: string
+          created_at?: string
+          description?: string | null
+          employee_id: string
+          id?: string
+          sale_id?: string | null
+          sale_item_id?: string | null
+        }
+        Update: {
+          accrual_type?: string
+          amount?: number
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          employee_id?: string
+          id?: string
+          sale_id?: string | null
+          sale_item_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_accruals_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_accruals_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_accruals_sale_item_id_fkey"
+            columns: ["sale_item_id"]
+            isOneToOne: false
+            referencedRelation: "sale_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salary_bonuses: {
+        Row: {
+          amount: number
+          company_id: string
+          created_at: string
+          created_by: string
+          employee_id: string
+          id: string
+          reason: string | null
+          type: string
+        }
+        Insert: {
+          amount: number
+          company_id: string
+          created_at?: string
+          created_by: string
+          employee_id: string
+          id?: string
+          reason?: string | null
+          type: string
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          employee_id?: string
+          id?: string
+          reason?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_bonuses_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salary_settings: {
+        Row: {
+          accrual_type: string
+          calc_type: string
+          company_id: string
+          created_at: string
+          employee_id: string
+          id: string
+          is_active: boolean
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          accrual_type: string
+          calc_type?: string
+          company_id: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          value?: number
+        }
+        Update: {
+          accrual_type?: string
+          calc_type?: string
+          company_id?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sale_items: {
         Row: {
           cost_price: number | null
