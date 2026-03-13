@@ -85,7 +85,7 @@ const TmaHomePage = () => {
       return data;
     },
     enabled: !!user && !!companyId,
-    staleTime: 30_000,
+    staleTime: 10_000,
   });
 
   const { data: cashOps = [] } = useQuery({
