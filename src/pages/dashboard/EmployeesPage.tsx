@@ -309,7 +309,7 @@ const EmployeesPage = () => {
   const handleCreateClose = () => {
     setCreateOpen(false);
     setInviteLink(null);
-    setForm({ fullName: "", phone: "", role: "employee", storeId: "", telegram: "" });
+    setForm({ fullName: "", phone: "", role: "employee", storeId: "", telegram: "", salaryType: "global" });
   };
 
   const copyCode = (code: string) => {
