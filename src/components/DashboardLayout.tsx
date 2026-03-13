@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import OnboardingTour from "@/components/OnboardingTour";
@@ -13,12 +14,13 @@ import { StoreProvider } from "@/contexts/StoreContext";
 
 const DashboardContent = () => {
   const { user, loading } = useAuth();
+  const { isAdmin, isLoading: adminLoading } = usePlatformAdmin();
   const { isTrialExpired, isLoading: subLoading, subscription } = useSubscription();
   const location = useLocation();
   const isMobile = useIsMobile();
   const isPremier = subscription.plan === "premier";
 
-  if (loading || subLoading) {
+  if (loading || subLoading || adminLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-muted-foreground">Загрузка...</div>
@@ -28,6 +30,11 @@ const DashboardContent = () => {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Redirect platform admins to admin panel
+  if (isAdmin) {
+    return <Navigate to="/admin" replace />;
   }
 
   const isPricingPage = location.pathname === "/dashboard/pricing";
