@@ -63,6 +63,15 @@ const EmployeesPage = () => {
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [linkDialogUrl, setLinkDialogUrl] = useState("");
 
+  // Salary dialog
+  const [salaryOpen, setSalaryOpen] = useState(false);
+  const [salaryEmployee, setSalaryEmployee] = useState<any>(null);
+
+  // Salary data for current month
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const { byEmployee: salaryByEmployee } = useSalaryData(companyId || null, { from: monthStart });
+
   // Stores
   const { data: stores = [] } = useQuery({
     queryKey: ["stores", companyId],
