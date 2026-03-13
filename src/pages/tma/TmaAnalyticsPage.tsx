@@ -131,7 +131,7 @@ const TmaAnalyticsPage = () => {
       return (data || []).reduce((s, a) => s + (a.amount || 0), 0);
     },
     enabled: !!companyId && !!user,
-    staleTime: 60_000,
+    staleTime: 10_000,
   });
 
   // Bonuses/penalties for the selected period
