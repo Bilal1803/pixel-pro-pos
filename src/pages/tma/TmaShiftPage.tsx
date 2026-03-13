@@ -77,7 +77,7 @@ const TmaShiftPage = () => {
       return (data || []).reduce((s, a) => s + (a.amount || 0), 0);
     },
     enabled: !!activeShift && !!companyId && !!user,
-    staleTime: 30_000,
+    staleTime: 10_000,
   });
 
   const shiftRevenue = shiftSales.reduce((s, sale) => s + (sale.total || 0), 0);

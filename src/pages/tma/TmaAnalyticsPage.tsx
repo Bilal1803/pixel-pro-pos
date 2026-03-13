@@ -150,7 +150,7 @@ const TmaAnalyticsPage = () => {
       return { bonus, penalty };
     },
     enabled: !!companyId && !!user,
-    staleTime: 60_000,
+    staleTime: 10_000,
   });
 
   const stats = useMemo(() => {
