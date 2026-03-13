@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Search, RefreshCw, Plus, Trash2, Upload, FileSpreadsheet, X } from "lucide-react";
+import PriceAdjustmentsCard from "@/components/PriceAdjustmentsCard";
 import * as XLSX from "xlsx";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
