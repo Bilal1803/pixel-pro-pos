@@ -1,5 +1,3 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -20,10 +18,17 @@ Deno.serve(async (req) => {
   try {
     const botToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
     if (!botToken) {
-      return new Response(JSON.stringify({ error: "Bot token not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response("ok", { status: 200 });
+    }
+
+    // Validate Telegram secret token if configured
+    const webhookSecret = Deno.env.get("TELEGRAM_WEBHOOK_SECRET");
+    if (webhookSecret) {
+      const receivedSecret = req.headers.get("X-Telegram-Bot-Api-Secret-Token");
+      if (receivedSecret !== webhookSecret) {
+        console.error("Invalid webhook secret token");
+        return new Response("forbidden", { status: 403 });
+      }
     }
 
     const update = await req.json();
@@ -35,7 +40,6 @@ Deno.serve(async (req) => {
 
     const chatId = message.chat.id;
     const text = message.text.trim();
-    const userId = message.from?.id;
     const firstName = message.from?.first_name || "";
 
     let replyText = "";
@@ -60,7 +64,6 @@ Deno.serve(async (req) => {
         `📌 Ваш Chat ID: <code>${chatId}</code>`;
     }
 
-    // Send reply
     await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -74,6 +77,6 @@ Deno.serve(async (req) => {
     return new Response("ok", { status: 200 });
   } catch (err) {
     console.error("telegram-webhook error:", err);
-    return new Response("ok", { status: 200 }); // Always return 200 to Telegram
+    return new Response("ok", { status: 200 });
   }
 });

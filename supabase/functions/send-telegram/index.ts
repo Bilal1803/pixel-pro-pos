@@ -11,17 +11,58 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { company_id, event_type, message } = await req.json();
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    if (!company_id || !message) {
-      return new Response(JSON.stringify({ error: "company_id и message обязательны" }), {
+    // --- Auth: verify caller is authenticated ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Не авторизован" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const callerClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await callerClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Неверный токен" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const userId = claimsData.claims.sub as string;
+
+    // Get caller's company
+    const { data: callerProfile } = await callerClient
+      .from("profiles")
+      .select("company_id")
+      .eq("user_id", userId)
+      .single();
+
+    if (!callerProfile) {
+      return new Response(JSON.stringify({ error: "Профиль не найден" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { event_type, message } = await req.json();
+    const company_id = callerProfile.company_id;
+
+    if (!message) {
+      return new Response(JSON.stringify({ error: "message обязателен" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     // Get telegram settings for this company
@@ -44,7 +85,7 @@ Deno.serve(async (req) => {
       (event_type === "shift_open" && settings.notify_shifts) ||
       (event_type === "shift_close" && settings.notify_shifts) ||
       (event_type === "cash" && settings.notify_cash) ||
-      !event_type; // If no type specified, always send
+      !event_type;
 
     if (!shouldNotify) {
       return new Response(JSON.stringify({ skipped: true, reason: "Уведомление отключено" }), {
