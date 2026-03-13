@@ -88,8 +88,12 @@ TmaNavBar.displayName = "TmaNavBar";
 const TmaLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, companyId } = useAuth();
   const { toast } = useToast();
+
+  // Enable realtime sync for the entire TMA
+  useTmaRealtime(companyId);
+
   const [tmaAuthLoading, setTmaAuthLoading] = useState(false);
   const [tmaAuthError, setTmaAuthError] = useState("");
   const [showNotFound, setShowNotFound] = useState(false);
