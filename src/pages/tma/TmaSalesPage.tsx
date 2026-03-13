@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { sendTelegramNotification } from "@/lib/telegram";
 import { usePaymentSettings, calcFee } from "@/hooks/usePaymentSettings";
 import { createSaleCashOperations } from "@/lib/saleCashSync";
+import { createSalaryAccruals } from "@/lib/salaryCalc";
 
 type CartItem = {
   id: string;
@@ -145,7 +146,6 @@ const TmaSalesPage = () => {
 
   const removeFromCart = (id: string) => setCart(prev => prev.filter(c => c.id !== id));
 
-  // Price editing
   const startEditPrice = (item: CartItem) => {
     setEditingItemId(item.id);
     setEditPrice(String(item.price));
@@ -234,7 +234,7 @@ const TmaSalesPage = () => {
         quantity: c.quantity,
       }));
 
-      await supabase.from("sale_items").insert(items);
+      const { data: insertedItems } = await supabase.from("sale_items").insert(items).select();
 
       const deviceIds = cart.filter(c => c.device_id).map(c => c.device_id!);
       if (deviceIds.length > 0) {
@@ -247,7 +247,6 @@ const TmaSalesPage = () => {
         }).eq("id", item.product_id!);
       }
 
-      // Auto-create cash operation for cash register sync
       await createSaleCashOperations({
         companyId,
         employeeId: user.id,
@@ -257,6 +256,34 @@ const TmaSalesPage = () => {
         cashAmount: payment === "mixed" ? mixedCash : undefined,
         saleId: sale.id,
       });
+
+      // Create salary accruals
+      if (insertedItems && insertedItems.length > 0) {
+        const deviceSalePrices: Record<string, number> = {};
+        for (const c of cart) {
+          if (c.device_id) {
+            deviceSalePrices[c.device_id] = c.originalPrice;
+          }
+        }
+
+        const salaryItems = insertedItems.map((si, idx) => ({
+          item_type: cart[idx].type,
+          price: si.price,
+          original_price: si.original_price,
+          cost_price: si.cost_price || 0,
+          device_id: si.device_id,
+          name: si.name,
+          sale_item_id: si.id,
+        }));
+
+        await createSalaryAccruals({
+          companyId,
+          employeeId: user.id,
+          saleId: sale.id,
+          items: salaryItems,
+          deviceSalePrices,
+        });
+      }
 
       const pmLabel = activePaymentMethods.find(p => p.method === payment)?.label || payment;
       return { sale, cartItems: cart, totalAmount: saleTotal, paymentLabel: pmLabel, paymentFee: payment === "mixed" ? 0 : paymentFee };
@@ -273,6 +300,7 @@ const TmaSalesPage = () => {
       queryClient.invalidateQueries({ queryKey: ["tma-today-sales"] });
       queryClient.invalidateQueries({ queryKey: ["tma-cash-ops"] });
       queryClient.invalidateQueries({ queryKey: ["tma-cash-sales-total"] });
+      queryClient.invalidateQueries({ queryKey: ["tma-salary"] });
       toast({ title: "Продажа оформлена ✓" });
 
       if (companyId) {
@@ -505,7 +533,6 @@ const TmaSalesPage = () => {
                     <Badge variant="outline" className="text-[10px]">{d.imei.slice(-6)}</Badge>
                   </div>
                   <p className="text-sm font-bold mt-1">{basePrice.toLocaleString("ru")} ₽</p>
-                  {/* Payment variant prices */}
                   {paymentSettings.length > 0 && basePrice > 0 && (
                     <div className="flex flex-wrap gap-x-3 mt-1">
                       {paymentSettings.filter(ps => ps.percent_fee > 0 || ps.fixed_fee > 0).map(ps => {

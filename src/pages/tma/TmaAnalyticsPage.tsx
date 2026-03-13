@@ -1,5 +1,5 @@
 import { useState, useMemo, memo } from "react";
-import { TrendingUp, Hash, DollarSign, CreditCard, Wallet, BarChart3 } from "lucide-react";
+import { TrendingUp, Hash, DollarSign, CreditCard, Wallet, BarChart3, Award } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -117,6 +117,42 @@ const TmaAnalyticsPage = () => {
     staleTime: 30_000,
   });
 
+  // Salary accruals for the selected period
+  const { data: periodSalary = 0 } = useQuery({
+    queryKey: ["tma-salary-period", companyId, user?.id, fromISO],
+    queryFn: async () => {
+      if (!companyId || !user) return 0;
+      const { data } = await supabase
+        .from("salary_accruals")
+        .select("amount")
+        .eq("company_id", companyId)
+        .eq("employee_id", user.id)
+        .gte("created_at", fromISO);
+      return (data || []).reduce((s, a) => s + (a.amount || 0), 0);
+    },
+    enabled: !!companyId && !!user,
+    staleTime: 60_000,
+  });
+
+  // Bonuses/penalties for the selected period
+  const { data: periodBonuses = { bonus: 0, penalty: 0 } } = useQuery({
+    queryKey: ["tma-bonuses-period", companyId, user?.id, fromISO],
+    queryFn: async () => {
+      if (!companyId || !user) return { bonus: 0, penalty: 0 };
+      const { data } = await supabase
+        .from("salary_bonuses")
+        .select("amount, type")
+        .eq("company_id", companyId)
+        .eq("employee_id", user.id)
+        .gte("created_at", fromISO);
+      const bonus = (data || []).filter(b => b.type === "bonus").reduce((s, b) => s + b.amount, 0);
+      const penalty = (data || []).filter(b => b.type === "penalty").reduce((s, b) => s + b.amount, 0);
+      return { bonus, penalty };
+    },
+    enabled: !!companyId && !!user,
+    staleTime: 60_000,
+  });
+
   const stats = useMemo(() => {
     const totalRevenue = sales.reduce((s, sale) => s + (sale.total || 0), 0);
     const totalFees = sales.reduce((s, sale) => s + (sale.payment_fee || 0), 0);
@@ -134,6 +170,8 @@ const TmaAnalyticsPage = () => {
   }, [sales, cashOps, activeShift]);
 
   const chartData = useMemo(() => buildChartData(sales, period), [sales, period]);
+
+  const totalEarnings = periodSalary + periodBonuses.bonus - periodBonuses.penalty;
 
   return (
     <div className="space-y-5">
@@ -158,6 +196,22 @@ const TmaAnalyticsPage = () => {
         <div className="py-10 text-center text-gray-400">Загрузка...</div>
       ) : (
         <>
+          {/* Salary card */}
+          <div className="bg-purple-50 rounded-xl border border-purple-100 p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                <Award className="h-4 w-4 text-purple-600" />
+              </div>
+              <p className="text-sm font-semibold text-purple-700">Заработок</p>
+            </div>
+            <p className="text-2xl font-bold text-purple-700">{totalEarnings.toLocaleString("ru")} ₽</p>
+            <div className="flex flex-wrap gap-x-4 mt-1.5 text-xs text-purple-600/70">
+              <span>Начисления: {periodSalary.toLocaleString("ru")} ₽</span>
+              {periodBonuses.bonus > 0 && <span>Премии: +{periodBonuses.bonus.toLocaleString("ru")} ₽</span>}
+              {periodBonuses.penalty > 0 && <span>Штрафы: −{periodBonuses.penalty.toLocaleString("ru")} ₽</span>}
+            </div>
+          </div>
+
           {/* KPI cards */}
           <div className="grid grid-cols-2 gap-3">
             <StatCard icon={TrendingUp} label="Выручка" value={`${stats.totalRevenue.toLocaleString("ru")} ₽`} iconColor="text-emerald-600" bg="bg-emerald-50" />
