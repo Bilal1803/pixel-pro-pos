@@ -210,6 +210,27 @@ const FinancesPage = () => {
           </div>
         )}
       </Card>
+
+      {/* Salary breakdown */}
+      {Object.keys(byEmployee).length > 0 && (
+        <Card className="card-shadow overflow-hidden">
+          <div className="border-b p-4"><h3 className="font-semibold">Зарплаты сотрудников (за месяц)</h3></div>
+          <div className="divide-y">
+            {Object.entries(byEmployee).map(([empId, data]) => {
+              const name = finProfiles.find((p: any) => p.user_id === empId)?.full_name || "—";
+              return (
+                <div key={empId} className="flex items-center justify-between p-4">
+                  <div>
+                    <p className="text-sm font-medium">{name}</p>
+                    <p className="text-xs text-muted-foreground">{data.salesCount} продаж · начислено {data.accruals.toLocaleString("ru")} ₽{data.bonuses > 0 ? ` · премии +${data.bonuses.toLocaleString("ru")} ₽` : ""}{data.penalties > 0 ? ` · штрафы −${data.penalties.toLocaleString("ru")} ₽` : ""}</p>
+                  </div>
+                  <span className="text-sm font-bold text-emerald-600">{data.total.toLocaleString("ru")} ₽</span>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
     </div>
   );
 };
