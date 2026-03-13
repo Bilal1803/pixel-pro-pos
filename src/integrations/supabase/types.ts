@@ -1738,6 +1738,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_full_platform_admin: { Args: { _user_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
