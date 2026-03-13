@@ -95,7 +95,7 @@ const FinancesPage = () => {
 
   const monthExpenses = expenses.filter((e: any) => new Date(e.date) >= new Date(monthStart));
 
-  const { totalSalary, byEmployee, isLoading: salaryLoading } = useSalaryData(companyId || null, { from: monthStart });
+  const { totalSalary, byEmployee } = useSalaryData(companyId || null, { from: monthStart });
 
   // Profiles for names
   const { data: finProfiles = [] } = useQuery({
