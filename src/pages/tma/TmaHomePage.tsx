@@ -48,7 +48,7 @@ const TmaHomePage = () => {
       return data;
     },
     enabled: !!user,
-    staleTime: 5 * 60_000,
+    staleTime: 60_000,
   });
 
   const { data: todaySales = [] } = useQuery({
