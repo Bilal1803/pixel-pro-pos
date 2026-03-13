@@ -4,10 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Save, Settings } from "lucide-react";
+import { Loader2, Save, Settings, Plus, Trash2 } from "lucide-react";
 
 const ACCRUAL_TYPES = [
   { value: "device", label: "Продажа телефона", emoji: "📱" },
@@ -17,26 +18,31 @@ const ACCRUAL_TYPES = [
   { value: "above_price", label: "Продажа выше цены", emoji: "💎" },
 ];
 
-type GlobalSetting = {
+type SalaryRule = {
   id?: string;
   accrual_type: string;
   calc_type: string;
   value: number;
   is_active: boolean;
+  min_price: number;
+  max_price: number | null;
 };
 
 export const GlobalSalarySettingsCard = ({ companyId, open, onOpenChange }: { companyId: string; open: boolean; onOpenChange: (v: boolean) => void }) => {
   const qc = useQueryClient();
-  const [settings, setSettings] = useState<Record<string, GlobalSetting>>({});
+  const [rules, setRules] = useState<SalaryRule[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
+  const [deletedIds, setDeletedIds] = useState<string[]>([]);
 
-  const { data: savedSettings, isLoading } = useQuery({
+  const { data: savedRules, isLoading } = useQuery({
     queryKey: ["global-salary-settings", companyId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("global_salary_settings")
         .select("*")
-        .eq("company_id", companyId);
+        .eq("company_id", companyId)
+        .order("accrual_type")
+        .order("min_price");
       if (error) throw error;
       return data || [];
     },
@@ -44,48 +50,72 @@ export const GlobalSalarySettingsCard = ({ companyId, open, onOpenChange }: { co
   });
 
   useEffect(() => {
-    if (savedSettings) {
-      const map: Record<string, GlobalSetting> = {};
-      for (const at of ACCRUAL_TYPES) {
-        const saved = savedSettings.find((s: any) => s.accrual_type === at.value);
-        map[at.value] = saved
-          ? { id: saved.id, accrual_type: at.value, calc_type: saved.calc_type, value: saved.value, is_active: saved.is_active }
-          : { accrual_type: at.value, calc_type: "percent", value: 0, is_active: false };
+    if (savedRules) {
+      const mapped: SalaryRule[] = savedRules.map((s: any) => ({
+        id: s.id,
+        accrual_type: s.accrual_type,
+        calc_type: s.calc_type,
+        value: s.value,
+        is_active: s.is_active,
+        min_price: s.min_price || 0,
+        max_price: s.max_price ?? null,
+      }));
+      // If no rules exist, add defaults
+      if (mapped.length === 0) {
+        for (const at of ACCRUAL_TYPES) {
+          mapped.push({ accrual_type: at.value, calc_type: "percent", value: 0, is_active: false, min_price: 0, max_price: null });
+        }
       }
-      setSettings(map);
+      setRules(mapped);
       setHasChanges(false);
+      setDeletedIds([]);
     }
-  }, [savedSettings]);
+  }, [savedRules]);
 
-  const updateSetting = (type: string, field: string, value: any) => {
-    setSettings(prev => ({
-      ...prev,
-      [type]: { ...prev[type], [field]: value },
-    }));
+  const addRule = (accrualType: string) => {
+    setRules(prev => [...prev, { accrual_type: accrualType, calc_type: "percent", value: 0, is_active: true, min_price: 0, max_price: null }]);
+    setHasChanges(true);
+  };
+
+  const removeRule = (index: number) => {
+    const rule = rules[index];
+    if (rule.id) setDeletedIds(prev => [...prev, rule.id!]);
+    setRules(prev => prev.filter((_, i) => i !== index));
+    setHasChanges(true);
+  };
+
+  const updateRule = (index: number, field: string, value: any) => {
+    setRules(prev => prev.map((r, i) => i === index ? { ...r, [field]: value } : r));
     setHasChanges(true);
   };
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      for (const at of ACCRUAL_TYPES) {
-        const s = settings[at.value];
-        if (!s) continue;
-
-        if (s.id) {
+      // Delete removed rules
+      for (const id of deletedIds) {
+        await supabase.from("global_salary_settings").delete().eq("id", id);
+      }
+      // Upsert remaining rules
+      for (const rule of rules) {
+        if (rule.id) {
           await supabase.from("global_salary_settings").update({
-            calc_type: s.calc_type,
-            value: s.value,
-            is_active: s.is_active,
+            calc_type: rule.calc_type,
+            value: rule.value,
+            is_active: rule.is_active,
+            min_price: rule.min_price,
+            max_price: rule.max_price,
             updated_at: new Date().toISOString(),
-          }).eq("id", s.id);
-        } else if (s.is_active || s.value > 0) {
-          await supabase.from("global_salary_settings").upsert({
+          }).eq("id", rule.id);
+        } else if (rule.is_active && rule.value > 0) {
+          await supabase.from("global_salary_settings").insert({
             company_id: companyId,
-            accrual_type: at.value,
-            calc_type: s.calc_type,
-            value: s.value,
-            is_active: s.is_active,
-          }, { onConflict: "company_id,accrual_type" });
+            accrual_type: rule.accrual_type,
+            calc_type: rule.calc_type,
+            value: rule.value,
+            is_active: rule.is_active,
+            min_price: rule.min_price,
+            max_price: rule.max_price,
+          });
         }
       }
     },
@@ -93,13 +123,17 @@ export const GlobalSalarySettingsCard = ({ companyId, open, onOpenChange }: { co
       qc.invalidateQueries({ queryKey: ["global-salary-settings", companyId] });
       toast.success("Общие настройки зарплаты сохранены");
       setHasChanges(false);
+      setDeletedIds([]);
     },
     onError: () => toast.error("Ошибка сохранения"),
   });
 
+  const getRulesForType = (type: string) => rules.filter(r => r.accrual_type === type);
+  const getTypeLabel = (type: string) => ACCRUAL_TYPES.find(a => a.value === type);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
@@ -107,47 +141,104 @@ export const GlobalSalarySettingsCard = ({ companyId, open, onOpenChange }: { co
           </DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          Стандартные ставки для всех новых сотрудников. Можно переопределить индивидуально в карточке сотрудника.
+          Стандартные правила для всех сотрудников. Можно переопределить индивидуально в карточке сотрудника.
         </p>
 
         {isLoading ? (
           <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {ACCRUAL_TYPES.map(at => {
-              const s = settings[at.value];
-              if (!s) return null;
+              const typeRules = getRulesForType(at.value);
               return (
-                <div key={at.value} className="flex items-center gap-3 p-3 rounded-lg border bg-background">
-                  <Switch
-                    checked={s.is_active}
-                    onCheckedChange={(v) => updateSetting(at.value, "is_active", v)}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">{at.emoji} {at.label}</p>
-                    {at.value === "above_price" && (
-                      <p className="text-[10px] text-muted-foreground">% или сумма от разницы между ценой продажи и ценой магазина</p>
-                    )}
+                <div key={at.value} className="border rounded-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold">{at.emoji} {at.label}</p>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => addRule(at.value)}>
+                      <Plus className="h-3 w-3 mr-1" />Добавить правило
+                    </Button>
                   </div>
-                  {s.is_active && (
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Input
-                        type="number"
-                        value={s.value || ""}
-                        onChange={(e) => updateSetting(at.value, "value", Number(e.target.value) || 0)}
-                        className="w-20 h-8 text-sm"
-                        placeholder="0"
-                      />
-                      <Select value={s.calc_type} onValueChange={(v) => updateSetting(at.value, "calc_type", v)}>
-                        <SelectTrigger className="w-20 h-8 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="percent">%</SelectItem>
-                          <SelectItem value="fixed">₽</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+
+                  {typeRules.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="h-8 text-xs">Вкл</TableHead>
+                          {at.value !== "above_price" && at.value !== "device" && (
+                            <>
+                              <TableHead className="h-8 text-xs">Цена от</TableHead>
+                              <TableHead className="h-8 text-xs">Цена до</TableHead>
+                            </>
+                          )}
+                          <TableHead className="h-8 text-xs">Тип</TableHead>
+                          <TableHead className="h-8 text-xs">Размер</TableHead>
+                          <TableHead className="h-8 text-xs w-8"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {typeRules.map((rule) => {
+                          const idx = rules.indexOf(rule);
+                          return (
+                            <TableRow key={idx}>
+                              <TableCell className="p-2">
+                                <Switch checked={rule.is_active} onCheckedChange={(v) => updateRule(idx, "is_active", v)} />
+                              </TableCell>
+                              {at.value !== "above_price" && at.value !== "device" && (
+                                <>
+                                  <TableCell className="p-2">
+                                    <Input
+                                      type="number"
+                                      value={rule.min_price || ""}
+                                      onChange={(e) => updateRule(idx, "min_price", Number(e.target.value) || 0)}
+                                      className="w-20 h-8 text-xs"
+                                      placeholder="0"
+                                    />
+                                  </TableCell>
+                                  <TableCell className="p-2">
+                                    <Input
+                                      type="number"
+                                      value={rule.max_price ?? ""}
+                                      onChange={(e) => updateRule(idx, "max_price", e.target.value ? Number(e.target.value) : null)}
+                                      className="w-20 h-8 text-xs"
+                                      placeholder="∞"
+                                    />
+                                  </TableCell>
+                                </>
+                              )}
+                              <TableCell className="p-2">
+                                <Select value={rule.calc_type} onValueChange={(v) => updateRule(idx, "calc_type", v)}>
+                                  <SelectTrigger className="w-16 h-8 text-xs"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="percent">%</SelectItem>
+                                    <SelectItem value="fixed">₽</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell className="p-2">
+                                <Input
+                                  type="number"
+                                  value={rule.value || ""}
+                                  onChange={(e) => updateRule(idx, "value", Number(e.target.value) || 0)}
+                                  className="w-20 h-8 text-xs"
+                                  placeholder="0"
+                                />
+                              </TableCell>
+                              <TableCell className="p-2">
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeRule(idx)}>
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Нет правил. Нажмите «Добавить правило».</p>
+                  )}
+
+                  {at.value === "above_price" && (
+                    <p className="text-[10px] text-muted-foreground">% или сумма от разницы между ценой продажи и ценой магазина</p>
                   )}
                 </div>
               );
