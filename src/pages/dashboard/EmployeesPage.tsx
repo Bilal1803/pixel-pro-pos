@@ -29,9 +29,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Copy, MoreVertical, Pencil, Trash2, RefreshCw, UserX, Send, DollarSign } from "lucide-react";
+import { Plus, Copy, MoreVertical, Pencil, Trash2, RefreshCw, UserX, Send, DollarSign, Settings } from "lucide-react";
 import { SalarySettingsCard } from "@/components/SalarySettingsCard";
 import { SalaryBonusCard } from "@/components/SalaryBonusCard";
+import { GlobalSalarySettingsCard } from "@/components/GlobalSalarySettingsCard";
 import { useSalaryData } from "@/hooks/useSalaryData";
 import { format } from "date-fns";
 
@@ -46,7 +47,8 @@ const EmployeesPage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
-  const [form, setForm] = useState({ fullName: "", phone: "", role: "employee", storeId: "", telegram: "" });
+  const [form, setForm] = useState({ fullName: "", phone: "", role: "employee", storeId: "", telegram: "", salaryType: "global" });
+  const [globalSettingsOpen, setGlobalSettingsOpen] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
 
   // Edit state
@@ -307,7 +309,7 @@ const EmployeesPage = () => {
   const handleCreateClose = () => {
     setCreateOpen(false);
     setInviteLink(null);
-    setForm({ fullName: "", phone: "", role: "employee", storeId: "", telegram: "" });
+    setForm({ fullName: "", phone: "", role: "employee", storeId: "", telegram: "", salaryType: "global" });
   };
 
   const copyCode = (code: string) => {
@@ -340,10 +342,14 @@ const EmployeesPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Сотрудники</h1>
-        <Dialog open={createOpen} onOpenChange={(v) => { if (!v) handleCreateClose(); else setCreateOpen(true); }}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-1" />Пригласить</Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setGlobalSettingsOpen(true)}>
+            <Settings className="h-4 w-4 mr-1" />Настройка зарплаты
+          </Button>
+          <Dialog open={createOpen} onOpenChange={(v) => { if (!v) handleCreateClose(); else setCreateOpen(true); }}>
+            <DialogTrigger asChild>
+              <Button><Plus className="h-4 w-4 mr-1" />Пригласить</Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{inviteLink ? "Приглашение создано" : "Новый сотрудник"}</DialogTitle>
@@ -407,6 +413,16 @@ const EmployeesPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                <div>
+                  <Label>Зарплата</Label>
+                  <Select value={form.salaryType} onValueChange={(v) => setForm({ ...form, salaryType: v })}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="global">Общая (по стандарту магазина)</SelectItem>
+                      <SelectItem value="individual">Индивидуальная</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <DialogFooter>
                   <Button onClick={handleCreateSubmit} disabled={createInvitation.isPending || !form.fullName}>
                     {createInvitation.isPending ? "Создание..." : "Создать приглашение"}
@@ -416,6 +432,7 @@ const EmployeesPage = () => {
             )}
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <SectionHelp tips={SECTION_TIPS.employees} sectionKey="employees" />
@@ -636,6 +653,11 @@ const EmployeesPage = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Global Salary Settings */}
+      {companyId && (
+        <GlobalSalarySettingsCard companyId={companyId} open={globalSettingsOpen} onOpenChange={setGlobalSettingsOpen} />
+      )}
     </div>
   );
 };
