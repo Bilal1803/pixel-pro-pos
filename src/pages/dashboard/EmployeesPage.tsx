@@ -615,6 +615,27 @@ const EmployeesPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Salary Dialog */}
+      <Dialog open={salaryOpen} onOpenChange={(v) => { setSalaryOpen(v); if (!v) setSalaryEmployee(null); }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Зарплата — {salaryEmployee?.full_name}</DialogTitle>
+          </DialogHeader>
+          {salaryEmployee && companyId && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-semibold mb-2">Настройки начислений</h3>
+                <SalarySettingsCard employeeId={salaryEmployee.user_id} companyId={companyId} />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold mb-2">Премии и штрафы</h3>
+                <SalaryBonusCard employeeId={salaryEmployee.user_id} companyId={companyId} />
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
